@@ -8,7 +8,7 @@ const Step3 = lazy(()=>import("../pages/step/Step3Page.jsx"))
 const stepRouter = () => {
   return [
     {
-      path:'step0',
+      path:'step0/:bookId',
       element:<Suspense fallback={Loading}><Step0/></Suspense>,
     },
     {
