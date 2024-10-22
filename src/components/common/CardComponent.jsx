@@ -12,7 +12,7 @@ export default function CardComponent({bookName,bookId,author}) {
 
   const handleClickCreate = () => {
     console.log(bookId)
-    moveToPath(`exam/step0/${bookId}`)
+    moveToPath(`/exam/step0/${bookId}`)
   }
 
   return (
