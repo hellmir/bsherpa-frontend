@@ -4,12 +4,15 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import useCustomMove from "../../hooks/useCustomMove.jsx";
 
 export default function CardComponent({bookName,bookId,author}) {
 
+  const {moveToPath} = useCustomMove()
+
   const handleClickCreate = () => {
     console.log(bookId)
-
+    moveToPath(`exam/step0/${bookId}`)
   }
 
   return (
