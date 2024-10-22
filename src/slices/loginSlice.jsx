@@ -33,14 +33,8 @@ const loginSlice = createSlice({
         setCookie("user",JSON.stringify(payload))
       }
       const email = payload.email
-      const userId = payload.userId
-      const username = payload.username
-      const profile = payload.imageUrl
       return {
-        email,
-        userId,
-        username,
-        profile
+        email
       }
     })
     .addCase(loginPostAsync.pending,(state,action)=>{

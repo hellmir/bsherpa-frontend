@@ -4,9 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import CardComponent from "../components/common/CardComponent.jsx";
-import DrawerComponent from "../components/common/DrawerComponent.jsx";
-import MainSelectComponent from "../components/common/MainSelectComponent.jsx";
+import MainComponent from "../components/MainComponent.jsx";
 
 const drawerWidth = 240;
 
@@ -25,38 +23,7 @@ export default function MainPage() {
             </Typography>
           </Toolbar>
         </AppBar>
-        <Box
-            component="main"
-            sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
-        >
-          <Toolbar />
-          <MainSelectComponent
-
-          />
-          <Typography sx={{ marginBottom: 2, marginTop: 2 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}> {/* flexbox 추가 */}
-              <CardComponent />
-              <CardComponent />
-              <CardComponent />
-              <CardComponent />
-            </Box>
-          </Typography>
-          <Typography sx={{ marginBottom: 2, marginTop: 2 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}> {/* flexbox 추가 */}
-              <CardComponent />
-              <CardComponent />
-              <CardComponent />
-              <CardComponent />
-            </Box>
-          </Typography>
-          {/*<Typography sx={{ marginBottom: 2 }}>
-            <CardComponent />
-            <CardComponent />
-            <CardComponent />
-            <CardComponent />
-          </Typography>*/}
-        </Box>
-        <DrawerComponent/>
+        <MainComponent/>
       </Box>
       </>
   );
