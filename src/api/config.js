@@ -1,0 +1,1 @@
+export const API_SERVER_HOST = 'https://bsherpa.duckdns.org'
