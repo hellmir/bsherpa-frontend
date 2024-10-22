@@ -1,10 +1,10 @@
 import React from 'react';
 import TextField from "@mui/material/TextField";
 
-function TextFieldComponent({id,type,label,value,handleChange}) {
+function TextFieldComponent({auto = true,id,type,label,value,handleChange}) {
   return (
       <TextField
-          autoFocus
+          autoFocus={auto}
           required
           margin="dense"
           id={id}
