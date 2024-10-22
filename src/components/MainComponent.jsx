@@ -1,12 +1,24 @@
-import React from 'react';
+import {useEffect, useState} from 'react';
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import MainSelectComponent from "./common/MainSelectComponent.jsx";
 import Typography from "@mui/material/Typography";
 import CardComponent from "./common/CardComponent.jsx";
 import DrawerComponent from "./common/DrawerComponent.jsx";
+import {useParams} from "react-router-dom";
 
-function MainComponent(props) {
+const initState = {
+  name:'국어'
+}
+
+function MainComponent() {
+
+  const [subject, setSubject] = useState(initState)
+  const {subjectName} = useParams()
+  useEffect(() => {
+    setSubject({name:subjectName})
+  }, [subjectName]);
+
   return (
       <>
       <Box
@@ -15,12 +27,12 @@ function MainComponent(props) {
       >
         <Toolbar />
         <MainSelectComponent
-
+          subjectName={subjectName}
         />
         <Typography sx={{ marginBottom: 2, marginTop: 2 }}>
           <Box sx={{ display: 'flex', gap: 2 }}> {/* flexbox 추가 */}
             <CardComponent
-            bookName={'국어1-1'}
+            bookName={`${subject.name}1-1`}
             bookId={1154}
             author={'고양이 선생님'}
             />
