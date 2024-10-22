@@ -29,6 +29,10 @@ const handleChange = (e) => {
   setUser({...user})
 }
 
+const handleClickLogin = () => {
+  console.log('로그인 클릭')
+}
+
   return (
       <Drawer
           sx={{
@@ -49,9 +53,11 @@ const handleChange = (e) => {
               <ListItem key={text} disablePadding>
                 <ListItemButton>
                   <ListItemIcon>
-                    {index % 2 === 0 ? <LoginIcon /> : <MailIcon />}
+                    {index % 2 === 0 ? <LoginIcon onClick={handleClickLogin}/> : <MailIcon />}
                   </ListItemIcon>
-                  <ListItemText primary={text} />
+                  <ListItemText primary={text}
+                                onClick={handleClickLogin}
+                  />
                 </ListItemButton>
               </ListItem>
           ))}
@@ -63,6 +69,7 @@ const handleChange = (e) => {
           handleChange={handleChange}
           />
           <TextFieldComponent
+              auto={false}
               id={'password'}
               type={'password'}
               label={'비밀번호'}
