@@ -1,8 +1,9 @@
+import Step3Component from "../../components/step/Step3Component.jsx";
 
 function Step3Page() {
   return (
       <div>
-        스텝3 페이지
+          <Step3Component/>
       </div>
   );
 }
