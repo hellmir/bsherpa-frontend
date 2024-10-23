@@ -9,7 +9,8 @@ export default function Step3Component() {
     // step2 로 돌아갈 때 받았던 props 그대로 반환해줄 것
     
     const [examName, setExamName] = useState("");
-    const regExp= /[\/?:|*+<>\;\"#%\\]/gi;
+    // 예외처리용 regExp
+    // const regExp= /[\/?:|*+<>\;\"#%\\]/gi;
 
     
 
@@ -66,7 +67,7 @@ export default function Step3Component() {
                                     <div className="tbody">
                                         <div className="scroll-inner">
                                             {/* length = 문제 갯수만큼 */}
-                                            {Array.from({ length: 10 }).map((_, index) => (
+                                            {Array.from({ length: 10 }).map((index) => (
                                                 <div className="col" key={index}>
                                                     <span>{index + 1}</span>
                                                     <span className="tit">1. 새로운 시작 &gt; (1) 시의 아름다움</span>
