@@ -1,17 +1,9 @@
 import {useParams} from "react-router-dom";
 import AccordionComponent from "../common/AccordionComponent.jsx";
-
-const data = [
-  {largeChapterId:1,largeChapterName:'시험1',exam:'a시험 1회'},
-  {largeChapterId:2,largeChapterName:'시험2',exam:'b시험 1회'},
-  {largeChapterId:3,largeChapterName:'시험3',exam:'c시험 1회'},
-  {largeChapterId:4,largeChapterName:'시험4',exam:'d시험 1회'},
-  {largeChapterId:1,largeChapterName:'시험1',exam:'a시험 2회'},
-  {largeChapterId:2,largeChapterName:'시험2',exam:'b시험 2회'},
-  {largeChapterId:3,largeChapterName:'시험3',exam:'c시험 2회'},
-  {largeChapterId:4,largeChapterName:'시험4',exam:'d시험 2회'}
-
-]
+import Button from "@mui/material/Button";
+import {Box} from "@mui/material";
+import BorderColorOutlinedIcon from '@mui/icons-material/BorderColorOutlined';
+import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
 
 const examData = {
   "examList": [
@@ -235,7 +227,12 @@ function Step0Component() {
   const groupedData = groupByLargeChapterId(examData.examList)
   console.log(groupedData)
   return (
-      <div>
+      <>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+        <Button variant="contained"><BorderColorOutlinedIcon/>선택한 시험지 편집하기</Button>
+        <Button variant="outlined" sx={{ ml: 1 }}><AddBoxOutlinedIcon/>신규 시험지 만들기</Button>
+      </Box>
+  <div>
         bookId:{bookId}
         {Object.entries(groupedData).map(([id,group])=>(
           <AccordionComponent
@@ -248,6 +245,7 @@ function Step0Component() {
         }
 
       </div>
+      </>
   );
 }
 
