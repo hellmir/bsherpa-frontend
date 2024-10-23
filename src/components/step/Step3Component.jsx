@@ -1,7 +1,7 @@
 import React, {useState} from "react";
-import "../../assets/css/common.css"
-import "../../assets/css/font.css"
-import "../../assets/css/reset.css"
+// import "../../assets/css/common.css"
+// import "../../assets/css/font.css"
+// import "../../assets/css/reset.css"
 import {Link} from "react-router-dom";
 export default function Step3Component() {
     // 필요한 것 props 받아와서 처리 (return 부분에서 map으로 보여줌)
