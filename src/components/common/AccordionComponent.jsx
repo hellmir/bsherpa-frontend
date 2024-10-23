@@ -2,30 +2,39 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import {AccordionActions} from "@mui/material";
-import Button from "@mui/material/Button";
+import TableComponent from "./TableComponent.jsx";
 
-export default function AccordionComponent() {
+export default function AccordionComponent({largeChapter, exams}) {
   return (
       <div>
         <Accordion>
           <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
+              expandIcon={<ExpandMoreIcon/>}
               aria-controls="panel1-content"
               id="panel1-header"
           >
-            1 단원
+            {largeChapter}
           </AccordionSummary>
-          <AccordionDetails>
-            단원 1 시험지
-          </AccordionDetails>
-          <AccordionActions>
-            <Button>보기</Button>
-            <Button>만들기</Button>
-          </AccordionActions>
+
+          {/* eslint-disable-next-line react/prop-types */}
+          {/*{exams.map((item, index) => (*/}
+              <>
+
+                <AccordionDetails>
+                  <TableComponent
+                      data={exams}
+                  />
+                  {/*{item.examName}*/}
+                </AccordionDetails>
+                {/*<AccordionActions>
+                  <Button>보기</Button>
+                  <Button>만들기</Button>
+                </AccordionActions>*/}
+              </>
+
+
+
         </Accordion>
-
-
       </div>
   );
 }
