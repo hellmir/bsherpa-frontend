@@ -209,7 +209,7 @@ const examData = {
 
 const groupByLargeChapterId = (array) => {
   return array.reduce((acc, item) => {
-    const { largeChapterId, largeChapterName,examName,itemCnt } = item;
+    const { largeChapterId, largeChapterName,examName,itemCnt,examId } = item;
     if (!acc[largeChapterId]) {
       acc[largeChapterId] = {
         largeChapterId,
@@ -217,7 +217,7 @@ const groupByLargeChapterId = (array) => {
         exams: [],
       };
     }
-    acc[largeChapterId].exams.push({examName, itemCnt});
+    acc[largeChapterId].exams.push({examName, itemCnt,examId});
     return acc;
   }, {});
 };
