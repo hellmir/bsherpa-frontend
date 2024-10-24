@@ -1,6 +1,6 @@
 import axios from "axios";
 import {BOOK} from "./config.js";
 
-export const getBook = async () => {
-  return (await axios.get(`${BOOK}`)).data
+export const getSubjectExamsFromTsherpa = async (bookId) => {
+  return (await axios.get(`${BOOK}/external/exams`,{params:{subjectId:bookId}})).data
 }
