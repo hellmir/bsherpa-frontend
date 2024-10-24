@@ -51,7 +51,7 @@ function MainComponent() {
             </Typography>
             {groupedBooks.length > 0 ? (
                 groupedBooks.map((group, index) => (
-                    <Box sx={{ display: 'flex', gap: 2 }} key={`box-${index}`}>
+                    <Box sx={{ display: 'flex', gap: 2 , marginBottom: 2, marginTop: 2 }} key={`box-${index}`}>
                       {group.map(book => (
                           <CardComponent
                               key={book.subjectId}
