@@ -1,8 +1,9 @@
+import Step1Component from "../../components/step/step1/Step1Component";
 
 function Step1Page() {
   return (
       <div>
-        스텝1 페이지
+       <Step1Component/>
       </div>
   );
 }
