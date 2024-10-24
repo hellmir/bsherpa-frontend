@@ -4,6 +4,8 @@ import Button from "@mui/material/Button";
 import {Box} from "@mui/material";
 import BorderColorOutlinedIcon from '@mui/icons-material/BorderColorOutlined';
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
+import {useSelector} from "react-redux";
+import useCustomMove from "../../hooks/useCustomMove.jsx";
 
 const examData = {
   "examList": [
@@ -209,7 +211,7 @@ const examData = {
 
 const groupByLargeChapterId = (array) => {
   return array.reduce((acc, item) => {
-    const { largeChapterId, largeChapterName,examName,itemCnt } = item;
+    const { largeChapterId, largeChapterName,examName,itemCnt,examId } = item;
     if (!acc[largeChapterId]) {
       acc[largeChapterId] = {
         largeChapterId,
@@ -217,20 +219,40 @@ const groupByLargeChapterId = (array) => {
         exams: [],
       };
     }
-    acc[largeChapterId].exams.push({examName, itemCnt});
+    acc[largeChapterId].exams.push({examName, itemCnt,examId});
     return acc;
   }, {});
 };
 
+
 function Step0Component() {
   const {bookId} = useParams()
+  const {moveToStepWithData} = useCustomMove()
   const groupedData = groupByLargeChapterId(examData.examList)
+  const examIdList = useSelector(state => state.examIdSlice)
   console.log(groupedData)
+
+  const handleClickSelectedExamEdit = () =>{
+    console.log(`선택한 시험지 만들기 : ${examIdList}`)
+    moveToStepWithData('step1',examIdList)
+  }
+  const handleClickNewExamEdit = () =>{
+    console.log(`새로운 시험지 만들기 : ${bookId}`)
+    moveToStepWithData('step1',bookId)
+  }
+
   return (
       <>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-        <Button variant="contained"><BorderColorOutlinedIcon/>선택한 시험지 편집하기</Button>
-        <Button variant="outlined" sx={{ ml: 1 }}><AddBoxOutlinedIcon/>신규 시험지 만들기</Button>
+        <Button
+            variant="contained"
+            onClick={handleClickSelectedExamEdit}
+        ><BorderColorOutlinedIcon/>선택한 시험지 편집하기</Button>
+        <Button
+            variant="outlined"
+            sx={{ ml: 1 }}
+            onClick={handleClickNewExamEdit}
+        ><AddBoxOutlinedIcon/>신규 시험지 만들기</Button>
       </Box>
   <div>
         bookId:{bookId}
