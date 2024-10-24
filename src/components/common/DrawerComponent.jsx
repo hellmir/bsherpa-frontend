@@ -9,11 +9,12 @@ import ListItemText from "@mui/material/ListItemText";
 import Drawer from "@mui/material/Drawer";
 import LoginIcon from '@mui/icons-material/Login';
 import TextFieldComponent from "./TextFieldComponent.jsx";
-import React, {useState} from "react";
+import {useState} from "react";
 import useCustomLogin from "../../hooks/useCustomLogin.jsx";
 import ModalComponent from "./ModalComponent.jsx";
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import TextField from "@mui/material/TextField";
+import HomeIcon from '@mui/icons-material/Home';
 
 const drawerWidth = 240;
 const initState = {
@@ -61,6 +62,9 @@ const handleClickText = (e) => {
   console.log(value)
   if (value==='회원가입'){
     moveToPath('/users/join')
+  }
+  if (value==='홈'){
+    moveToPath('/')
   }
 }
   const handleClose = () => {
@@ -173,11 +177,11 @@ const handleClickText = (e) => {
         </List>
         <Divider />
         <List>
-          {['회원가입', 'Trash', 'Spam'].map((text, index) => (
+          {['회원가입', '홈'].map((text, index) => (
               <ListItem key={text} disablePadding>
                 <ListItemButton>
                   <ListItemIcon>
-                    {index % 2 === 0 ? <PersonAddAltIcon /> : <MailIcon />}
+                    {index % 2 === 0 ? <PersonAddAltIcon /> : <HomeIcon />}
                   </ListItemIcon>
                   <ListItemText primary={text}
                                 onClick={handleClickText}
