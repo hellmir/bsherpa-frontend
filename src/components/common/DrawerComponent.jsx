@@ -109,6 +109,7 @@ const handleClickText = (e) => {
           ))}
           <TextFieldComponent
           id={'email'}
+          name={'email'}
           type={'email'}
           label={'이메일'}
           value={user.email}
@@ -117,6 +118,7 @@ const handleClickText = (e) => {
           <TextFieldComponent
               auto={false}
               id={'password'}
+              name={'password'}
               type={'password'}
               label={'비밀번호'}
               value={user.password}
