@@ -31,8 +31,8 @@ function MainComponent() {
 
   const filteredBooks = data ? data.data.filter(book => book.subjectName === subject.name) : [];
 
-  const groupedBooks = Array.from({ length: Math.ceil(filteredBooks.length / 5) }, (_, i) =>
-      filteredBooks.slice(i * 5, i * 5 + 5)
+  const groupedBooks = Array.from({ length: Math.ceil(filteredBooks.length / 4) }, (_, i) =>
+      filteredBooks.slice(i * 4, i * 4 + 4)
   );
 
   return (
