@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './inc/css/font.css';
-import './inc/css/reset.css';
-import './inc/css/common.css';
 
 // 데이터 변환 함수
 const transformData = (data) => {
@@ -67,17 +64,67 @@ const transformData = (data) => {
   return hierarchy;
 };
 
-// 재귀적 AccordionItem 컴포넌트
+// 모든 하위 노드의 ID를 가져오는 함수
+const getAllChildNodeIds = (node) => {
+  let ids = [`node-${node.id}`];
+  if (node.children) {
+    Object.values(node.children).forEach(child => {
+      ids = [...ids, ...getAllChildNodeIds(child)];
+    });
+  }
+  return ids;
+};
+
+// 모든 노드의 ID를 가져오는 함수
+const getAllNodeIds = (data) => {
+  let ids = [];
+  Object.values(data).forEach(node => {
+    ids = [...ids, ...getAllChildNodeIds(node)];
+  });
+  return ids;
+};
+
+// 상위 노드의 ID를 가져오는 함수
+const getParentNodeId = (hierarchyData, targetId) => {
+  let parentId = null;
+  
+  const searchParent = (data, target, currentParentId = null) => {
+    Object.entries(data).forEach(([_, value]) => {
+      if (value.children) {
+        Object.values(value.children).forEach(child => {
+          if (`node-${child.id}` === target) {
+            parentId = `node-${value.id}`;
+          }
+          searchParent(value.children, target, `node-${value.id}`);
+        });
+      }
+    });
+  };
+  
+  searchParent(hierarchyData, targetId);
+  return parentId;
+};
+
+// DynamicAccordionItem 컴포넌트
 const DynamicAccordionItem = ({ 
   title, 
   id,
   isActive,
   isChecked,
+  isIndeterminate,
   onToggle,
   onCheckChange,
   children,
   depth = 0 
 }) => {
+  const checkboxRef = React.useRef();
+
+  React.useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [isIndeterminate]);
+
   return (
     <div className={`check-group title ${isActive ? 'on' : ''}`}>
       <div className="title-chk" style={{
@@ -88,6 +135,7 @@ const DynamicAccordionItem = ({
         paddingLeft: `${depth * 20}px`
       }}>
         <input
+          ref={checkboxRef}
           type="checkbox"
           id={id}
           checked={isChecked}
@@ -117,18 +165,49 @@ const DynamicAccordionItem = ({
   );
 };
 
-// 재귀적 렌더링 컴포넌트
+// RenderHierarchy 컴포넌트
+// 수정된 RenderHierarchy 컴포넌트
 const RenderHierarchy = ({ 
   data, 
   activeNodes, 
   checkedNodes, 
   onToggle, 
   onCheckChange,
-  depth = 0 
+  depth = 0,
+  hierarchyData 
 }) => {
   return Object.entries(data).map(([key, value]) => {
     const hasChildren = Object.keys(value.children || {}).length > 0;
     const nodeId = `node-${value.id}`;
+    
+    // 현재 노드의 모든 자식 노드 ID 가져오기
+    const childNodeIds = hasChildren ? getAllChildNodeIds(value) : [];
+    
+    // 자식 노드들의 체크 상태 확인
+    const checkedChildCount = childNodeIds.filter(id => checkedNodes.includes(id)).length;
+    const isIndeterminate = hasChildren && checkedChildCount > 0 && checkedChildCount < childNodeIds.length;
+    const isChecked = hasChildren ? checkedChildCount === childNodeIds.length : checkedNodes.includes(nodeId);
+
+    const updateParentNodes = (nodeId, newCheckedNodes) => {
+      let currentNodeId = nodeId;
+      while (true) {
+        const parentId = getParentNodeId(hierarchyData, currentNodeId);
+        if (!parentId) break;
+        
+        const parentNode = Object.values(hierarchyData).find(node => `node-${node.id}` === parentId);
+        if (!parentNode) break;
+
+        const parentChildIds = getAllChildNodeIds(parentNode).filter(id => id !== parentId);
+        const anyChildChecked = parentChildIds.some(id => newCheckedNodes.includes(id));
+        
+        if (!anyChildChecked) {
+          newCheckedNodes = newCheckedNodes.filter(id => id !== parentId);
+        }
+        
+        currentNodeId = parentId;
+      }
+      return newCheckedNodes;
+    };
 
     return (
       <DynamicAccordionItem
@@ -136,9 +215,39 @@ const RenderHierarchy = ({
         title={value.name}
         id={nodeId}
         isActive={activeNodes.includes(nodeId)}
-        isChecked={checkedNodes.includes(nodeId)}
+        isChecked={isChecked}
+        isIndeterminate={isIndeterminate}
         onToggle={() => onToggle(nodeId)}
-        onCheckChange={(e) => onCheckChange(nodeId, e.target.checked)}
+        onCheckChange={(e) => {
+          const newChecked = e.target.checked;
+          let newCheckedNodes = [...checkedNodes];
+          
+          // 현재 노드 처리
+          if (newChecked) {
+            // 체크 시 현재 노드와 모든 자식 노드 체크
+            newCheckedNodes.push(nodeId);
+            if (hasChildren) {
+              const childIds = getAllChildNodeIds(value);
+              childIds.forEach(id => {
+                if (!newCheckedNodes.includes(id)) {
+                  newCheckedNodes.push(id);
+                }
+              });
+            }
+          } else {
+            // 체크 해제 시 현재 노드와 모든 자식 노드 체크 해제
+            newCheckedNodes = newCheckedNodes.filter(id => id !== nodeId);
+            if (hasChildren) {
+              const childIds = getAllChildNodeIds(value);
+              newCheckedNodes = newCheckedNodes.filter(id => !childIds.includes(id));
+            }
+            
+            // 부모 노드들 상태 업데이트
+            newCheckedNodes = updateParentNodes(nodeId, newCheckedNodes);
+          }
+          
+          onCheckChange(newCheckedNodes);
+        }}
         depth={depth}
       >
         {hasChildren && (
@@ -149,6 +258,7 @@ const RenderHierarchy = ({
             onToggle={onToggle}
             onCheckChange={onCheckChange}
             depth={depth + 1}
+            hierarchyData={hierarchyData}
           />
         )}
       </DynamicAccordionItem>
@@ -156,7 +266,36 @@ const RenderHierarchy = ({
   });
 };
 
+
 const Step1Component = () => {
+  useEffect(() => {
+    // 공통 CSS
+    const commonLink = document.createElement("link");
+    const VITE_COMMON_LINK = import.meta.env.VITE_COMMON_LINK
+    commonLink.href = VITE_COMMON_LINK;
+    commonLink.rel = "stylesheet";
+    document.head.appendChild(commonLink);
+
+    // 폰트 CSS
+    const fontLink = document.createElement("link");
+    const VITE_FONT_LINK = import.meta.env.VITE_FONT_LINK
+    fontLink.href = VITE_FONT_LINK;
+    fontLink.rel = "stylesheet";
+    document.head.appendChild(fontLink);
+
+    // 리셋 CSS
+    const resetLink = document.createElement("link");
+    const VITE_RESET_LINK = import.meta.env.VITE_RESET_LINK
+    resetLink.href = VITE_RESET_LINK;
+    resetLink.rel = "stylesheet";
+    document.head.appendChild(resetLink);
+
+    return () => {
+      document.head.removeChild(commonLink);
+      document.head.removeChild(fontLink);
+      document.head.removeChild(resetLink);
+    };
+  }, []);
   // 상태 관리
   const [hierarchyData, setHierarchyData] = useState({});
   const [activeNodes, setActiveNodes] = useState([]);
@@ -169,7 +308,7 @@ const Step1Component = () => {
 
   // API 데이터 로드
   useEffect(() => {
-    axios.post('https://bsherpa.com/step1/chapters')
+    axios.post('http://localhost:8080/step1/chapters')
       .then((response) => {
         const transformed = transformData(response.data.chapterList);
         setHierarchyData(transformed);
@@ -189,12 +328,8 @@ const Step1Component = () => {
   };
 
   // 체크박스 변경 핸들러
-  const handleCheckChange = (nodeId, isChecked) => {
-    setCheckedNodes(prev => 
-      isChecked 
-        ? [...prev, nodeId]
-        : prev.filter(id => id !== nodeId)
-    );
+  const handleCheckChange = (newCheckedNodes) => {
+    setCheckedNodes(newCheckedNodes);
   };
 
   // 범위 버튼 클릭 핸들러
@@ -283,6 +418,7 @@ const Step1Component = () => {
                             checkedNodes={checkedNodes}
                             onToggle={handleToggle}
                             onCheckChange={handleCheckChange}
+                            hierarchyData={hierarchyData}
                           />
                         </li>
                       </ul>
