@@ -3,16 +3,18 @@ import TextFieldComponent from "../common/TextFieldComponent.jsx";
 import {Box, Stack} from "@mui/material";
 import Button from "@mui/material/Button";
 import {postJoin} from "../../api/userApi.js";
+import useCustomMove from "../../hooks/useCustomMove.jsx";
 
 const initState = {
-  email:'',
-  username:'',
-  password:''
+  email: '',
+  username: '',
+  password: ''
 }
 
 function JoinComponent() {
 
   const [user, setUser] = useState(initState)
+  const {moveToPath} = useCustomMove()
 
   const handleChange = (e) => {
     user[e.target.name] = e.target.value
@@ -20,10 +22,14 @@ function JoinComponent() {
   }
 
   const handleClickJoin = () => {
-    postJoin(user).then(data=>{
-      console.log('로그인 성공')
-    }).catch(err=>{
-      console.log('가입 에러',err)
+    postJoin(user).then(data => {
+      console.log(`가입 성공: `)
+      console.log(data)
+      if (data.SUCCESS === 'JOIN') {
+        moveToPath('/')
+      }
+    }).catch(err => {
+      console.log('가입 에러', err)
     })
   }
 
