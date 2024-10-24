@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './inc/css/font.css';
-import './inc/css/reset.css';
-import './inc/css/common.css';
+
 
 // 데이터 변환 함수
 const transformData = (data) => {
