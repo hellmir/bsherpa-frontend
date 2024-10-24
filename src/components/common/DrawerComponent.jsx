@@ -36,12 +36,15 @@ const handleChange = (e) => {
 
 const handleClickLogin = () => {
   console.log('로그인 클릭')
+  console.log(user)
   doLogin(user)
   .then(data => {
-    if (data.ERROR) {
+    console.log(data)
+    if (data.error) {
       setFail(true)
     } else {
       console.log('로그인 성공')
+
       setSuccess(true)
       setResult(data.username)
     }
