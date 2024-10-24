@@ -1,11 +1,34 @@
-import React, {useState} from "react";
-import "../../assets/css/common.css"
-import "../../assets/css/font.css"
-import "../../assets/css/reset.css"
+import React, {useEffect, useState} from "react";
 
 export default function Step2Component() {
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
+
+    useEffect(() => {
+        // 공통 CSS
+        const commonLink = document.createElement("link");
+        commonLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1920/1729744314747_common.css";
+        commonLink.rel = "stylesheet";
+        document.head.appendChild(commonLink);
+
+        // 폰트 CSS
+        const fontLink = document.createElement("link");
+        fontLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1920/1729744194828_font.css";
+        fontLink.rel = "stylesheet";
+        document.head.appendChild(fontLink);
+
+        // 리셋 CSS
+        const resetLink = document.createElement("link");
+        resetLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1920/1729744327959_reset.css";
+        resetLink.rel = "stylesheet";
+        document.head.appendChild(resetLink);
+
+        return () => {
+            document.head.removeChild(commonLink);
+            document.head.removeChild(fontLink);
+            document.head.removeChild(resetLink);
+        };
+    }, []);
 
     const toggleProblemOptions = () => {
         setIsProblemOptionsOpen(!isProblemOptionsOpen);
@@ -91,7 +114,7 @@ export default function Step2Component() {
                                         </div>
                                     </div>
                                     <div className="view-que-list scroll-inner"
-                                         style="display: -webkit-box;-webkit-box-orient:vertical">
+                                         style={{display: "-webkit-box", WebkitBoxOrient: "vertical"}}>
                                         <div className="view-que-box">
                                             <div className="que-top">
                                                 <div className="title">
@@ -119,13 +142,13 @@ export default function Step2Component() {
                                                             <p className="answer"><span className="label">해설</span></p>
                                                             <div className="data-answer-area">
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt">해설 텍스트가 나오는 영역입니다.해설
 																텍스트가
 																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
                                                                 </div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt">해설 텍스트가 나오는 영역입니다.해설
 																텍스트가
 																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
@@ -139,13 +162,13 @@ export default function Step2Component() {
                                                                 className="label type01">정답</span></p>
                                                             <div className="data-answer-area">
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                             </div>
                                                         </div>
@@ -193,13 +216,13 @@ export default function Step2Component() {
                                                             <p className="answer"><span className="label">해설</span></p>
                                                             <div className="data-answer-area">
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt">해설 텍스트가 나오는 영역입니다.해설
 																텍스트가
 																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
                                                                 </div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt">해설 텍스트가 나오는 영역입니다.해설
 																텍스트가
 																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
@@ -213,13 +236,13 @@ export default function Step2Component() {
                                                                 className="label type01">정답</span></p>
                                                             <div className="data-answer-area">
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                             </div>
                                                         </div>
@@ -305,13 +328,13 @@ export default function Step2Component() {
                                                             <p className="answer"><span className="label">해설</span></p>
                                                             <div className="data-answer-area">
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt">해설 텍스트가 나오는 영역입니다.해설
 																텍스트가
 																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
                                                                 </div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt">해설 텍스트가 나오는 영역입니다.해설
 																텍스트가
 																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
@@ -325,13 +348,13 @@ export default function Step2Component() {
                                                                 className="label type01">정답</span></p>
                                                             <div className="data-answer-area">
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                                 <div className="paragraph"
-                                                                     style="text-align: Justify"><span
+                                                                     style={{textAlign: "justify"}}><span
                                                                     className="txt"> ①</span></div>
                                                             </div>
                                                         </div>
