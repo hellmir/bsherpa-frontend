@@ -7,19 +7,22 @@ export default function Step2Component() {
     useEffect(() => {
         // 공통 CSS
         const commonLink = document.createElement("link");
-        commonLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1920/1729744314747_common.css";
+        const VITE_COMMON_LINK = import.meta.env.VITE_COMMON_LINK
+        commonLink.href = VITE_COMMON_LINK;
         commonLink.rel = "stylesheet";
         document.head.appendChild(commonLink);
 
         // 폰트 CSS
         const fontLink = document.createElement("link");
-        fontLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1920/1729744194828_font.css";
+        const VITE_FONT_LINK = import.meta.env.VITE_FONT_LINK
+        fontLink.href = VITE_FONT_LINK;
         fontLink.rel = "stylesheet";
         document.head.appendChild(fontLink);
 
         // 리셋 CSS
         const resetLink = document.createElement("link");
-        resetLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1920/1729744327959_reset.css";
+        const VITE_RESET_LINK = import.meta.env.VITE_RESET_LINK
+        resetLink.href = VITE_RESET_LINK;
         resetLink.rel = "stylesheet";
         document.head.appendChild(resetLink);
 
@@ -180,8 +183,8 @@ export default function Step2Component() {
 
                                             </div>
                                             <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질a소인수분해a거듭제곱a거듭제곱으로표현자연수의
-                                                    성질a소인수분해a거듭제곱a거듭제곱으로표현</p>
+                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현자연수의
+                                                    성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
                                             </div>
                                         </div>
                                         <div className="view-que-box active">
@@ -254,7 +257,7 @@ export default function Step2Component() {
 
                                             </div>
                                             <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질a소인수분해a거듭제곱a거듭제곱으로표현</p>
+                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
                                             </div>
                                         </div>
                                         <div className="view-que-box">
@@ -298,7 +301,7 @@ export default function Step2Component() {
                                                 </div>
                                             </div>
                                             <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질a소인수분해a거듭제곱a거듭제곱으로표현</p>
+                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
                                             </div>
                                         </div>
                                         <div className="view-que-box">
@@ -365,7 +368,7 @@ export default function Step2Component() {
                                                 </div>
                                             </div>
                                             <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질a소인수분해a거듭제곱a거듭제곱으로표현</p>
+                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
                                             </div>
                                         </div>
                                         <div className="view-que-box">
@@ -403,7 +406,7 @@ export default function Step2Component() {
                                                 </div>
                                             </div>
                                             <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질a소인수분해a거듭제곱a거듭제곱으로표현</p>
+                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
                                             </div>
                                         </div>
                                     </div>
