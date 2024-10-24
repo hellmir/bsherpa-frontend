@@ -3,15 +3,15 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 
-function MainSelectComponent({subjectName,outlined='contained'}) {
-
-  const {moveToPath} = useCustomMove()
+function MainSelectComponent({ subjectName, outlined = 'contained' }) {
+  const { moveToPath } = useCustomMove();
 
   const handleClickSubject = (e) => {
-    console.log(e.target.textContent)
-    const path = e.target.textContent
-    moveToPath(`/${path}`)
-  }
+    const path = e.target.textContent;
+    moveToPath(`/${path}`);
+  };
+
+  const subjects = ['국어', '수학', '영어', '과학', '사회', '역사', '도덕'];
 
   return (
       <Box
@@ -25,55 +25,19 @@ function MainSelectComponent({subjectName,outlined='contained'}) {
           }}
       >
         <ButtonGroup variant="outlined" aria-label="Basic button group">
-          <Button
-              variant={outlined}
-          >중학</Button>
+          <Button variant={outlined}>중학</Button>
           <Button>시험지 보관함</Button>
         </ButtonGroup>
         <ButtonGroup variant="text" aria-label="Basic button group">
-          {subjectName === '국어' ?
+          {subjects.map((subject) => (
               <Button
-                  variant={'outlined'}
+                  key={subject}
+                  variant={subjectName === subject ? 'outlined' : 'text'}
                   onClick={handleClickSubject}
-              >국어</Button>
-              :
-              <Button
-                  onClick={handleClickSubject}
-              >국어</Button>
-          }
-          {subjectName === '수학' ?
-              <Button
-                  variant={'outlined'}
-                  onClick={handleClickSubject}
-              >수학</Button>
-              :
-              <Button
-                  onClick={handleClickSubject}
-              >수학</Button>
-          }
-          {subjectName === '영어' ?
-              <Button
-                  variant={'outlined'}
-                  onClick={handleClickSubject}
-              >영어</Button>
-              :
-              <Button
-                  onClick={handleClickSubject}
-              >영어</Button>
-          }
-
-          <Button
-              onClick={handleClickSubject}
-          >과학</Button>
-          <Button
-              onClick={handleClickSubject}
-          >사회</Button>
-          <Button
-              onClick={handleClickSubject}
-          >역사</Button>
-          <Button
-              onClick={handleClickSubject}
-          >도덕</Button>
+              >
+                {subject}
+              </Button>
+          ))}
         </ButtonGroup>
       </Box>
   );
