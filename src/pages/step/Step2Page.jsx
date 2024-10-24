@@ -1,10 +1,10 @@
+import Step2Component from "../../components/step/Step2Component.jsx";
 
-function Step2Page() {
-  return (
-      <div>
-        스텝2 페이지
-      </div>
-  );
+export default function Step2Page() {
+    return (
+        <div>
+            스텝2 페이지
+            <Step2Component/>
+        </div>
+    );
 }
-
-export default Step2Page;
