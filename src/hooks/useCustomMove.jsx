@@ -8,7 +8,15 @@ const useCustomMove = () => {
     navigate({pathname:path},{replace:true})
   }
 
-  return {moveToPath}
+  const moveToStepWithData = (path,data) => {
+    navigate(
+        {pathname:`/exam/${path}`},
+        {state:{data}},
+        {replace:true}
+    )
+  }
+
+  return {moveToPath,moveToStepWithData}
 }
 
 

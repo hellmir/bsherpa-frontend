@@ -3,6 +3,8 @@ import { DataGrid } from '@mui/x-data-grid';
 import Button from "@mui/material/Button";
 import SearchIcon from '@mui/icons-material/Search';
 import { useState } from "react";
+import {useDispatch} from "react-redux";
+import {addExamId} from "../../slices/examIdSlice.jsx";
 
 const handleAction = (action, id) => {
   console.log(`${action} clicked for ID: ${id}`);
@@ -71,6 +73,7 @@ const columns = [
 
 export default function TableComponent({ data }) {
   const [examIdList, setExamIdList] = useState([]);
+  const dispatch = useDispatch()
 
   const rows = data.map((item, index) => (
       { id: index + 1, examName: item.examName, examCount: item.itemCnt, examId: item.examId }
@@ -87,6 +90,7 @@ export default function TableComponent({ data }) {
       // examIdList 업데이트
       const newExamIds = selectedRow.map(row => row.examId); // 선택한 examId 배열 생성
       console.log(newExamIds) // 새로운 examId 배열로 업데이트
+      dispatch(addExamId(newExamIds))
     }
   };
 
