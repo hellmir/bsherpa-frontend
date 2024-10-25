@@ -59,13 +59,6 @@ const columns = [
           >
             정답+해설
           </Button>
-          <Button
-              onClick={() => handleAction('view', params.row.id)}
-              variant="outlined"
-              color="default"
-          >
-            문항정보표
-          </Button>
         </div>
     ),
   },
