@@ -11,7 +11,7 @@ export default function CardComponent({bookName,bookId,author}) {
   const {moveToStepWithData} = useCustomMove()
 
   const handleClickCreate = () => {
-    moveToStepWithData(`step0`,bookId)
+    moveToStepWithData(`step0`,{id:bookId,name:bookName,author})
   }
 
   return (
