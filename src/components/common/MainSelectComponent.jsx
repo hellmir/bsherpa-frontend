@@ -4,11 +4,12 @@ import Box from "@mui/material/Box";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 
 function MainSelectComponent({ subjectName, outlined = 'contained' }) {
-  const { moveToPath } = useCustomMove();
+  const { moveToPathWithData } = useCustomMove();
 
   const handleClickSubject = (e) => {
-    const path = e.target.textContent;
-    moveToPath(`/${path}`);
+    const selectSubjectName = e.target.textContent;
+    console.log(selectSubjectName)
+    moveToPathWithData(`/`,selectSubjectName);
   };
 
   const subjects = ['국어', '수학', '영어', '과학', '사회', '역사', '도덕'];
