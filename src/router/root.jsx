@@ -11,16 +11,8 @@ const Error404 = lazy(()=>import("../pages/Error404.jsx"))
 
 const root = createBrowserRouter([
   {
-    path: '/:subjectName',
-    element: <Suspense fallback={Loading}><Main/></Suspense>
-  },
-  {
-    path: '/:국어',
-    element: <Suspense fallback={Loading}><Main/></Suspense>
-  },
-  {
     path: '/',
-    element: <Navigate replace to={'/국어'}/>
+    element: <Suspense fallback={Loading}><Main/></Suspense>
   },
   {
     path: '/exam',

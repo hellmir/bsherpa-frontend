@@ -1,16 +1,16 @@
-import {useParams} from "react-router-dom";
+import {useLocation} from "react-router-dom";
 import AccordionComponent from "../common/AccordionComponent.jsx";
 import Button from "@mui/material/Button";
 import {Box} from "@mui/material";
 import BorderColorOutlinedIcon from '@mui/icons-material/BorderColorOutlined';
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
-import {useSelector} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import {useQuery} from "@tanstack/react-query";
 import {getSubjectExamsFromTsherpa} from "../../api/step0Api.js";
 import Typography from "@mui/material/Typography";
 import HomeIcon from '@mui/icons-material/Home';
-
+import {addBookId} from "../../slices/bookIdSlice.jsx";
 
 const groupByLargeChapterId = (array) => {
   return array.reduce((acc, item) => {
@@ -29,7 +29,9 @@ const groupByLargeChapterId = (array) => {
 
 
 function Step0Component() {
-  const {bookId} = useParams()
+  const bookId = useLocation().state.data
+  const dispatch = useDispatch()
+  dispatch(addBookId(bookId))
   const {moveToStepWithData,moveToPath} = useCustomMove()
 
   const examIdList = useSelector(state => state.examIdSlice)

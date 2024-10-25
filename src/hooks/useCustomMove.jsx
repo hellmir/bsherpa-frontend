@@ -12,6 +12,7 @@ const useCustomMove = () => {
   }
 
   const moveToStepWithData = (path,data) => {
+    setRefresh(!refresh)
     navigate(
         {pathname:`/exam/${path}`},
         {state:{data}},
@@ -19,7 +20,16 @@ const useCustomMove = () => {
     )
   }
 
-  return {moveToPath,moveToStepWithData,refresh}
+  const moveToPathWithData = (path,data) => {
+    setRefresh(!refresh)
+    navigate(
+        {pathname:path},
+        {state:{data}},
+        {replace:true}
+    )
+  }
+
+  return {moveToPath,moveToPathWithData,moveToStepWithData,refresh}
 }
 
 
