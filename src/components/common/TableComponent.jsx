@@ -15,13 +15,13 @@ const columns = [
     field: 'examName',
     headerName: '시험지명',
     width: 500,
-    editable: true,
+    editable: false,
   },
   {
     field: 'examCount',
     headerName: '문항수',
     width: 150,
-    editable: true,
+    editable: false,
   },
   {
     field: 'preView',
