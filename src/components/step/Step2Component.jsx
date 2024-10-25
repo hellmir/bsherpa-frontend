@@ -1,40 +1,24 @@
 import React, {useEffect, useState} from "react";
+import CommonResource from "../../util/CommonResource.jsx";
 
 export default function Step2Component() {
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
+    const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);  // 사용자 정렬 상태 관리 추가
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
+    const [selectedSortOption, setSelectedSortOption] = useState("단원순");
 
     useEffect(() => {
-        // 공통 CSS
-        const commonLink = document.createElement("link");
-        const VITE_COMMON_LINK = import.meta.env.VITE_COMMON_LINK
-        commonLink.href = VITE_COMMON_LINK;
-        commonLink.rel = "stylesheet";
-        document.head.appendChild(commonLink);
-
-        // 폰트 CSS
-        const fontLink = document.createElement("link");
-        const VITE_FONT_LINK = import.meta.env.VITE_FONT_LINK
-        fontLink.href = VITE_FONT_LINK;
-        fontLink.rel = "stylesheet";
-        document.head.appendChild(fontLink);
-
-        // 리셋 CSS
-        const resetLink = document.createElement("link");
-        const VITE_RESET_LINK = import.meta.env.VITE_RESET_LINK
-        resetLink.href = VITE_RESET_LINK;
-        resetLink.rel = "stylesheet";
-        document.head.appendChild(resetLink);
-
-        return () => {
-            document.head.removeChild(commonLink);
-            document.head.removeChild(fontLink);
-            document.head.removeChild(resetLink);
-        };
-    }, []);
+        console.log("isProblemOptionsOpen changed:", isProblemOptionsOpen);
+    }, [isProblemOptionsOpen]);
 
     const toggleProblemOptions = () => {
         setIsProblemOptionsOpen(!isProblemOptionsOpen);
+        console.log("Problem options open:", !isProblemOptionsOpen);
+    };
+
+    const toggleSortOptions = () => {
+        setIsSortOptionsOpen(!isSortOptionsOpen);
+        console.log("Sort options open:", !isSortOptionsOpen);
     };
 
     const handleOptionSelect = (option) => {
@@ -42,8 +26,14 @@ export default function Step2Component() {
         setIsProblemOptionsOpen(false);
     };
 
+    const handleSortOptionSelect = (option) => {
+        setSelectedSortOption(option);
+        setIsSortOptionsOpen(false);
+    };
+
     return (
         <>
+            <CommonResource />
             <div id="wrap" className="full-pop-que">
                 <div className="full-pop-wrap">
                     <div className="pop-header">
@@ -70,20 +60,6 @@ export default function Step2Component() {
                                         <span className="title">문제 목록</span>
                                         <div className="right-area">
                                             <div className="select-wrap">
-                                                <button type="button" className="select-btn">문제만 보기</button>
-                                                <ul className="select-list">
-                                                    <li>
-                                                        <a href="javascript:;">문제+정답 보기</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="javascript:;">문제+해설+정답 보기</a>
-                                                    </li>
-                                                    <li className="disabled">
-                                                        <a href="javascript:;">편집단계에서만 적용되는 보기 옵션</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                            <div className="select-wrap">
                                                 <button
                                                     type="button"
                                                     className="select-btn"
@@ -109,6 +85,35 @@ export default function Step2Component() {
                                 onClick={() => handleOptionSelect("문제+해설+정답 보기")}
                             >
                               문제+해설+정답 보기
+                            </span>
+                                                        </li>
+                                                    </ul>
+                                                )}
+                                            </div>
+                                            <div className="select-wrap">
+                                                <button
+                                                    type="button"
+                                                    className="select-btn"
+                                                    onClick={toggleSortOptions}
+                                                >
+                                                    {selectedSortOption}
+                                                </button>
+
+                                                {isSortOptionsOpen && (
+                                                    <ul className="select-list open">
+                                                        <li>
+                            <span onClick={() => handleSortOptionSelect("단원순")}>
+                              단원순
+                            </span>
+                                                        </li>
+                                                        <li>
+                            <span onClick={() => handleSortOptionSelect("난이도순")}>
+                              난이도순
+                            </span>
+                                                        </li>
+                                                        <li>
+                            <span onClick={() => handleSortOptionSelect("문제 형태순")}>
+                              문제 형태순
                             </span>
                                                         </li>
                                                     </ul>
