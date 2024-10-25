@@ -303,7 +303,7 @@ const Step1Component = () => {
 
         // 인풋 체크박스 이미지
         const inputCheckboxImage = document.createElement("link");
-        inputCheckboxImage.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729831511691_input_checkbox.png";
+        inputCheckboxImage.href = "https://ddipddipddip.s3.amazonaws.com/images/common/input_checkbox.png";
         inputCheckboxImage.rel = "stylesheet";
         document.head.appendChild(inputCheckboxImage);
 
