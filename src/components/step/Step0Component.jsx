@@ -29,9 +29,9 @@ const groupByLargeChapterId = (array) => {
 
 
 function Step0Component() {
-  const bookId = useLocation().state.data
+  const book = useLocation().state.data
   const dispatch = useDispatch()
-  dispatch(addBookId(bookId))
+  dispatch(addBookId(book.id))
   const {moveToStepWithData,moveToPath} = useCustomMove()
 
   const examIdList = useSelector(state => state.examIdSlice)
@@ -39,7 +39,7 @@ function Step0Component() {
 
   const {data} = useQuery({
     queryKey:[],
-    queryFn:()=>getSubjectExamsFromTsherpa(bookId),
+    queryFn:()=>getSubjectExamsFromTsherpa(book.id),
     staleTime:1000*3
   })
   console.log(data)
@@ -51,8 +51,8 @@ function Step0Component() {
     moveToStepWithData('step1',examIdList)
   }
   const handleClickNewExamEdit = () =>{
-    console.log(`새로운 시험지 만들기 : ${bookId}`)
-    moveToStepWithData('step1',bookId)
+    console.log(`새로운 시험지 만들기 : ${book.id}`)
+    moveToStepWithData('step1',book.id)
   }
 
   const handleClickHome = () => {
@@ -61,17 +61,24 @@ function Step0Component() {
 
   return (
       <>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-        <Button
-            variant="contained"
-            onClick={handleClickSelectedExamEdit}
-        ><BorderColorOutlinedIcon/>선택한 시험지 편집하기</Button>
-        <Button
-            variant="outlined"
-            sx={{ ml: 1 }}
-            onClick={handleClickNewExamEdit}
-        ><AddBoxOutlinedIcon/>신규 시험지 만들기</Button>
-      </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2 }}>
+          <Typography variant="body1"><h1>{book.name} ({book.author})</h1></Typography>
+          <Box>
+            <Button
+                variant="contained"
+                onClick={handleClickSelectedExamEdit}
+            >
+              <BorderColorOutlinedIcon /> 선택한 시험지 편집하기
+            </Button>
+            <Button
+                variant="outlined"
+                sx={{ ml: 1 }}
+                onClick={handleClickNewExamEdit}
+            >
+              <AddBoxOutlinedIcon /> 신규 시험지 만들기
+            </Button>
+          </Box>
+        </Box>
   <div>
         {groupedData?(Object.entries(groupedData).map(([id,group])=>(
           <AccordionComponent
