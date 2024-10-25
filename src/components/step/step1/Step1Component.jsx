@@ -323,11 +323,7 @@ const Step1Component = () => {
     }, []);
   // API 데이터 로드
   useEffect(() => {
-
-    axios.post('http://localhost:8080/step1/chapters')
-
     axios.post('https://bsherpa.duckdns.org/step1/chapters')
-
       .then((response) => {
         const transformed = transformData(response.data.chapterList);
         setHierarchyData(transformed);
