@@ -2,14 +2,15 @@ import React, {useEffect, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useQuery} from "@tanstack/react-query";
 import {getEvaluationsFromTsherpa, getItemImagesFromTsherpa} from "../../api/step2Api.js";
+import {useSelector} from "react-redux";
 
 export default function Step2Component() {
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
     const [selectedSortOption, setSelectedSortOption] = useState("단원순");
-    const bookId = 1154;
-
+    const bookId = useSelector(state => state.bookIdSlice)
+    console.log(`step2 ${bookId}`)
 // TODO: Step0으로부터 교재 ID 정보 받아서 연동
     const {data: evaluationsData} = useQuery({
         queryKey: [],
