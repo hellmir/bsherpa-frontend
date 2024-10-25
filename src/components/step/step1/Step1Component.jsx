@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import CommonResource from "../../../util/CommonResource.jsx";
+import useCustomMove from "../../../hooks/useCustomMove.jsx";
 
 
 
@@ -385,6 +386,8 @@ const Step1Component = () => {
     setSource(prev => prev === sourceType ? '' : sourceType);
   };
 
+  const {moveToPath} = useCustomMove()
+
   return (
     <div id="wrap" className="full-pop-que">
       <CommonResource />
@@ -707,6 +710,7 @@ const Step1Component = () => {
                 type='button'
                 className='btn-step next pop-btn'
                 data-pop='que-pop'
+                onClick={()=>moveToPath('/exam/step2')}
               >
                 STEP2 문항 편집
               </button>
