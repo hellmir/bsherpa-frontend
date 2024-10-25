@@ -282,7 +282,45 @@ const Step1Component = () => {
   const [selectedEvaluation, setSelectedEvaluation] = useState([]);
   const [selectedQuestiontype, setSelectedQuestiontype] = useState('');
   const [source, setSource] = useState('');
- 
+ useEffect(() => {
+        // 공통 CSS
+        const commonLink = document.createElement("link");
+        commonLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729758269073_common.css";
+        commonLink.rel = "stylesheet";
+        document.head.appendChild(commonLink);
+
+        // 폰트 CSS
+        const fontLink = document.createElement("link");
+        fontLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729830819288_font.css";
+        fontLink.rel = "stylesheet";
+        document.head.appendChild(fontLink);
+
+        // 리셋 CSS
+        const resetLink = document.createElement("link");
+        resetLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729830831854_reset.css";
+        resetLink.rel = "stylesheet";
+        document.head.appendChild(resetLink);
+
+        // 인풋 체크박스 이미지
+        const inputCheckboxImage = document.createElement("link");
+        inputCheckboxImage.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729831511691_input_checkbox.png";
+        inputCheckboxImage.rel = "stylesheet";
+        document.head.appendChild(inputCheckboxImage);
+
+        // 셀렉트 애로우 이미지
+        const selectArrowImage = document.createElement("link");
+        selectArrowImage.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729831535674_select_arrow.png";
+        selectArrowImage.rel = "stylesheet";
+        document.head.appendChild(selectArrowImage);
+
+        return () => {
+            document.head.removeChild(commonLink);
+            document.head.removeChild(fontLink);
+            document.head.removeChild(resetLink);
+            document.head.removeChild(inputCheckboxImage);
+            document.head.removeChild(selectArrowImage);
+        };
+    }, []);
   // API 데이터 로드
   useEffect(() => {
 
