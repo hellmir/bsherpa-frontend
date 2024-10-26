@@ -1,0 +1,42 @@
+.select-wrap {
+    position: relative;
+    display: inline-block;
+    margin: 0 10px;
+}
+
+.select-btn {
+    padding: 8px 12px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.select-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 100;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    width: 180px;
+    padding: 5px 0;
+    display: none;
+}
+
+.select-list.open {
+    display: block;
+}
+
+.select-list li {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.select-list li:hover {
+    background-color: #f0f0f0;
+}
