@@ -23,26 +23,10 @@ const CommonResource = () => {
         resetLink.rel = "stylesheet";
         document.head.appendChild(resetLink);
 
-        // 인풋 체크박스 이미지
-        const inputCheckboxImage = document.createElement("link");
-        const INPUT_CHECKBOX_IMAGE = import.meta.env.INPUT_CHECKBOX_IMAGE
-        inputCheckboxImage.href = INPUT_CHECKBOX_IMAGE;
-        inputCheckboxImage.rel = "stylesheet";
-        document.head.appendChild(inputCheckboxImage);
-
-        // 셀렉트 애로우 이미지
-        const selectArrowImage = document.createElement("link");
-        const SELECT_ARROW_IMAGE = import.meta.env.SELECT_ARROW_IMAGE
-        selectArrowImage.href = SELECT_ARROW_IMAGE;
-        selectArrowImage.rel = "stylesheet";
-        document.head.appendChild(selectArrowImage);
-
         return () => {
             document.head.removeChild(commonLink);
             document.head.removeChild(fontLink);
             document.head.removeChild(resetLink);
-            document.head.removeChild(inputCheckboxImage);
-            document.head.removeChild(selectArrowImage);
         };
     }, []);
 
