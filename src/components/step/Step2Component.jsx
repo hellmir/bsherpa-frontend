@@ -14,6 +14,7 @@ export default function Step2Component() {
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
     const [selectedSortOption, setSelectedSortOption] = useState("단원순");
+    const [groupedItems, setGroupedItems] = useState([]);
     const [itemList, setItemList] = useState([]);
     const [tempItemList, setTempItemList] = useState([]);
     const [difficultyCounts, setDifficultyCounts] = useState([
@@ -78,6 +79,7 @@ export default function Step2Component() {
     const fetchQuestions = useMutation({
         mutationFn: (form) => getItemImagesFromTsherpa(form),
         onSuccess: (data) => {
+            const newTempItemList = [...data.data.itemList];
             const counts = [
                 {level: "최하", count: 0},
                 {level: "하", count: 0},
@@ -85,13 +87,13 @@ export default function Step2Component() {
                 {level: "상", count: 0},
                 {level: "최상", count: 0}
             ];
-            data.data.itemList.forEach(item => {
+            newTempItemList.forEach(item => {
                 const difficulty = counts.find(d => d.level === item.difficultyName);
                 if (difficulty) difficulty.count += 1;
             });
 
-            setTempItemList([...data.data.itemList]);
-            setTempDifficultyCounts([...counts]);
+            setTempItemList(newTempItemList);
+            setTempDifficultyCounts(counts);
 
             console.log('새로 받아 온 문제 목록: ', data.data.itemList);
             console.log('새로 받아 온 난이도 별 문제 수: ', counts);
@@ -125,8 +127,40 @@ export default function Step2Component() {
             console.log("questionsData 전체 구조:", questionsData);
             console.log("questionsData.data.itemList 확인:", questionsData.data.itemList);
             setItemList(questionsData.data.itemList);
+            setTempItemList(questionsData.data.itemList);
+            organizeItems(questionsData.data.itemList);
         }
     }, [questionsData]);
+
+    useEffect(() => {
+        if (questionsData?.data?.itemList) {
+            organizeItems(questionsData.data.itemList);
+        }
+    }, [questionsData]);
+
+    const organizeItems = (items) => {
+        const passageGroups = items.reduce((acc, item) => {
+            const passageId = item.passageId || "noPassage";
+            if (!acc[passageId]) {
+                acc[passageId] = {passageId, passageUrl: item.passageUrl, items: []};
+            }
+            acc[passageId].items.push(item);
+            return acc;
+        }, {});
+
+        const groupedArray = Object.values(passageGroups).map(group => {
+            group.items.sort((a, b) => a.itemNo - b.itemNo);
+            return group;
+        });
+
+        groupedArray.sort((a, b) => {
+            const firstItemA = a.items[0].itemNo;
+            const firstItemB = b.items[0].itemNo;
+            return firstItemA - firstItemB;
+        });
+
+        setGroupedItems(groupedArray);
+    };
 
     useEffect(() => {
         const counts = [
@@ -145,25 +179,29 @@ export default function Step2Component() {
     console.log('난이도 별 문제 수: ', difficultyCounts);
 
     useEffect(() => {
-        const sortedList = [...itemList];
-        if (selectedSortOption === "단원순") {
-            sortedList.sort((a, b) =>
-                a.largeChapterId - b.largeChapterId ||
-                a.mediumChapterId - b.mediumChapterId ||
-                a.smallChapterId - b.smallChapterId ||
-                a.topicChapterId - b.topicChapterId
-            );
-        } else if (selectedSortOption === "난이도순") {
-            const difficultyOrder = ["최하", "하", "중", "상", "최상"];
-            sortedList.sort((a, b) =>
-                difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
-            );
-        } else if (selectedSortOption === "문제 형태순") {
-            sortedList.sort((a, b) =>
-                (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
-            );
-        }
-        setItemList(sortedList);
+        const sortedGroups = groupedItems.map(group => {
+            const sortedItems = [...group.items];
+            if (selectedSortOption === "단원순") {
+                sortedItems.sort((a, b) =>
+                    a.largeChapterId - b.largeChapterId ||
+                    a.mediumChapterId - b.mediumChapterId ||
+                    a.smallChapterId - b.smallChapterId ||
+                    a.topicChapterId - b.topicChapterId
+                );
+            } else if (selectedSortOption === "난이도순") {
+                const difficultyOrder = ["최하", "하", "중", "상", "최상"];
+                sortedItems.sort((a, b) =>
+                    difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
+                );
+            } else if (selectedSortOption === "문제 형태순") {
+                sortedItems.sort((a, b) =>
+                    (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
+                );
+            }
+            return {...group, items: sortedItems};
+        });
+
+        setGroupedItems(sortedGroups);
     }, [selectedSortOption]);
 
     useEffect(() => {
@@ -190,6 +228,7 @@ export default function Step2Component() {
         setItemList([...tempItemList]);
         setDifficultyCounts([...tempDifficultyCounts]);
         setIsConfirmOpen(false);
+        organizeItems(tempItemList);
     };
 
     if (isLoading) {
@@ -241,7 +280,7 @@ export default function Step2Component() {
             case "하":
                 return "purple";
             case "최하":
-                return "darkgray";
+                return "black";
             default:
                 return "gray";
         }
@@ -306,8 +345,8 @@ export default function Step2Component() {
                 </span>
                                                         </li>
                                                         <li>
-                <span onClick={() => handleOptionSelect("문제+해설+정답 보기")}>
-                    문제+해설+정답 보기
+                <span onClick={() => handleOptionSelect("문제+정답+해설 보기")}>
+                    문제+정답+해설 보기
                 </span>
                                                         </li>
                                                     </ul>
@@ -349,89 +388,147 @@ export default function Step2Component() {
                                         </div>
                                     </div>
                                     <div className="view-que-list scroll-inner">
-                                        {itemList?.length > 0 ? (
-                                            itemList.map((item, index) => (
-                                                <div key={index} className="view-que-box">
-                                                    <div className="que-top">
-                                                        <div className="title">
-                                                            <span className="num">{index + 1}</span>
-                                                            <div className="que-badge-group">
-                                                                <span
-                                                                    clcustomStylesassName={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
-                                {item.difficultyName}
-                            </span>
-                                                                <span className="que-badge gray">
-                                {item.questionFormCode <= 50 ? "객관식" : "주관식"}
-                            </span>
+                                        {groupedItems.length > 0 ? (
+                                            groupedItems.map((group, groupIndex) => (
+                                                <div key={groupIndex} className="passage-group">
+                                                    {group.passageId !== "noPassage" && (
+                                                        <div className="passage-group-wrapper" style={{
+                                                            border: "1px solid #ddd",
+                                                            padding: "20px",
+                                                            borderRadius: "8px",
+                                                            marginBottom: "20px",
+                                                            position: "relative"
+                                                        }}>
+                                                            <div className="passage-group-header" style={{
+                                                                display: "flex",
+                                                                justifyContent: "space-between",
+                                                                alignItems: "flex-start",
+                                                                borderBottom: "1px solid #ddd",
+                                                                paddingBottom: "5px",
+                                                                marginBottom: "10px"
+                                                            }}>
+    <span style={{fontSize: "18px", fontWeight: "bold", marginTop: "-10px"}}>
+    {itemList.indexOf(group.items[0]) + 1} ~ {itemList.indexOf(group.items[group.items.length - 1]) + 1}
+</span>
+                                                            </div>
+
+                                                            <button type="button" className="btn-delete-2" style={{
+                                                                position: "absolute",
+                                                                right: "40px",
+                                                                top: "10px",
+                                                                zIndex: "2",
+                                                                width: "22px",
+                                                                height: "22px",
+                                                                fontSize: "16px"
+                                                            }}></button>
+                                                            <div className="passage" style={{
+                                                                border: "1px solid #ccc",
+                                                                borderRadius: "8px",
+                                                                padding: "10px"
+                                                            }}>
+                                                                <img src={group.passageUrl} alt="지문 이미지"
+                                                                     style={{width: "100%"}}/>
                                                             </div>
                                                         </div>
-                                                        <div className="btn-wrap">
-                                                            <button type="button" className="btn-error pop-btn"
-                                                                    data-pop="error-report-pop"></button>
-                                                            <button type="button" className="btn-delete"></button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="view-que">
-                                                        <div className="que-content">
-                                                            {item.questionUrl ? (
-                                                                <img src={item.questionUrl} alt="문제 이미지"/>
-                                                            ) : (
-                                                                <p className="txt">문제 텍스트 없음</p>
-                                                            )}
-                                                        </div>
-                                                        <div className="que-bottom">
-                                                            {selectedOption === "문제+해설+정답 보기" && (
-                                                                <div className="data-area">
-                                                                    <div className="que-info">
-                                                                        <p className="answer"><span
-                                                                            className="label">해설</span></p>
-                                                                        <div className="data-answer-area">
-                                                                            {item.explainUrl ? (
-                                                                                <img src={item.explainUrl}
-                                                                                     alt="해설 이미지"/>
-                                                                            ) : (
-                                                                                <div className="paragraph"
-                                                                                     style={{textAlign: "justify"}}>
-                                                                                <span
-                                                                                    className="txt">해설 없음</span>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
+                                                    )}
+                                                    {group.items.map((item, index) => (
+                                                        <div key={index} className="view-que-box"
+                                                             style={{marginTop: "10px"}}>
+                                                            <div className="que-top">
+                                                                <div className="title">
+                                                                    <span
+                                                                        className="num">{itemList.indexOf(item) + 1}</span>
+                                                                    <div className="que-badge-group">
+                                    <span className={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
+                                        {item.difficultyName}
+                                    </span>
+                                                                        <span className="que-badge gray">
+                                        {item.questionFormCode <= 50 ? "객관식" : "주관식"}
+                                    </span>
                                                                     </div>
                                                                 </div>
-                                                            )}
-                                                            {(selectedOption === "문제+정답 보기" || selectedOption === "문제+해설+정답 보기") && (
-                                                                <div className="data-area">
-                                                                    <div className="que-info">
-                                                                        <p className="answer"><span
-                                                                            className="label type01">정답</span></p>
-                                                                        <div className="data-answer-area">
-                                                                            {item.answerUrl ? (
-                                                                                <img src={item.answerUrl} alt="정답 이미지"/>
-                                                                            ) : (
-                                                                                <div className="paragraph"
-                                                                                     style={{textAlign: "justify"}}>
-                                                                                <span
-                                                                                    className="txt">정답 없음</span>
+                                                                <div className="btn-wrap">
+                                                                    <button type="button" className="btn-error pop-btn"
+                                                                            data-pop="error-report-pop"></button>
+                                                                    <button type="button"
+                                                                            className="btn-delete"></button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="view-que">
+                                                                <div className="que-content">
+                                                                    {item.questionUrl ? (
+                                                                        <img src={item.questionUrl} alt="문제 이미지"/>
+                                                                    ) : (
+                                                                        <p className="txt">문제 텍스트 없음</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="que-bottom">
+                                                                    {(selectedOption === "문제+정답 보기" || selectedOption === "문제+정답+해설 보기") && (
+                                                                        <div className="data-area">
+                                                                            <div className="que-info">
+                                                                                <p className="answer">
+                                                                                    <span className="label type01"
+                                                                                          style={{
+                                                                                              display: "block",
+                                                                                              textAlign: "left",
+                                                                                              paddingLeft: "20px"
+                                                                                          }}>정답</span>
+                                                                                </p>
+                                                                                <div className="data-answer-area">
+                                                                                    {item.answerUrl ? (
+                                                                                        <img src={item.answerUrl}
+                                                                                             alt="정답 이미지"/>
+                                                                                    ) : (
+                                                                                        <div className="paragraph"
+                                                                                             style={{textAlign: "justify"}}>
+                                                                                            <span
+                                                                                                className="txt">정답 없음</span>
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
-                                                                            )}
+                                                                            </div>
                                                                         </div>
+                                                                    )}
+                                                                    {selectedOption === "문제+정답+해설 보기" && (
+                                                                        <div className="data-area">
+                                                                            <div className="que-info">
+                                                                                <p className="answer">
+                                                                                    <span className="label" style={{
+                                                                                        display: "block",
+                                                                                        textAlign: "left",
+                                                                                        paddingLeft: "20px"
+                                                                                    }}>해설</span>
+                                                                                </p>
+                                                                                <div className="data-answer-area">
+                                                                                    {item.explainUrl ? (
+                                                                                        <img src={item.explainUrl}
+                                                                                             alt="해설 이미지"/>
+                                                                                    ) : (
+                                                                                        <div className="paragraph"
+                                                                                             style={{textAlign: "justify"}}>
+                                                                                            <span
+                                                                                                className="txt">해설 없음</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="data-area type01">
+                                                                        <button type="button"
+                                                                                className="btn-similar-que btn-default">
+                                                                            <i className="similar"></i> 유사 문제
+                                                                        </button>
                                                                     </div>
                                                                 </div>
-                                                            )}
-                                                            <div className="data-area type01">
-                                                                <button type="button"
-                                                                        className="btn-similar-que btn-default">
-                                                                    <i className="similar"></i> 유사 문제
-                                                                </button>
+                                                            </div>
+                                                            <div className="que-info-last">
+                                                                <p className="chapter">
+                                                                    {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
+                                                                </p>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="que-info-last">
-                                                        <p className="chapter">
-                                                            {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
-                                                        </p>
-                                                    </div>
+                                                    ))}
                                                 </div>
                                             ))
                                         ) : (
