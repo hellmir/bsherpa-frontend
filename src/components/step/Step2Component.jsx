@@ -9,7 +9,8 @@ import ConfirmationModal from "../common/ConfirmationModal.jsx";
 import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
 import {setExamData} from "../../slices/examDataSlice.js";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
+import {createSelector} from "@reduxjs/toolkit";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -29,10 +30,10 @@ export default function Step2Component() {
     ]);
     const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    // TODO: Step0으로부터 교재 ID와 단원 코드 정보 받아서 연동
-    // const bookId = useSelector(state => state.bookIdSlice)
-    const bookId = 1154;
-    console.log(`step2 ${bookId}`)
+    
+    // TODO: Step0으로부터 시험지 정보 받아서 연동
+    const bookId = useSelector(state => state.bookIdSlice)
+    console.log(`교재 ID: ${bookId}`)
 
     const {moveToStepWithData, moveToPath} = useCustomMove();
 
@@ -61,7 +62,7 @@ export default function Step2Component() {
 
     console.log(`평가 영역 목록: ${activityCategoryList}`)
 
-    // TODO: Step1으로부터 교재 ID, 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
+    // TODO: Step1으로부터 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
     const itemsRequestForm = evaluationsData
         ? {
             activityCategoryList: activityCategoryList,
@@ -182,30 +183,39 @@ export default function Step2Component() {
     console.log('난이도 별 문제 수: ', difficultyCounts);
 
     useEffect(() => {
-        const sortedGroups = groupedItems.map(group => {
-            const sortedItems = [...group.items];
-            if (selectedSortOption === "단원순") {
-                sortedItems.sort((a, b) =>
-                    a.largeChapterId - b.largeChapterId ||
-                    a.mediumChapterId - b.mediumChapterId ||
-                    a.smallChapterId - b.smallChapterId ||
-                    a.topicChapterId - b.topicChapterId
-                );
-            } else if (selectedSortOption === "난이도순") {
-                const difficultyOrder = ["최하", "하", "중", "상", "최상"];
-                sortedItems.sort((a, b) =>
-                    difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
-                );
-            } else if (selectedSortOption === "문제 형태순") {
-                sortedItems.sort((a, b) =>
-                    (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
-                );
-            }
-            return {...group, items: sortedItems};
-        });
+        const sortGroupedItems = () => {
+            const sortedGroups = groupedItems.map(group => {
+                const sortedItems = [...group.items];
 
-        setGroupedItems(sortedGroups);
-    }, [selectedSortOption]);
+                if (selectedSortOption === "단원순") {
+                    sortedItems.sort((a, b) =>
+                        a.largeChapterId - b.largeChapterId ||
+                        a.mediumChapterId - b.mediumChapterId ||
+                        a.smallChapterId - b.smallChapterId ||
+                        a.topicChapterId - b.topicChapterId
+                    );
+                } else if (selectedSortOption === "난이도순") {
+                    const difficultyOrder = ["최하", "하", "중", "상", "최상"];
+                    sortedItems.sort((a, b) =>
+                        difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
+                    );
+                } else if (selectedSortOption === "문제 형태순") {
+                    sortedItems.sort((a, b) =>
+                        (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
+                    );
+                }
+
+                return {...group, items: sortedItems};
+            });
+
+            setGroupedItems(sortedGroups);
+
+            const newSortedItemList = sortedGroups.flatMap(group => group.items);
+            setItemList(newSortedItemList);
+        };
+
+        sortGroupedItems();
+    }, [selectedSortOption, groupedItems]);
 
     useEffect(() => {
         console.log("itemList가 업데이트되었습니다: ", itemList);
