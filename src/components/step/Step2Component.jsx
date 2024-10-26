@@ -108,6 +108,11 @@ export default function Step2Component() {
         moveToPath('../step1')
     };
 
+    const handleClickMoveToStepThree = () => {
+        console.log(`STEP 3 시험지 저장 : ${questionsData}`);
+        moveToStepWithData('step3', questionsData.data.itemList);
+    };
+
     return (
         <>
             <CommonResource/>
@@ -286,13 +291,19 @@ export default function Step2Component() {
                         </div>
                     </div>
                     <div className="step-btn-wrap">
-                        <button type="button" className="btn-step next">STEP 3 시험지 저장</button>
                         <Button
                             variant="contained"
                             onClick={handleClickMoveToStepOne}
                             className="btn-step"
                         >
                             <BorderColorOutlinedIcon/>STEP 1 단원 선택
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleClickMoveToStepThree}
+                            className="btn-step next"
+                        >
+                            <BorderColorOutlinedIcon/>STEP 3 시험지 저장
                         </Button>
                     </div>
                 </div>
