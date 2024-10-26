@@ -8,8 +8,11 @@ import Button from "@mui/material/Button";
 import ConfirmationModal from "../common/ConfirmationModal.jsx";
 import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
+import {setExamData} from "../../slices/examDataSlice.js";
+import {useDispatch} from "react-redux";
 
 export default function Step2Component() {
+    const dispatch = useDispatch();
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
@@ -28,7 +31,7 @@ export default function Step2Component() {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     // TODO: Step0으로부터 교재 ID와 단원 코드 정보 받아서 연동
     // const bookId = useSelector(state => state.bookIdSlice)
-    const bookId = 1154;
+    const bookId = 1136;
     console.log(`step2 ${bookId}`)
 
     const {moveToStepWithData, moveToPath} = useCustomMove();
@@ -65,10 +68,10 @@ export default function Step2Component() {
             levelCnt: [1, 1, 1, 1, 1],
             minorClassification: [
                 {
-                    large: 115401,
-                    medium: 11540101,
-                    small: 1154010101,
-                    subject: 1154
+                    large: 113601,
+                    medium: 11360101,
+                    small: 1136010101,
+                    subject: 1136
                 }
             ],
             questionForm: "multiple,subjective"
@@ -266,7 +269,8 @@ export default function Step2Component() {
 
     const handleClickMoveToStepThree = () => {
         console.log(`STEP 3 시험지 저장 : ${bookId, itemList}`);
-        moveToStepWithData('step3', {bookId, itemList});
+        dispatch(setExamData({bookId, groupedItems}));
+        moveToStepWithData('step3', {bookId, groupedItems});
     };
 
     function getDifficultyColor(difficultyName) {
