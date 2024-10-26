@@ -7,6 +7,7 @@ import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import Button from "@mui/material/Button";
 import ConfirmationModal from "../common/ConfirmationModal.jsx";
 import "../../assets/css/confirmationModal.css";
+import "../../assets/css/comboBox.css";
 
 export default function Step2Component() {
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
@@ -60,14 +61,13 @@ export default function Step2Component() {
     const itemsRequestForm = evaluationsData
         ? {
             activityCategoryList: activityCategoryList,
-            levelCnt: [1, 3, 2, 3, 1],
+            levelCnt: [1, 1, 1, 1, 1],
             minorClassification: [
                 {
                     large: 115401,
                     medium: 11540101,
                     small: 1154010101,
-                    subject: 1154,
-                    topic: 115401010101
+                    subject: 1154
                 }
             ],
             questionForm: "multiple,subjective"
@@ -143,6 +143,28 @@ export default function Step2Component() {
         setDifficultyCounts(counts.filter(c => c.count > 0));
     }, [itemList]);
     console.log('난이도 별 문제 수: ', difficultyCounts);
+
+    useEffect(() => {
+        const sortedList = [...itemList];
+        if (selectedSortOption === "단원순") {
+            sortedList.sort((a, b) =>
+                a.largeChapterId - b.largeChapterId ||
+                a.mediumChapterId - b.mediumChapterId ||
+                a.smallChapterId - b.smallChapterId ||
+                a.topicChapterId - b.topicChapterId
+            );
+        } else if (selectedSortOption === "난이도순") {
+            const difficultyOrder = ["최하", "하", "중", "상", "최상"];
+            sortedList.sort((a, b) =>
+                difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
+            );
+        } else if (selectedSortOption === "문제 형태순") {
+            sortedList.sort((a, b) =>
+                (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
+            );
+        }
+        setItemList(sortedList);
+    }, [selectedSortOption]);
 
     useEffect(() => {
         console.log("itemList가 업데이트되었습니다: ", itemList);
@@ -274,19 +296,19 @@ export default function Step2Component() {
                                                 {isProblemOptionsOpen && (
                                                     <ul className="select-list open">
                                                         <li>
-                                                            <span onClick={() => handleOptionSelect("문제만 보기")}>
-                                                                문제만 보기
-                                                            </span>
+                <span onClick={() => handleOptionSelect("문제만 보기")}>
+                    문제만 보기
+                </span>
                                                         </li>
                                                         <li>
-                                                            <span onClick={() => handleOptionSelect("문제+정답 보기")}>
-                                                                문제+정답 보기
-                                                            </span>
+                <span onClick={() => handleOptionSelect("문제+정답 보기")}>
+                    문제+정답 보기
+                </span>
                                                         </li>
                                                         <li>
-                                                            <span onClick={() => handleOptionSelect("문제+해설+정답 보기")}>
-                                                                문제+해설+정답 보기
-                                                            </span>
+                <span onClick={() => handleOptionSelect("문제+해설+정답 보기")}>
+                    문제+해설+정답 보기
+                </span>
                                                         </li>
                                                     </ul>
                                                 )}
@@ -301,6 +323,11 @@ export default function Step2Component() {
                                                 </button>
                                                 {isSortOptionsOpen && (
                                                     <ul className="select-list open">
+                                                        <li>
+                                                            <span onClick={() => handleSortOptionSelect("사용자 정렬")}>
+                                                                사용자 정렬
+                                                            </span>
+                                                        </li>
                                                         <li>
                                                             <span onClick={() => handleSortOptionSelect("단원순")}>
                                                                 단원순
