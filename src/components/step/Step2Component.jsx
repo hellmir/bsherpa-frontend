@@ -5,7 +5,6 @@ import {getBookFromTsherpa, getEvaluationsFromTsherpa, getItemImagesFromTsherpa}
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import Button from "@mui/material/Button";
-import '../../assets/css/stepTwoCustom.css';
 
 export default function Step2Component() {
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
