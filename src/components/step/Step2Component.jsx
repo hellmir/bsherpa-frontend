@@ -10,7 +10,6 @@ import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
 import {setExamData} from "../../slices/examDataSlice.js";
 import {useDispatch, useSelector} from "react-redux";
-import {createSelector} from "@reduxjs/toolkit";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -30,9 +29,10 @@ export default function Step2Component() {
     ]);
     const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    
+    const [isSorted, setIsSorted] = useState(false);
+
     // TODO: Step0으로부터 시험지 정보 받아서 연동
-    const bookId = useSelector(state => state.bookIdSlice)
+    const bookId = useSelector((state) => state.bookIdSlice);
     console.log(`교재 ID: ${bookId}`)
 
     const {moveToStepWithData, moveToPath} = useCustomMove();
@@ -117,6 +117,13 @@ export default function Step2Component() {
     });
 
     useEffect(() => {
+        if (!isSorted && groupedItems.length > 0) {
+            sortGroupedItems();
+            setIsSorted(true);
+        }
+    }, [groupedItems]);
+
+    useEffect(() => {
         if (!isLoading && questionsData) {
             console.log(questionsData);
         }
@@ -127,7 +134,7 @@ export default function Step2Component() {
     }, [isProblemOptionsOpen]);
 
     useEffect(() => {
-        if (questionsData?.data?.itemList) {
+        if (questionsData?.data?.itemList && itemList.length === 0) {
             console.log("questionsData 전체 구조:", questionsData);
             console.log("questionsData.data.itemList 확인:", questionsData.data.itemList);
             setItemList(questionsData.data.itemList);
@@ -136,11 +143,6 @@ export default function Step2Component() {
         }
     }, [questionsData]);
 
-    useEffect(() => {
-        if (questionsData?.data?.itemList) {
-            organizeItems(questionsData.data.itemList);
-        }
-    }, [questionsData]);
 
     const organizeItems = (items) => {
         const passageGroups = items.reduce((acc, item) => {
@@ -164,6 +166,7 @@ export default function Step2Component() {
         });
 
         setGroupedItems(groupedArray);
+        setIsSorted(false);
     };
 
     useEffect(() => {
@@ -183,39 +186,39 @@ export default function Step2Component() {
     console.log('난이도 별 문제 수: ', difficultyCounts);
 
     useEffect(() => {
-        const sortGroupedItems = () => {
-            const sortedGroups = groupedItems.map(group => {
-                const sortedItems = [...group.items];
-
-                if (selectedSortOption === "단원순") {
-                    sortedItems.sort((a, b) =>
-                        a.largeChapterId - b.largeChapterId ||
-                        a.mediumChapterId - b.mediumChapterId ||
-                        a.smallChapterId - b.smallChapterId ||
-                        a.topicChapterId - b.topicChapterId
-                    );
-                } else if (selectedSortOption === "난이도순") {
-                    const difficultyOrder = ["최하", "하", "중", "상", "최상"];
-                    sortedItems.sort((a, b) =>
-                        difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
-                    );
-                } else if (selectedSortOption === "문제 형태순") {
-                    sortedItems.sort((a, b) =>
-                        (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
-                    );
-                }
-
-                return {...group, items: sortedItems};
-            });
-
-            setGroupedItems(sortedGroups);
-
-            const newSortedItemList = sortedGroups.flatMap(group => group.items);
-            setItemList(newSortedItemList);
-        };
-
         sortGroupedItems();
-    }, [selectedSortOption, groupedItems]);
+    }, [selectedSortOption]);
+
+    const sortGroupedItems = () => {
+        const sortedGroups = groupedItems.map(group => {
+            const sortedItems = [...group.items];
+
+            if (selectedSortOption === "단원순") {
+                sortedItems.sort((a, b) =>
+                    a.largeChapterId - b.largeChapterId ||
+                    a.mediumChapterId - b.mediumChapterId ||
+                    a.smallChapterId - b.smallChapterId ||
+                    a.topicChapterId - b.topicChapterId
+                );
+            } else if (selectedSortOption === "난이도순") {
+                const difficultyOrder = ["최하", "하", "중", "상", "최상"];
+                sortedItems.sort((a, b) =>
+                    difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
+                );
+            } else if (selectedSortOption === "문제 형태순") {
+                sortedItems.sort((a, b) =>
+                    (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
+                );
+            }
+
+            return {...group, items: sortedItems};
+        });
+
+        setGroupedItems(sortedGroups);
+
+        const newSortedItemList = sortedGroups.flatMap(group => group.items);
+        setItemList(newSortedItemList);
+    };
 
     useEffect(() => {
         console.log("itemList가 업데이트되었습니다: ", itemList);
@@ -404,7 +407,8 @@ export default function Step2Component() {
                                     <div className="view-que-list scroll-inner">
                                         {groupedItems.length > 0 ? (
                                             groupedItems.map((group, groupIndex) => (
-                                                <div key={groupIndex} className="passage-group">
+                                                <div key={`group-${group.passageId}-${groupIndex}`}
+                                                     className="passage-group">
                                                     {group.passageId !== "noPassage" && (
                                                         <div className="passage-group-wrapper" style={{
                                                             border: "1px solid #ddd",
@@ -446,7 +450,8 @@ export default function Step2Component() {
                                                         </div>
                                                     )}
                                                     {group.items.map((item, index) => (
-                                                        <div key={index} className="view-que-box"
+                                                        <div key={`item-${item.itemId}-${index}`}
+                                                             className="view-que-box"
                                                              style={{marginTop: "10px"}}>
                                                             <div className="que-top">
                                                                 <div className="title">
