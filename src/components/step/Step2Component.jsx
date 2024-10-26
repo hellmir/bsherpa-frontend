@@ -97,7 +97,7 @@ export default function Step2Component() {
         });
         setDifficultyCounts(counts);
     }, [itemList]);
-    console.log(`난이도 별 문제 수: ${difficultyCounts}`);
+    console.log('난이도 별 문제 수: ', difficultyCounts);
 
     const totalQuestions = itemList.length;
 
@@ -301,8 +301,9 @@ export default function Step2Component() {
                                                         </div>
                                                     </div>
                                                     <div className="que-info-last">
-                                                        <p className="chapter">자연수의
-                                                            성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
+                                                        <p className="chapter">
+                                                            {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             ))
