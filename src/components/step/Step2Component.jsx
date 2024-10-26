@@ -115,6 +115,19 @@ export default function Step2Component() {
         moveToStepWithData('step3', {bookId, itemList});
     };
 
+    function getDifficultyColor(difficultyName) {
+        switch (difficultyName) {
+            case "상":
+                return "yellow";
+            case "중":
+                return "green";
+            case "하":
+                return "purple";
+            default:
+                return "gray";
+        }
+    }
+
     return (
         <>
             <CommonResource/>
@@ -208,8 +221,13 @@ export default function Step2Component() {
                                                         <div className="title">
                                                             <span className="num">{index + 1}</span>
                                                             <div className="que-badge-group">
-                                                                <span className="que-badge yellow">상</span>
-                                                                <span className="que-badge gray">주관식</span>
+                                                                <span
+                                                                    className={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
+                                {item.difficultyName}
+                            </span>
+                                                                <span className="que-badge gray">
+                                {item.questionFormCode <= 50 ? "객관식" : "주관식"}
+                            </span>
                                                             </div>
                                                         </div>
                                                         <div className="btn-wrap">
