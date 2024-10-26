@@ -283,7 +283,7 @@ const Step1Component = () => {
   const [selectedEvaluation, setSelectedEvaluation] = useState([]);
   const [selectedQuestiontype, setSelectedQuestiontype] = useState('');
   const [source, setSource] = useState('');
- useEffect(() => {
+useEffect(() => {
         // 공통 CSS
         const commonLink = document.createElement("link");
         commonLink.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729758269073_common.css";
@@ -304,13 +304,13 @@ const Step1Component = () => {
 
         // 인풋 체크박스 이미지
         const inputCheckboxImage = document.createElement("link");
-        inputCheckboxImage.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729831511691_input_checkbox.png";
+        inputCheckboxImage.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-image/images/common/input_checkbox.png";
         inputCheckboxImage.rel = "stylesheet";
         document.head.appendChild(inputCheckboxImage);
 
         // 셀렉트 애로우 이미지
         const selectArrowImage = document.createElement("link");
-        selectArrowImage.href = "https://ddipddipddip.s3.amazonaws.com/post/1917/1729831535674_select_arrow.png";
+        selectArrowImage.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-image/images/common/select_arrow.png";
         selectArrowImage.rel = "stylesheet";
         document.head.appendChild(selectArrowImage);
 
