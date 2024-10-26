@@ -31,7 +31,7 @@ export default function Step2Component() {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     // TODO: Step0으로부터 교재 ID와 단원 코드 정보 받아서 연동
     // const bookId = useSelector(state => state.bookIdSlice)
-    const bookId = 1136;
+    const bookId = 1154;
     console.log(`step2 ${bookId}`)
 
     const {moveToStepWithData, moveToPath} = useCustomMove();
@@ -49,7 +49,7 @@ export default function Step2Component() {
     const curriculumYear = bookData?.subjectInfoList?.[0]?.curriculumName || "년도 정보 없음";
 
     const {data: evaluationsData} = useQuery({
-        queryKey: [],
+        queryKey: ['evaluationsData', bookId],
         queryFn: () => getEvaluationsFromTsherpa(bookId),
         staleTime: 1000 * 3
     })
@@ -68,10 +68,10 @@ export default function Step2Component() {
             levelCnt: [1, 1, 1, 1, 1],
             minorClassification: [
                 {
-                    large: 113601,
-                    medium: 11360101,
-                    small: 1136010101,
-                    subject: 1136
+                    large: 115401,
+                    medium: 11540101,
+                    small: 1154010101,
+                    subject: 1154
                 }
             ],
             questionForm: "multiple,subjective"
