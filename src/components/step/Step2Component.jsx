@@ -2,16 +2,23 @@ import React, {useEffect, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useQuery} from "@tanstack/react-query";
 import {getEvaluationsFromTsherpa, getItemImagesFromTsherpa} from "../../api/step2Api.js";
-import {useSelector} from "react-redux";
+import useCustomMove from "../../hooks/useCustomMove.jsx";
+import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
+import Button from "@mui/material/Button";
 
 export default function Step2Component() {
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
     const [selectedSortOption, setSelectedSortOption] = useState("단원순");
-    const bookId = useSelector(state => state.bookIdSlice)
+
+    // TODO: Step0으로부터 교재 ID와 단원 코드 정보 받아서 연동
+    // const bookId = useSelector(state => state.bookIdSlice)
+    const bookId = 1154;
     console.log(`step2 ${bookId}`)
-// TODO: Step0으로부터 교재 ID 정보 받아서 연동
+
+    const {moveToStepWithData, moveToPath} = useCustomMove();
+
     const {data: evaluationsData} = useQuery({
         queryKey: [],
         queryFn: () => getEvaluationsFromTsherpa(bookId),
@@ -25,7 +32,7 @@ export default function Step2Component() {
 
     console.log(activityCategoryList)
 
-    // TODO: Step1으로부터 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
+    // TODO: Step1으로부터 교재 ID, 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
     const itemsRequestForm = evaluationsData
         ? {
             activityCategoryList: activityCategoryList,
@@ -94,6 +101,11 @@ export default function Step2Component() {
     const handleSortOptionSelect = (option) => {
         setSelectedSortOption(option);
         setIsSortOptionsOpen(false);
+    };
+
+    const handleClickMoveToStepOne = () => {
+        console.log('STEP 1 단원 선택');
+        moveToPath('../step1')
     };
 
     return (
@@ -274,8 +286,14 @@ export default function Step2Component() {
                         </div>
                     </div>
                     <div className="step-btn-wrap">
-                        <button type="button" className="btn-step">STEP 1 단원 선택</button>
                         <button type="button" className="btn-step next">STEP 3 시험지 저장</button>
+                        <Button
+                            variant="contained"
+                            onClick={handleClickMoveToStepOne}
+                            className="btn-step"
+                        >
+                            <BorderColorOutlinedIcon/>STEP 1 단원 선택
+                        </Button>
                     </div>
                 </div>
             </div>
