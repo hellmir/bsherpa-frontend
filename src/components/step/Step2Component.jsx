@@ -353,39 +353,46 @@ export default function Step2Component() {
                                                             )}
                                                         </div>
                                                         <div className="que-bottom">
-                                                            <div className="data-area">
-                                                                <div className="que-info">
-                                                                    <p className="answer"><span
-                                                                        className="label">해설</span></p>
-                                                                    <div className="data-answer-area">
-                                                                        {item.explainUrl ? (
-                                                                            <img src={item.explainUrl} alt="해설 이미지"/>
-                                                                        ) : (
-                                                                            <div className="paragraph"
-                                                                                 style={{textAlign: "justify"}}>
+                                                            {selectedOption === "문제+해설+정답 보기" && (
+                                                                <div className="data-area">
+                                                                    <div className="que-info">
+                                                                        <p className="answer"><span
+                                                                            className="label">해설</span></p>
+                                                                        <div className="data-answer-area">
+                                                                            {item.explainUrl ? (
+                                                                                <img src={item.explainUrl}
+                                                                                     alt="해설 이미지"/>
+                                                                            ) : (
+                                                                                <div className="paragraph"
+                                                                                     style={{textAlign: "justify"}}>
                                                                                 <span
                                                                                     className="txt">해설 없음</span>
-                                                                            </div>
-                                                                        )}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            <div className="data-area type01">
-                                                                <div className="que-info">
-                                                                    <p className="answer"><span
-                                                                        className="label type01">정답</span></p>
-                                                                    <div className="data-answer-area">
-                                                                        {item.answerUrl ? (
-                                                                            <img src={item.answerUrl} alt="정답 이미지"/>
-                                                                        ) : (
-                                                                            <div className="paragraph"
-                                                                                 style={{textAlign: "justify"}}>
+                                                            )}
+                                                            {(selectedOption === "문제+정답 보기" || selectedOption === "문제+해설+정답 보기") && (
+                                                                <div className="data-area">
+                                                                    <div className="que-info">
+                                                                        <p className="answer"><span
+                                                                            className="label type01">정답</span></p>
+                                                                        <div className="data-answer-area">
+                                                                            {item.answerUrl ? (
+                                                                                <img src={item.answerUrl} alt="정답 이미지"/>
+                                                                            ) : (
+                                                                                <div className="paragraph"
+                                                                                     style={{textAlign: "justify"}}>
                                                                                 <span
-                                                                                    className="txt">해설 참조</span>
-                                                                            </div>
-                                                                        )}
+                                                                                    className="txt">정답 없음</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
+                                                            )}
+                                                            <div className="data-area type01">
                                                                 <button type="button"
                                                                         className="btn-similar-que btn-default">
                                                                     <i className="similar"></i> 유사 문제
