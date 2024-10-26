@@ -27,6 +27,5 @@ dist-ssr
 # etc
 *~
 *.mjs
-*.js
 *.scss
 *.js
