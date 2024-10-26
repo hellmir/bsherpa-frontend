@@ -12,6 +12,7 @@ export default function Step2Component() {
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
     const [selectedSortOption, setSelectedSortOption] = useState("단원순");
     const [itemList, setItemList] = useState([]);
+    const [difficultyCounts, setDifficultyCounts] = useState({하: 0, 중: 0, 상: 0});
 
     // TODO: Step0으로부터 교재 ID와 단원 코드 정보 받아서 연동
     // const bookId = useSelector(state => state.bookIdSlice)
@@ -88,6 +89,17 @@ export default function Step2Component() {
             setItemList(questionsData.data.itemList);
         }
     }, [questionsData]);
+
+    useEffect(() => {
+        const counts = {하: 0, 중: 0, 상: 0};
+        itemList.forEach(item => {
+            counts[item.difficultyName] += 1;
+        });
+        setDifficultyCounts(counts);
+    }, [itemList]);
+    console.log(`난이도 별 문제 수: ${difficultyCounts}`);
+
+    const totalQuestions = itemList.length;
 
     if (isLoading) {
         return <div>데이터 로드 중...</div>;
@@ -302,18 +314,18 @@ export default function Step2Component() {
                                         <div className="que-badge-group type01">
                                             <div className="que-badge-wrap">
                                                 <span className="que-badge purple">하</span>
-                                                <span className="num">5</span>
+                                                <span className="num">{difficultyCounts.하}</span>
                                             </div>
                                             <div className="que-badge-wrap">
                                                 <span className="que-badge green">중</span>
-                                                <span className="num">15</span>
+                                                <span className="num">{difficultyCounts.중}</span>
                                             </div>
                                             <div className="que-badge-wrap">
                                                 <span className="que-badge yellow">상</span>
-                                                <span className="num">25</span>
+                                                <span className="num">{difficultyCounts.상}</span>
                                             </div>
                                         </div>
-                                        <p className="total-num">총 <span>30</span>문제</p>
+                                        <p className="total-num">총 <span>{totalQuestions}</span>문제</p>
                                     </div>
                                 </div>
                                 <div className="cnt-box type01">
