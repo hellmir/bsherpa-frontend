@@ -27,10 +27,6 @@ dist-ssr
 # etc
 *~
 *.mjs
-*.css
-*.png
 *.js
-*.jpg
-*.gif
 *.scss
 *.js

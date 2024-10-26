@@ -1,10 +1,12 @@
 import React, {useEffect, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery} from "@tanstack/react-query";
 import {getBookFromTsherpa, getEvaluationsFromTsherpa, getItemImagesFromTsherpa} from "../../api/step2Api.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import Button from "@mui/material/Button";
+import ConfirmationModal from "../common/ConfirmationModal.jsx";
+import "../../assets/css/confirmationModal.css";
 
 export default function Step2Component() {
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
@@ -12,8 +14,16 @@ export default function Step2Component() {
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
     const [selectedSortOption, setSelectedSortOption] = useState("단원순");
     const [itemList, setItemList] = useState([]);
-    const [difficultyCounts, setDifficultyCounts] = useState({하: 0, 중: 0, 상: 0});
-
+    const [tempItemList, setTempItemList] = useState([]);
+    const [difficultyCounts, setDifficultyCounts] = useState([
+        {level: "최하", count: 0},
+        {level: "하", count: 0},
+        {level: "중", count: 0},
+        {level: "상", count: 0},
+        {level: "최상", count: 0}
+    ]);
+    const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     // TODO: Step0으로부터 교재 ID와 단원 코드 정보 받아서 연동
     // const bookId = useSelector(state => state.bookIdSlice)
     const bookId = 1154;
@@ -22,10 +32,10 @@ export default function Step2Component() {
     const {moveToStepWithData, moveToPath} = useCustomMove();
 
     const {data: bookData} = useQuery({
-        queryKey: ['bookData', bookId], // 쿼리 키 명시
+        queryKey: ['bookData', bookId],
         queryFn: () => getBookFromTsherpa(bookId),
         staleTime: 1000 * 3,
-        enabled: !!bookId  // bookId가 존재할 때만 쿼리 실행
+        enabled: !!bookId
     });
     console.log('교재 정보: ', bookData)
 
@@ -50,7 +60,7 @@ export default function Step2Component() {
     const itemsRequestForm = evaluationsData
         ? {
             activityCategoryList: activityCategoryList,
-            levelCnt: [5, 5, 5, 5, 5],
+            levelCnt: [1, 3, 2, 3, 1],
             minorClassification: [
                 {
                     large: 115401,
@@ -64,6 +74,34 @@ export default function Step2Component() {
         }
         : null;
     console.log(itemsRequestForm);
+
+    const fetchQuestions = useMutation({
+        mutationFn: (form) => getItemImagesFromTsherpa(form),
+        onSuccess: (data) => {
+            const counts = [
+                {level: "최하", count: 0},
+                {level: "하", count: 0},
+                {level: "중", count: 0},
+                {level: "상", count: 0},
+                {level: "최상", count: 0}
+            ];
+            data.data.itemList.forEach(item => {
+                const difficulty = counts.find(d => d.level === item.difficultyName);
+                if (difficulty) difficulty.count += 1;
+            });
+
+            setTempItemList([...data.data.itemList]);
+            setTempDifficultyCounts([...counts]);
+
+            console.log('새로 받아 온 문제 목록: ', data.data.itemList);
+            console.log('새로 받아 온 난이도 별 문제 수: ', counts);
+
+            setIsConfirmOpen(true);
+        },
+        onError: (error) => {
+            console.error("문항 재검색 실패: ", error);
+        }
+    });
 
     const {data: questionsData, isLoading, error} = useQuery({
         queryKey: ['getChapterItemsRequest', itemsRequestForm],
@@ -91,15 +129,46 @@ export default function Step2Component() {
     }, [questionsData]);
 
     useEffect(() => {
-        const counts = {하: 0, 중: 0, 상: 0};
+        const counts = [
+            {level: "최하", count: 0},
+            {level: "하", count: 0},
+            {level: "중", count: 0},
+            {level: "상", count: 0},
+            {level: "최상", count: 0}
+        ];
         itemList.forEach(item => {
-            counts[item.difficultyName] += 1;
+            const difficulty = counts.find(d => d.level === item.difficultyName);
+            if (difficulty) difficulty.count += 1;
         });
-        setDifficultyCounts(counts);
+        setDifficultyCounts(counts.filter(c => c.count > 0));
     }, [itemList]);
     console.log('난이도 별 문제 수: ', difficultyCounts);
 
+    useEffect(() => {
+        console.log("itemList가 업데이트되었습니다: ", itemList);
+    }, [itemList]);
+
     const totalQuestions = itemList.length;
+
+    const [forceRender, setForceRender] = useState(false);
+
+    const handleReSearchClick = () => {
+        if (itemsRequestForm) {
+            fetchQuestions.mutate(itemsRequestForm, {
+                onSuccess: () => {
+                    setForceRender(!forceRender);
+                }
+            });
+        } else {
+            console.warn("itemsRequestForm 값이 존재하지 않습니다.");
+        }
+    };
+
+    const handleConfirm = () => {
+        setItemList([...tempItemList]);
+        setDifficultyCounts([...tempDifficultyCounts]);
+        setIsConfirmOpen(false);
+    };
 
     if (isLoading) {
         return <div>데이터 로드 중...</div>;
@@ -141,12 +210,16 @@ export default function Step2Component() {
 
     function getDifficultyColor(difficultyName) {
         switch (difficultyName) {
+            case "최상":
+                return "red";
             case "상":
-                return "yellow";
+                return "orange";
             case "중":
                 return "green";
             case "하":
                 return "purple";
+            case "최하":
+                return "darkgray";
             default:
                 return "gray";
         }
@@ -155,6 +228,15 @@ export default function Step2Component() {
     return (
         <>
             <CommonResource/>
+            {isConfirmOpen && (
+                <ConfirmationModal
+                    title="문항 재검색"
+                    message="문항 구성이 자동으로 변경됩니다."
+                    details={tempDifficultyCounts.filter(count => count.count > 0)}
+                    onCancel={() => setIsConfirmOpen(false)}
+                    onConfirm={handleConfirm}
+                />
+            )}
             <div id="wrap" className="full-pop-que">
                 <div className="full-pop-wrap">
                     <div className="pop-header">
@@ -171,7 +253,9 @@ export default function Step2Component() {
                                 <div className="paper-info">
                                     <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                <button className="btn-default btn-research"><i className="research"></i>재검색</button>
+                                <button className="btn-default btn-research" onClick={handleReSearchClick}>
+                                    <i className="research"></i>재검색
+                                </button>
                                 <button className="btn-default pop-btn" data-pop="que-scope-pop">출제범위</button>
                             </div>
                             <div className="view-bottom type01">
@@ -238,8 +322,8 @@ export default function Step2Component() {
                                         </div>
                                     </div>
                                     <div className="view-que-list scroll-inner">
-                                        {questionsData?.data?.itemList?.length > 0 ? (
-                                            questionsData.data.itemList.map((item, index) => (
+                                        {itemList?.length > 0 ? (
+                                            itemList.map((item, index) => (
                                                 <div key={index} className="view-que-box">
                                                     <div className="que-top">
                                                         <div className="title">
@@ -322,18 +406,14 @@ export default function Step2Component() {
                                     </div>
                                     <div className="bottom-box">
                                         <div className="que-badge-group type01">
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge purple">하</span>
-                                                <span className="num">{difficultyCounts.하}</span>
-                                            </div>
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge green">중</span>
-                                                <span className="num">{difficultyCounts.중}</span>
-                                            </div>
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge yellow">상</span>
-                                                <span className="num">{difficultyCounts.상}</span>
-                                            </div>
+                                            {difficultyCounts.filter(d => d.count > 0).map(difficulty => (
+                                                <div key={difficulty.level} className="que-badge-wrap">
+            <span className={`que-badge`} style={{color: getDifficultyColor(difficulty.level)}}>
+                {difficulty.level}
+            </span>
+                                                    <span className="num">{difficulty.count}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                         <p className="total-num">총 <span>{totalQuestions}</span>문제</p>
                                     </div>
