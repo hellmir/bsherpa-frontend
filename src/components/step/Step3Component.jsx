@@ -1,9 +1,12 @@
 import React, {useEffect, useState} from "react";
-import {Link} from "react-router-dom";
+import {Link, useLocation} from "react-router-dom";
 import axios from "axios";
 import CommonResource from "../../util/CommonResource.jsx";
+import {useSelector} from "react-redux";
 export default function Step3Component() {
-
+    const location = useLocation();
+    const itemData = location.state?.data;
+    console.log(`Step2로부터 전송된 문제 데이터 목록: ${JSON.stringify(itemData)}`);
     const [itemList, setItemList] = useState([]);
 
     // 시험명 추가용 로직
