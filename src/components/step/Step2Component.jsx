@@ -246,7 +246,7 @@ export default function Step2Component() {
                                                             <span className="num">{index + 1}</span>
                                                             <div className="que-badge-group">
                                                                 <span
-                                                                    className={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
+                                                                    clcustomStylesassName={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
                                 {item.difficultyName}
                             </span>
                                                                 <span className="que-badge gray">
@@ -274,11 +274,15 @@ export default function Step2Component() {
                                                                     <p className="answer"><span
                                                                         className="label">해설</span></p>
                                                                     <div className="data-answer-area">
-                                                                        <div className="paragraph"
-                                                                             style={{textAlign: "justify"}}>
-                                                                            <span
-                                                                                className="txt">해설 텍스트가 나오는 영역입니다.</span>
-                                                                        </div>
+                                                                        {item.explainUrl ? (
+                                                                            <img src={item.explainUrl} alt="해설 이미지"/>
+                                                                        ) : (
+                                                                            <div className="paragraph"
+                                                                                 style={{textAlign: "justify"}}>
+                                                                                <span
+                                                                                    className="txt">해설 없음</span>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -287,10 +291,15 @@ export default function Step2Component() {
                                                                     <p className="answer"><span
                                                                         className="label type01">정답</span></p>
                                                                     <div className="data-answer-area">
-                                                                        <div className="paragraph"
-                                                                             style={{textAlign: "justify"}}>
-                                                                            <span className="txt"> ①</span>
-                                                                        </div>
+                                                                        {item.answerUrl ? (
+                                                                            <img src={item.answerUrl} alt="정답 이미지"/>
+                                                                        ) : (
+                                                                            <div className="paragraph"
+                                                                                 style={{textAlign: "justify"}}>
+                                                                                <span
+                                                                                    className="txt">해설 참조</span>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                                 <button type="button"
