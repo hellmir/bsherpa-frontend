@@ -11,6 +11,7 @@ export default function Step2Component() {
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
     const [selectedSortOption, setSelectedSortOption] = useState("단원순");
+    const [itemList, setItemList] = useState([]);
 
     // TODO: Step0으로부터 교재 ID와 단원 코드 정보 받아서 연동
     // const bookId = useSelector(state => state.bookIdSlice)
@@ -69,9 +70,10 @@ export default function Step2Component() {
     }, [isProblemOptionsOpen]);
 
     useEffect(() => {
-        if (questionsData) {
+        if (questionsData?.data?.itemList) {
             console.log("questionsData 전체 구조:", questionsData);
             console.log("questionsData.data.itemList 확인:", questionsData.data.itemList);
+            setItemList(questionsData.data.itemList);
         }
     }, [questionsData]);
 
@@ -109,8 +111,8 @@ export default function Step2Component() {
     };
 
     const handleClickMoveToStepThree = () => {
-        console.log(`STEP 3 시험지 저장 : ${questionsData}`);
-        moveToStepWithData('step3', questionsData.data.itemList);
+        console.log(`STEP 3 시험지 저장 : ${bookId, itemList}`);
+        moveToStepWithData('step3', {bookId, itemList});
     };
 
     return (
