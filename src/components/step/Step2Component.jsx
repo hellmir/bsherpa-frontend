@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useQuery} from "@tanstack/react-query";
-import {getEvaluationsFromTsherpa, getItemImagesFromTsherpa} from "../../api/step2Api.js";
+import {getBookFromTsherpa, getEvaluationsFromTsherpa, getItemImagesFromTsherpa} from "../../api/step2Api.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import Button from "@mui/material/Button";
@@ -20,18 +20,30 @@ export default function Step2Component() {
 
     const {moveToStepWithData, moveToPath} = useCustomMove();
 
+    const {data: bookData} = useQuery({
+        queryKey: ['bookData', bookId], // 쿼리 키 명시
+        queryFn: () => getBookFromTsherpa(bookId),
+        staleTime: 1000 * 3,
+        enabled: !!bookId  // bookId가 존재할 때만 쿼리 실행
+    });
+    console.log('교재 정보: ', bookData)
+
+    const subjectName = bookData?.subjectInfoList?.[0]?.subjectName?.split('(')[0] || "과목명 없음";
+    const author = bookData?.subjectInfoList?.[0]?.subjectName?.match(/\(([^)]+)\)/)?.[1] || "저자 정보 없음";
+    const curriculumYear = bookData?.subjectInfoList?.[0]?.curriculumName || "년도 정보 없음";
+
     const {data: evaluationsData} = useQuery({
         queryKey: [],
         queryFn: () => getEvaluationsFromTsherpa(bookId),
         staleTime: 1000 * 3
     })
-    console.log(evaluationsData)
+    console.log('평가 영역 데이터: ', evaluationsData)
 
     const activityCategoryList = evaluationsData
         ? evaluationsData.evaluationList.map(evaluation => evaluation.domainId)
         : [];
 
-    console.log(activityCategoryList)
+    console.log(`평가 영역 목록: ${activityCategoryList}`)
 
     // TODO: Step1으로부터 교재 ID, 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
     const itemsRequestForm = evaluationsData
@@ -145,7 +157,7 @@ export default function Step2Component() {
                         <div className="view-box">
                             <div className="view-top">
                                 <div className="paper-info">
-                                    <span>수학 1</span> 이준열(2015)
+                                    <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
                                 <button className="btn-default btn-research"><i className="research"></i>재검색</button>
                                 <button className="btn-default pop-btn" data-pop="que-scope-pop">출제범위</button>
@@ -305,7 +317,6 @@ export default function Step2Component() {
                                     </div>
                                 </div>
                                 <div className="cnt-box type01">
-                                    {/* 오른쪽의 정답, 해설, 유사 문제 및 삭제 문항 부분 유지 */}
                                 </div>
                             </div>
                         </div>
