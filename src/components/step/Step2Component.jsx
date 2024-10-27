@@ -11,6 +11,7 @@ import "../../assets/css/comboBox.css";
 import {setExamData} from "../../slices/examDataSlice.js";
 import {useDispatch, useSelector} from "react-redux";
 import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
+import ModalComponent from "../common/ModalComponent.jsx";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -31,6 +32,10 @@ export default function Step2Component() {
     const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isSorted, setIsSorted] = useState(false);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const handleOpenModal = () => setIsModalOpen(true);
+    const handleCloseModal = () => setIsModalOpen(false);
 
     // TODO: Step0으로부터 시험지 정보 받아서 연동
     const bookId = useSelector((state) => state.bookIdSlice);
@@ -304,6 +309,61 @@ export default function Step2Component() {
         }
     }
 
+    const handleDragEnd = (result) => {
+        const {destination, source, type} = result;
+
+        if (!destination) return;
+
+        if (type === "PASSAGE_GROUP") {
+            const updatedGroups = Array.from(groupedItems);
+            const [movedGroup] = updatedGroups.splice(source.index, 1);
+            updatedGroups.splice(destination.index, 0, movedGroup);
+
+            setGroupedItems(updatedGroups);
+
+            const newSortedItemList = updatedGroups.flatMap(group => group.items);
+            setItemList(newSortedItemList);
+
+            console.log(`지문을 ${source.index}에서 ${destination.index}로 이동`);
+        } else if (type === "ITEM") {
+            const sourcePassageId = source.droppableId;
+            const destinationPassageId = destination.droppableId;
+
+            const sourcePassageIdNumber = Number(sourcePassageId);
+            const destinationPassageIdNumber = Number(destinationPassageId);
+
+            console.log(`sourcePassageId: ${sourcePassageIdNumber}, destinationPassageId: ${destinationPassageIdNumber}`);
+            console.log('현재 groupedItems:', groupedItems.map(group => group.passageId));
+
+            if (sourcePassageIdNumber !== destinationPassageIdNumber) {
+                console.log('다른 지문으로 이동할 수 없습니다.');
+                handleOpenModal();
+                return;
+            }
+
+            console.log(`문항을 ${source.index}에서 ${destination.index}로 이동`);
+
+            const updatedGroups = [...groupedItems];
+            const groupIndex = updatedGroups.findIndex(group => group.passageId === sourcePassageIdNumber);
+
+            if (groupIndex === -1) {
+                console.error('해당 지문 그룹을 찾을 수 없습니다.');
+                return;
+            }
+
+            const group = updatedGroups[groupIndex];
+
+            const [movedItem] = group.items.splice(source.index, 1);
+            group.items.splice(destination.index, 0, movedItem);
+
+            setGroupedItems(updatedGroups);
+
+            const newSortedItemList = updatedGroups.flatMap(group => group.items);
+            setItemList(newSortedItemList);
+        }
+    };
+
+
     return (
         <>
             <CommonResource/>
@@ -316,6 +376,18 @@ export default function Step2Component() {
                     onConfirm={handleConfirm}
                 />
             )}
+            <ModalComponent
+                title="이동 불가"
+                content="다른 지문으로 이동할 수 없습니다."
+                handleClose={handleCloseModal}
+                open={isModalOpen}
+            />
+            <ModalComponent
+                title="이동 오류"
+                content="문항을 이동하지 못했습니다. 다시 시도해 주세요."
+                handleClose={handleCloseModal}
+                open={isModalOpen}
+            />
             <div id="wrap" className="full-pop-que">
                 <div className="full-pop-wrap">
                     <div className="pop-header">
@@ -450,106 +522,115 @@ export default function Step2Component() {
                                                             </div>
                                                         </div>
                                                     )}
-                                                    {group.items.map((item, index) => (
-                                                        <div key={`item-${item.itemId}-${index}`}
-                                                             id={`question-${item.itemId}`}
-                                                             className="view-que-box"
-                                                             style={{marginTop: "10px"}}>
-                                                            <div className="que-top">
-                                                                <div className="title">
+                                                    {group.items.map((item, index) => {
+                                                        if (!item || !item.itemId) {
+                                                            console.error('item ID가 정의되지 않았습니다.');
+                                                            handleOpenModal();
+                                                            return null;
+                                                        }
+
+                                                        return (
+                                                            <div key={`item-${item.itemId}-${index}`}
+                                                                 id={`question-${item.itemId}`}
+                                                                 className="view-que-box"
+                                                                 style={{marginTop: "10px"}}>
+                                                                <div className="que-top">
+                                                                    <div className="title">
                                                                     <span
                                                                         className="num">{itemList.indexOf(item) + 1}</span>
-                                                                    <div className="que-badge-group">
+                                                                        <div className="que-badge-group">
                                     <span className={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
                                         {item.difficultyName}
                                     </span>
-                                                                        <span className="que-badge gray">
+                                                                            <span className="que-badge gray">
                                         {item.questionFormCode <= 50 ? "객관식" : "주관식"}
                                     </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="btn-wrap">
+                                                                        <button type="button"
+                                                                                className="btn-error pop-btn"
+                                                                                data-pop="error-report-pop"></button>
+                                                                        <button type="button"
+                                                                                className="btn-delete"></button>
                                                                     </div>
                                                                 </div>
-                                                                <div className="btn-wrap">
-                                                                    <button type="button" className="btn-error pop-btn"
-                                                                            data-pop="error-report-pop"></button>
-                                                                    <button type="button"
-                                                                            className="btn-delete"></button>
-                                                                </div>
-                                                            </div>
-                                                            <div className="view-que">
-                                                                <div className="que-content">
-                                                                    {item.questionUrl ? (
-                                                                        <img src={item.questionUrl} alt="문제 이미지"/>
-                                                                    ) : (
-                                                                        <p className="txt">문제 텍스트 없음</p>
-                                                                    )}
-                                                                </div>
-                                                                <div className="que-bottom">
-                                                                    {(selectedOption === "문제+정답 보기" || selectedOption === "문제+정답+해설 보기") && (
-                                                                        <div className="data-area">
-                                                                            <div className="que-info">
-                                                                                <p className="answer">
+                                                                <div className="view-que">
+                                                                    <div className="que-content">
+                                                                        {item.questionUrl ? (
+                                                                            <img src={item.questionUrl} alt="문제 이미지"/>
+                                                                        ) : (
+                                                                            <p className="txt">문제 텍스트 없음</p>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="que-bottom">
+                                                                        {(selectedOption === "문제+정답 보기" || selectedOption === "문제+정답+해설 보기") && (
+                                                                            <div className="data-area">
+                                                                                <div className="que-info">
+                                                                                    <p className="answer">
                                                                                     <span className="label type01"
                                                                                           style={{
                                                                                               display: "block",
                                                                                               textAlign: "left",
                                                                                               paddingLeft: "20px"
                                                                                           }}>정답</span>
-                                                                                </p>
-                                                                                <div className="data-answer-area">
-                                                                                    {item.answerUrl ? (
-                                                                                        <img src={item.answerUrl}
-                                                                                             alt="정답 이미지"/>
-                                                                                    ) : (
-                                                                                        <div className="paragraph"
-                                                                                             style={{textAlign: "justify"}}>
+                                                                                    </p>
+                                                                                    <div className="data-answer-area">
+                                                                                        {item.answerUrl ? (
+                                                                                            <img src={item.answerUrl}
+                                                                                                 alt="정답 이미지"/>
+                                                                                        ) : (
+                                                                                            <div className="paragraph"
+                                                                                                 style={{textAlign: "justify"}}>
                                                                                             <span
                                                                                                 className="txt">정답 없음</span>
-                                                                                        </div>
-                                                                                    )}
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
-                                                                    )}
-                                                                    {selectedOption === "문제+정답+해설 보기" && (
-                                                                        <div className="data-area">
-                                                                            <div className="que-info">
-                                                                                <p className="answer">
+                                                                        )}
+                                                                        {selectedOption === "문제+정답+해설 보기" && (
+                                                                            <div className="data-area">
+                                                                                <div className="que-info">
+                                                                                    <p className="answer">
                                                                                     <span className="label" style={{
                                                                                         display: "block",
                                                                                         textAlign: "left",
                                                                                         paddingLeft: "20px"
                                                                                     }}>해설</span>
-                                                                                </p>
-                                                                                <div className="data-answer-area">
-                                                                                    {item.explainUrl ? (
-                                                                                        <img src={item.explainUrl}
-                                                                                             alt="해설 이미지"/>
-                                                                                    ) : (
-                                                                                        <div className="paragraph"
-                                                                                             style={{textAlign: "justify"}}>
+                                                                                    </p>
+                                                                                    <div className="data-answer-area">
+                                                                                        {item.explainUrl ? (
+                                                                                            <img src={item.explainUrl}
+                                                                                                 alt="해설 이미지"/>
+                                                                                        ) : (
+                                                                                            <div className="paragraph"
+                                                                                                 style={{textAlign: "justify"}}>
                                                                                             <span
                                                                                                 className="txt">해설 없음</span>
-                                                                                        </div>
-                                                                                    )}
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
+                                                                        )}
+                                                                        <div className="data-area type01">
+                                                                            <button type="button"
+                                                                                    className="btn-similar-que btn-default">
+                                                                                <i className="similar"></i> 유사 문제
+                                                                            </button>
                                                                         </div>
-                                                                    )}
-                                                                    <div className="data-area type01">
-                                                                        <button type="button"
-                                                                                className="btn-similar-que btn-default">
-                                                                            <i className="similar"></i> 유사 문제
-                                                                        </button>
                                                                     </div>
                                                                 </div>
+                                                                <div className="que-info-last">
+                                                                    <p className="chapter">
+                                                                        {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
+                                                                    </p>
+                                                                </div>
                                                             </div>
-                                                            <div className="que-info-last">
-                                                                <p className="chapter">
-                                                                    {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             ))
                                         ) : (
@@ -571,8 +652,7 @@ export default function Step2Component() {
                                     </div>
                                 </div>
                                 <div className="cnt-box type01">
-                                    <Step2RightSideComponent itemList={itemList}/>
-                                </div>
+                                    <Step2RightSideComponent itemList={itemList} onDragEnd={handleDragEnd}/></div>
                             </div>
                         </div>
                     </div>
