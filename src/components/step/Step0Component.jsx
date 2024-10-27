@@ -36,6 +36,14 @@ function Step0Component() {
   const examIdList = useSelector(state => state.examIdSlice);
 
   useEffect(() => {
+    const isReloaded = sessionStorage.getItem("isReloaded");
+    if (!isReloaded) {
+      sessionStorage.setItem("isReloaded", "true");
+      window.location.reload();
+    }
+  }, []);
+
+  useEffect(() => {
     dispatch(addBookId(book.id)); // Book ID를 추가
   }, [dispatch, book.id]); // 의존성 배열에 추가
 
