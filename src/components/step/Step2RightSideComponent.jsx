@@ -6,6 +6,13 @@ export default function Step2RightSideComponent({itemList}) {
         return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
     };
 
+    const handleScrollToQuestion = (itemId) => {
+        const element = document.getElementById(`question-${itemId}`);
+        if (element) {
+            element.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+    };
+
     return (
         <>
             <CommonResource/>
@@ -25,7 +32,7 @@ export default function Step2RightSideComponent({itemList}) {
                     <div className="table half-type no-passage">
                         <div className="fix-head">
                             <span>이동</span>
-                            <span className="number-column">번호</span>
+                            <span>번호</span>
                             <span>문제 형태</span>
                             <span>문제 유형</span>
                             <span>난이도</span>
@@ -34,20 +41,21 @@ export default function Step2RightSideComponent({itemList}) {
                             <div className="scroll-inner">
                                 <div className="test ui-sortable" id="table-1">
                                     {itemList.map((item, index) => (
-                                        <div className="col" key={item.itemId}>
+                                        <div className="col" key={item.itemId}
+                                             onClick={() => handleScrollToQuestion(item.itemId)}>
                                             <a href="javascript:;">
                                                 <span className="dragHandle ui-sortable-handle ico-move-type01"></span>
-                                                <span className="number-column">{index + 1}</span>
+                                                <span className="number-data">{index + 1}</span>
                                                 <span className="tit">
-                                                    <div className="txt">
-                                                        {truncateText(`${item.largeChapterName} > ${item.mediumChapterName} > ${item.smallChapterName} > ${item.topicChapterName}`, 30)}
-                                                    </div>
-                                                </span>
-                                                <span>{item.questionFormCode <= 50 ? "객관식" : "주관식"}</span>
+                <div className="txt">
+                    {truncateText(`${item.largeChapterName} > ${item.mediumChapterName} > ${item.smallChapterName} > ${item.topicChapterName}`, 30)}
+                </div>
+            </span>
+                                                <span
+                                                    className="question-form-data">{item.questionFormCode <= 50 ? "객관식" : "주관식"}</span>
                                                 <span>
-                                                    <span
-                                                        className={`que-badge ${item.difficultyName}`}>{item.difficultyName}</span>
-                                                </span>
+                <span className={`que-badge ${item.difficultyName}`}>{item.difficultyName}</span>
+            </span>
                                             </a>
                                         </div>
                                     ))}
