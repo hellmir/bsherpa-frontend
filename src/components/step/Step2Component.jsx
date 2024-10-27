@@ -9,7 +9,7 @@ import ConfirmationModal from "../common/ConfirmationModal.jsx";
 import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
 import {setExamData} from "../../slices/examDataSlice.js";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
 
 export default function Step2Component() {
