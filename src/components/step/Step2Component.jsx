@@ -9,7 +9,7 @@ import ConfirmationModal from "../common/ConfirmationModal.jsx";
 import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
 import {setExamData} from "../../slices/examDataSlice.js";
-import {useDispatch, useSelector} from "react-redux";
+import {useDispatch} from "react-redux";
 import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
 
 export default function Step2Component() {
@@ -452,6 +452,7 @@ export default function Step2Component() {
                                                     )}
                                                     {group.items.map((item, index) => (
                                                         <div key={`item-${item.itemId}-${index}`}
+                                                             id={`question-${item.itemId}`}
                                                              className="view-que-box"
                                                              style={{marginTop: "10px"}}>
                                                             <div className="que-top">
