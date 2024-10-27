@@ -10,6 +10,7 @@ import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
 import {setExamData} from "../../slices/examDataSlice.js";
 import {useDispatch, useSelector} from "react-redux";
+import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -257,7 +258,7 @@ export default function Step2Component() {
 
     const toggleProblemOptions = () => {
         setIsProblemOptionsOpen(!isProblemOptionsOpen);
-        console.log("Problem options open:", !isProblemOptionsOpen);
+        console.log("Step2RightSideComponent options open:", !isProblemOptionsOpen);
     };
 
     const toggleSortOptions = () => {
@@ -569,6 +570,7 @@ export default function Step2Component() {
                                     </div>
                                 </div>
                                 <div className="cnt-box type01">
+                                    <Step2RightSideComponent itemList={itemList}/>
                                 </div>
                             </div>
                         </div>
