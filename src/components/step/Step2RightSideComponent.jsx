@@ -1,7 +1,7 @@
 import React from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 
-export default function Step2RightSideComponent({itemList}) {
+export default function Step2RightSideComponent({ itemList }) {
     const truncateText = (text, maxLength) => {
         return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
     };
@@ -9,7 +9,7 @@ export default function Step2RightSideComponent({itemList}) {
     const handleScrollToQuestion = (itemId) => {
         const element = document.getElementById(`question-${itemId}`);
         if (element) {
-            element.scrollIntoView({behavior: 'smooth', block: 'start'});
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };
 
@@ -26,9 +26,19 @@ export default function Step2RightSideComponent({itemList}) {
 
     const groupedItems = groupByPassage(itemList);
 
+    // 그룹을 전체에서의 첫 번째 문제 인덱스를 기준으로 정렬
+    const sortedGroupedItems = Object.keys(groupedItems)
+        .map((passageId) => ({
+            passageId,
+            items: groupedItems[passageId],
+            // 각 그룹의 첫 번째 문제의 전체 인덱스를 계산
+            firstIndex: itemList.findIndex((i) => i.itemId === groupedItems[passageId][0].itemId)
+        }))
+        .sort((a, b) => a.firstIndex - b.firstIndex);
+
     return (
         <>
-            <CommonResource/>
+            <CommonResource />
             <div className="tab-wrap">
                 <ul className="tab-menu-type01">
                     <li className="ui-tab-btn active">
@@ -53,7 +63,7 @@ export default function Step2RightSideComponent({itemList}) {
                         <div className="tbody">
                             <div className="scroll-inner">
                                 <div className="test ui-sortable" id="table-1">
-                                    {Object.keys(groupedItems).map((passageId) => (
+                                    {sortedGroupedItems.map(({ passageId, items }) => (
                                         <div
                                             className={`depth-01 ${passageId !== "noPassage" ? "has-passage" : "no-passage"}`}
                                             key={passageId}>
@@ -61,25 +71,30 @@ export default function Step2RightSideComponent({itemList}) {
                                                 <div className="dragHandle ui-sortable-handle ico-move-type02"></div>
                                             )}
                                             <div className="col-group">
-                                                {groupedItems[passageId].map((item, index) => (
-                                                    <div className="col depth-02" key={item.itemId}
-                                                         onClick={() => handleScrollToQuestion(item.itemId)}>
-                                                        <a href="javascript:;">
-                                                            <span
-                                                                className="dragHandle ui-sortable-handle ico-move-type01"></span>
-                                                            <span>{index + 1}</span>
-                                                            <span className="tit">
-                        <div className="txt">
-                            {truncateText(`${item.largeChapterName} > ${item.mediumChapterName} > ${item.smallChapterName} > ${item.topicChapterName}`, 30)}
-                        </div>
-                    </span>
-                                                            <span>{item.questionFormCode <= 50 ? "객관식" : "주관식"}</span>
-                                                            <span>
-                        <span className={`que-badge ${item.difficultyName}`}>{item.difficultyName}</span>
-                    </span>
-                                                        </a>
-                                                    </div>
-                                                ))}
+                                                {items.map((item, index) => {
+                                                    // 전체 문제 목록에서의 인덱스를 찾기 위해 itemList에서 item의 위치를 확인합니다.
+                                                    const overallIndex = itemList.findIndex(i => i.itemId === item.itemId);
+                                                    return (
+                                                        <div className="col depth-02" key={item.itemId}
+                                                             onClick={() => handleScrollToQuestion(item.itemId)}>
+                                                            <a href="javascript:;">
+                                                                <span
+                                                                    className="dragHandle ui-sortable-handle ico-move-type01"></span>
+                                                                <span>{overallIndex + 1}</span> {/* 전체 목록에서의 인덱스 사용 */}
+                                                                <span className="tit">
+                                                                    <div className="txt">
+                                                                        {truncateText(`${item.largeChapterName} > ${item.mediumChapterName} > ${item.smallChapterName} > ${item.topicChapterName}`, 30)}
+                                                                    </div>
+                                                                </span>
+                                                                <span>{item.questionFormCode <= 50 ? "객관식" : "주관식"}</span>
+                                                                <span>
+                                                                    <span
+                                                                        className={`que-badge ${item.difficultyName}`}>{item.difficultyName}</span>
+                                                                </span>
+                                                            </a>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     ))}
