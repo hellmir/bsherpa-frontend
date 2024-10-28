@@ -1,40 +1,274 @@
 import React, {useEffect, useState} from "react";
+import CommonResource from "../../util/CommonResource.jsx";
+import {useMutation, useQuery} from "@tanstack/react-query";
+import {getBookFromTsherpa, getEvaluationsFromTsherpa, getItemImagesFromTsherpa} from "../../api/step2Api.js";
+import useCustomMove from "../../hooks/useCustomMove.jsx";
+import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
+import Button from "@mui/material/Button";
+import ConfirmationModal from "../common/ConfirmationModal.jsx";
+import "../../assets/css/confirmationModal.css";
+import "../../assets/css/comboBox.css";
+import {setExamData} from "../../slices/examDataSlice.js";
+import {useDispatch, useSelector} from "react-redux";
+import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
+import ModalComponent from "../common/ModalComponent.jsx";
 
 export default function Step2Component() {
+    const dispatch = useDispatch();
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
+    const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
+    const [selectedSortOption, setSelectedSortOption] = useState("단원순");
+    const [groupedItems, setGroupedItems] = useState([]);
+    const [itemList, setItemList] = useState([]);
+    const [tempItemList, setTempItemList] = useState([]);
+    const [difficultyCounts, setDifficultyCounts] = useState([
+        {level: "최하", count: 0},
+        {level: "하", count: 0},
+        {level: "중", count: 0},
+        {level: "상", count: 0},
+        {level: "최상", count: 0}
+    ]);
+    const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [isSorted, setIsSorted] = useState(false);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const handleOpenModal = () => setIsModalOpen(true);
+    const handleCloseModal = () => setIsModalOpen(false);
+
+    // TODO: Step0으로부터 시험지 정보 받아서 연동
+    const bookId = useSelector((state) => state.bookIdSlice);
+    console.log(`교재 ID: ${bookId}`)
+
+    const {moveToStepWithData, moveToPath} = useCustomMove();
+
+    const {data: bookData} = useQuery({
+        queryKey: ['bookData', bookId],
+        queryFn: () => getBookFromTsherpa(bookId),
+        staleTime: 1000 * 3,
+        enabled: !!bookId
+    });
+    console.log('교재 정보: ', bookData)
+
+    const subjectName = bookData?.subjectInfoList?.[0]?.subjectName?.split('(')[0] || "과목명 없음";
+    const author = bookData?.subjectInfoList?.[0]?.subjectName?.match(/\(([^)]+)\)/)?.[1] || "저자 정보 없음";
+    const curriculumYear = bookData?.subjectInfoList?.[0]?.curriculumName || "년도 정보 없음";
+
+    const {data: evaluationsData} = useQuery({
+        queryKey: ['evaluationsData', bookId],
+        queryFn: () => getEvaluationsFromTsherpa(bookId),
+        staleTime: 1000 * 3
+    })
+    console.log('평가 영역 데이터: ', evaluationsData)
+
+    const activityCategoryList = evaluationsData
+        ? evaluationsData.evaluationList.map(evaluation => evaluation.domainId)
+        : [];
+
+    console.log(`평가 영역 목록: ${activityCategoryList}`)
+
+    // TODO: Step1으로부터 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
+    const itemsRequestForm = evaluationsData
+        ? {
+            activityCategoryList: activityCategoryList,
+            levelCnt: [1, 1, 1, 1, 1],
+            minorClassification: [
+                {
+                    large: 115401,
+                    medium: 11540101,
+                    small: 1154010101,
+                    subject: 1154
+                }
+            ],
+            questionForm: "multiple,subjective"
+        }
+        : null;
+    console.log(itemsRequestForm);
+
+    const fetchQuestions = useMutation({
+        mutationFn: (form) => getItemImagesFromTsherpa(form),
+        onSuccess: (data) => {
+            const newTempItemList = [...data.data.itemList];
+            const counts = [
+                {level: "최하", count: 0},
+                {level: "하", count: 0},
+                {level: "중", count: 0},
+                {level: "상", count: 0},
+                {level: "최상", count: 0}
+            ];
+            newTempItemList.forEach(item => {
+                const difficulty = counts.find(d => d.level === item.difficultyName);
+                if (difficulty) difficulty.count += 1;
+            });
+
+            setTempItemList(newTempItemList);
+            setTempDifficultyCounts(counts);
+
+            console.log('새로 받아 온 문제 목록: ', data.data.itemList);
+            console.log('새로 받아 온 난이도 별 문제 수: ', counts);
+
+            setIsConfirmOpen(true);
+        },
+        onError: (error) => {
+            console.error("문항 재검색 실패: ", error);
+        }
+    });
+
+    const {data: questionsData, isLoading, error} = useQuery({
+        queryKey: ['getChapterItemsRequest', itemsRequestForm],
+        queryFn: () => getItemImagesFromTsherpa(itemsRequestForm),
+        enabled: !!itemsRequestForm,
+        staleTime: 1000 * 3
+    });
 
     useEffect(() => {
-        // 공통 CSS
-        const commonLink = document.createElement("link");
-        const VITE_COMMON_LINK = import.meta.env.VITE_COMMON_LINK
-        commonLink.href = VITE_COMMON_LINK;
-        commonLink.rel = "stylesheet";
-        document.head.appendChild(commonLink);
+        if (!isSorted && groupedItems.length > 0) {
+            sortGroupedItems();
+            setIsSorted(true);
+        }
+    }, [groupedItems]);
 
-        // 폰트 CSS
-        const fontLink = document.createElement("link");
-        const VITE_FONT_LINK = import.meta.env.VITE_FONT_LINK
-        fontLink.href = VITE_FONT_LINK;
-        fontLink.rel = "stylesheet";
-        document.head.appendChild(fontLink);
+    useEffect(() => {
+        if (!isLoading && questionsData) {
+            console.log(questionsData);
+        }
+    }, [isLoading, questionsData]);
 
-        // 리셋 CSS
-        const resetLink = document.createElement("link");
-        const VITE_RESET_LINK = import.meta.env.VITE_RESET_LINK
-        resetLink.href = VITE_RESET_LINK;
-        resetLink.rel = "stylesheet";
-        document.head.appendChild(resetLink);
+    useEffect(() => {
+        console.log("isProblemOptionsOpen changed:", isProblemOptionsOpen);
+    }, [isProblemOptionsOpen]);
 
-        return () => {
-            document.head.removeChild(commonLink);
-            document.head.removeChild(fontLink);
-            document.head.removeChild(resetLink);
-        };
-    }, []);
+    useEffect(() => {
+        if (questionsData?.data?.itemList && itemList.length === 0) {
+            console.log("questionsData 전체 구조:", questionsData);
+            console.log("questionsData.data.itemList 확인:", questionsData.data.itemList);
+            setItemList(questionsData.data.itemList);
+            setTempItemList(questionsData.data.itemList);
+            organizeItems(questionsData.data.itemList);
+        }
+    }, [questionsData]);
+
+
+    const organizeItems = (items) => {
+        const passageGroups = items.reduce((acc, item) => {
+            const passageId = item.passageId || "noPassage";
+            if (!acc[passageId]) {
+                acc[passageId] = {passageId, passageUrl: item.passageUrl, items: []};
+            }
+            acc[passageId].items.push(item);
+            return acc;
+        }, {});
+
+        const groupedArray = Object.values(passageGroups).map(group => {
+            group.items.sort((a, b) => a.itemNo - b.itemNo);
+            return group;
+        });
+
+        groupedArray.sort((a, b) => {
+            const firstItemA = a.items[0].itemNo;
+            const firstItemB = b.items[0].itemNo;
+            return firstItemA - firstItemB;
+        });
+
+        setGroupedItems(groupedArray);
+        setIsSorted(false);
+    };
+
+    useEffect(() => {
+        const counts = [
+            {level: "최하", count: 0},
+            {level: "하", count: 0},
+            {level: "중", count: 0},
+            {level: "상", count: 0},
+            {level: "최상", count: 0}
+        ];
+        itemList.forEach(item => {
+            const difficulty = counts.find(d => d.level === item.difficultyName);
+            if (difficulty) difficulty.count += 1;
+        });
+        setDifficultyCounts(counts.filter(c => c.count > 0));
+    }, [itemList]);
+    console.log('난이도 별 문제 수: ', difficultyCounts);
+
+    useEffect(() => {
+        sortGroupedItems();
+    }, [selectedSortOption]);
+
+    const sortGroupedItems = () => {
+        const sortedGroups = groupedItems.map(group => {
+            const sortedItems = [...group.items];
+
+            if (selectedSortOption === "단원순") {
+                sortedItems.sort((a, b) =>
+                    a.largeChapterId - b.largeChapterId ||
+                    a.mediumChapterId - b.mediumChapterId ||
+                    a.smallChapterId - b.smallChapterId ||
+                    a.topicChapterId - b.topicChapterId
+                );
+            } else if (selectedSortOption === "난이도순") {
+                const difficultyOrder = ["최하", "하", "중", "상", "최상"];
+                sortedItems.sort((a, b) =>
+                    difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
+                );
+            } else if (selectedSortOption === "문제 형태순") {
+                sortedItems.sort((a, b) =>
+                    (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
+                );
+            }
+
+            return {...group, items: sortedItems};
+        });
+
+        setGroupedItems(sortedGroups);
+
+        const newSortedItemList = sortedGroups.flatMap(group => group.items);
+        setItemList(newSortedItemList);
+    };
+
+    useEffect(() => {
+        console.log("itemList가 업데이트되었습니다: ", itemList);
+    }, [itemList]);
+
+    const totalQuestions = itemList.length;
+
+    const [forceRender, setForceRender] = useState(false);
+
+    const handleReSearchClick = () => {
+        if (itemsRequestForm) {
+            fetchQuestions.mutate(itemsRequestForm, {
+                onSuccess: () => {
+                    setForceRender(!forceRender);
+                }
+            });
+        } else {
+            console.warn("itemsRequestForm 값이 존재하지 않습니다.");
+        }
+    };
+
+    const handleConfirm = () => {
+        setItemList([...tempItemList]);
+        setDifficultyCounts([...tempDifficultyCounts]);
+        setIsConfirmOpen(false);
+        organizeItems(tempItemList);
+    };
+
+    if (isLoading) {
+        return <div>데이터 로드 중...</div>;
+    }
+
+    if (error) {
+        return <div>데이터 로드 중 오류가 발생했습니다: {error.message}</div>;
+    }
 
     const toggleProblemOptions = () => {
         setIsProblemOptionsOpen(!isProblemOptionsOpen);
+        console.log("Step2RightSideComponent options open:", !isProblemOptionsOpen);
+    };
+
+    const toggleSortOptions = () => {
+        setIsSortOptionsOpen(!isSortOptionsOpen);
+        console.log("Sort options open:", !isSortOptionsOpen);
     };
 
     const handleOptionSelect = (option) => {
@@ -42,8 +276,112 @@ export default function Step2Component() {
         setIsProblemOptionsOpen(false);
     };
 
+    const handleSortOptionSelect = (option) => {
+        setSelectedSortOption(option);
+        setIsSortOptionsOpen(false);
+    };
+
+    const handleClickMoveToStepOne = () => {
+        console.log('STEP 1 단원 선택');
+        moveToPath('../step1')
+    };
+
+    const handleClickMoveToStepThree = () => {
+        console.log(`STEP 3 시험지 저장 : ${bookId, itemList}`);
+        dispatch(setExamData({bookId, groupedItems}));
+        moveToStepWithData('step3', {bookId, groupedItems});
+    };
+
+    function getDifficultyColor(difficultyName) {
+        switch (difficultyName) {
+            case "최상":
+                return "red";
+            case "상":
+                return "orange";
+            case "중":
+                return "green";
+            case "하":
+                return "purple";
+            case "최하":
+                return "black";
+            default:
+                return "gray";
+        }
+    }
+
+    const handleDragEnd = (result) => {
+        const {destination, source, type} = result;
+
+        if (!destination) return;
+
+        if (type === "PASSAGE_GROUP") {
+            const updatedGroups = Array.from(groupedItems);
+            const [movedGroup] = updatedGroups.splice(source.index, 1);
+            updatedGroups.splice(destination.index, 0, movedGroup);
+
+            setGroupedItems(updatedGroups);
+
+            const newSortedItemList = updatedGroups.flatMap(group => group.items);
+            setItemList(newSortedItemList);
+
+            console.log(`지문을 ${source.index}에서 ${destination.index}로 이동`);
+        } else if (type === "ITEM") {
+            const sourcePassageId = source.droppableId;
+            const destinationPassageId = destination.droppableId;
+
+            const sourcePassageIdNumber = Number(sourcePassageId);
+            const destinationPassageIdNumber = Number(destinationPassageId);
+
+            console.log(`sourcePassageId: ${sourcePassageIdNumber}, destinationPassageId: ${destinationPassageIdNumber}`);
+            console.log('현재 groupedItems:', groupedItems.map(group => group.passageId));
+
+            if (sourcePassageIdNumber !== destinationPassageIdNumber) {
+                console.log('다른 지문으로 이동할 수 없습니다.');
+                handleOpenModal();
+                return;
+            }
+
+            console.log(`문항을 ${source.index}에서 ${destination.index}로 이동`);
+
+            const updatedGroups = [...groupedItems];
+            const groupIndex = updatedGroups.findIndex(group => group.passageId === sourcePassageIdNumber);
+
+            if (groupIndex === -1) {
+                console.error('해당 지문 그룹을 찾을 수 없습니다.');
+                return;
+            }
+
+            const group = updatedGroups[groupIndex];
+
+            const [movedItem] = group.items.splice(source.index, 1);
+            group.items.splice(destination.index, 0, movedItem);
+
+            setGroupedItems(updatedGroups);
+
+            const newSortedItemList = updatedGroups.flatMap(group => group.items);
+            setItemList(newSortedItemList);
+        }
+    };
+
+
     return (
         <>
+            <CommonResource/>
+            {isConfirmOpen && (
+                <ConfirmationModal
+                    title="문항 재검색"
+                    message="문항 구성이 자동으로 변경됩니다."
+                    details={tempDifficultyCounts.filter(count => count.count > 0)}
+                    onCancel={() => setIsConfirmOpen(false)}
+                    onConfirm={handleConfirm}
+                />
+            )}
+            <ModalComponent
+                title="이동 불가"
+                content="다른 지문으로 이동할 수 없습니다."
+                handleClose={handleCloseModal}
+                open={isModalOpen}
+            />
             <div id="wrap" className="full-pop-que">
                 <div className="full-pop-wrap">
                     <div className="pop-header">
@@ -58,10 +396,11 @@ export default function Step2Component() {
                         <div className="view-box">
                             <div className="view-top">
                                 <div className="paper-info">
-                                    <span>수학 1</span>
-                                    이준열(2015)
+                                    <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                <button className="btn-default btn-research"><i className="research"></i>재검색</button>
+                                <button className="btn-default btn-research" onClick={handleReSearchClick}>
+                                    <i className="research"></i>재검색
+                                </button>
                                 <button className="btn-default pop-btn" data-pop="que-scope-pop">출제범위</button>
                             </div>
                             <div className="view-bottom type01">
@@ -70,20 +409,6 @@ export default function Step2Component() {
                                         <span className="title">문제 목록</span>
                                         <div className="right-area">
                                             <div className="select-wrap">
-                                                <button type="button" className="select-btn">문제만 보기</button>
-                                                <ul className="select-list">
-                                                    <li>
-                                                        <a href="javascript:;">문제+정답 보기</a>
-                                                    </li>
-                                                    <li>
-                                                        <a href="javascript:;">문제+해설+정답 보기</a>
-                                                    </li>
-                                                    <li className="disabled">
-                                                        <a href="javascript:;">편집단계에서만 적용되는 보기 옵션</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                            <div className="select-wrap">
                                                 <button
                                                     type="button"
                                                     className="select-btn"
@@ -91,848 +416,250 @@ export default function Step2Component() {
                                                 >
                                                     {selectedOption}
                                                 </button>
-
                                                 {isProblemOptionsOpen && (
                                                     <ul className="select-list open">
                                                         <li>
-                            <span onClick={() => handleOptionSelect("문제만 보기")}>
-                              문제만 보기
-                            </span>
+                <span onClick={() => handleOptionSelect("문제만 보기")}>
+                    문제만 보기
+                </span>
                                                         </li>
                                                         <li>
-                            <span onClick={() => handleOptionSelect("문제+정답 보기")}>
-                              문제+정답 보기
-                            </span>
+                <span onClick={() => handleOptionSelect("문제+정답 보기")}>
+                    문제+정답 보기
+                </span>
                                                         </li>
                                                         <li>
-                            <span
-                                onClick={() => handleOptionSelect("문제+해설+정답 보기")}
-                            >
-                              문제+해설+정답 보기
-                            </span>
+                <span onClick={() => handleOptionSelect("문제+정답+해설 보기")}>
+                    문제+정답+해설 보기
+                </span>
+                                                        </li>
+                                                    </ul>
+                                                )}
+                                            </div>
+                                            <div className="select-wrap">
+                                                <button
+                                                    type="button"
+                                                    className="select-btn"
+                                                    onClick={toggleSortOptions}
+                                                >
+                                                    {selectedSortOption}
+                                                </button>
+                                                {isSortOptionsOpen && (
+                                                    <ul className="select-list open">
+                                                        <li>
+                                                            <span onClick={() => handleSortOptionSelect("사용자 정렬")}>
+                                                                사용자 정렬
+                                                            </span>
+                                                        </li>
+                                                        <li>
+                                                            <span onClick={() => handleSortOptionSelect("단원순")}>
+                                                                단원순
+                                                            </span>
+                                                        </li>
+                                                        <li>
+                                                            <span onClick={() => handleSortOptionSelect("난이도순")}>
+                                                                난이도순
+                                                            </span>
+                                                        </li>
+                                                        <li>
+                                                            <span onClick={() => handleSortOptionSelect("문제 형태순")}>
+                                                                문제 형태순
+                                                            </span>
                                                         </li>
                                                     </ul>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="view-que-list scroll-inner"
-                                         style={{display: "-webkit-box", WebkitBoxOrient: "vertical"}}>
-                                        <div className="view-que-box">
-                                            <div className="que-top">
-                                                <div className="title">
-                                                    <span className="num">1</span>
-                                                    <div className="que-badge-group">
-                                                        <span className="que-badge yellow">상</span>
-                                                        <span className="que-badge gray">주관식</span>
-                                                    </div>
-                                                </div>
-                                                <div className="btn-wrap">
-                                                    <button type="button" className="btn-error pop-btn"
-                                                            data-pop="error-report-pop"></button>
-                                                    <button type="button" className="btn-delete"></button>
-                                                </div>
-                                            </div>
-                                            <div className="view-que">
-                                                <div className="que-content">
-                                                    <p className="txt">5×5×13×13×13×13을 거듭제곱으로 나타낼 5의 지수를 a, 13의 거듭제곱의
-                                                        밑을 b라
-                                                        하자. 이때 b−a의 값을 구하시오.</p>
-                                                </div>
-                                                <div className="que-bottom">
-                                                    <div className="data-area">
-                                                        <div className="que-info">
-                                                            <p className="answer"><span className="label">해설</span></p>
-                                                            <div className="data-answer-area">
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt">해설 텍스트가 나오는 영역입니다.해설
-																텍스트가
-																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
-                                                                </div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt">해설 텍스트가 나오는 영역입니다.해설
-																텍스트가
-																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
-                                                                </div>
+                                    <div className="view-que-list scroll-inner">
+                                        {groupedItems.length > 0 ? (
+                                            groupedItems.map((group, groupIndex) => (
+                                                <div key={`group-${group.passageId}-${groupIndex}`}
+                                                     className="passage-group">
+                                                    {group.passageId !== "noPassage" && (
+                                                        <div className="passage-group-wrapper" style={{
+                                                            border: "1px solid #ddd",
+                                                            padding: "20px",
+                                                            borderRadius: "8px",
+                                                            marginBottom: "20px",
+                                                            position: "relative"
+                                                        }}>
+                                                            <div className="passage-group-header" style={{
+                                                                display: "flex",
+                                                                justifyContent: "space-between",
+                                                                alignItems: "flex-start",
+                                                                borderBottom: "1px solid #ddd",
+                                                                paddingBottom: "5px",
+                                                                marginBottom: "10px"
+                                                            }}>
+    <span style={{fontSize: "18px", fontWeight: "bold", marginTop: "-10px"}}>
+    {itemList.indexOf(group.items[0]) + 1} ~ {itemList.indexOf(group.items[group.items.length - 1]) + 1}
+</span>
                                                             </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="data-area type01">
-                                                        <div className="que-info">
-                                                            <p className="answer"><span
-                                                                className="label type01">정답</span></p>
-                                                            <div className="data-answer-area">
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
-                                                            </div>
-                                                        </div>
-                                                        <button type="button" className="btn-similar-que btn-default"><i
-                                                            className="similar"></i> 유사 문제
-                                                        </button>
-                                                    </div>
-                                                </div>
 
-                                            </div>
-                                            <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현자연수의
-                                                    성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
-                                            </div>
-                                        </div>
-                                        <div className="view-que-box active">
-                                            <div className="que-top">
-                                                <div className="title">
-                                                    <span className="num">2</span>
-                                                    <div className="que-badge-group">
-                                                        <span className="que-badge green">중</span>
-                                                        <span className="que-badge gray">객관식</span>
-                                                    </div>
-                                                </div>
-                                                <div className="btn-wrap">
-                                                    <button type="button" className="btn-error pop-btn"
-                                                            data-pop="error-report-pop"></button>
-                                                    <button type="button" className="btn-delete"></button>
-                                                </div>
-                                            </div>
-                                            <div className="view-que">
-                                                <div className="que-content">
-                                                    <p className="txt">다음 중 3 : 4에 대해서 잘못 말한 것은 어느 것입니까?</p>
-                                                    <ul>
-                                                        <ol><em>①</em><span>3 대 4</span></ol>
-                                                        <ol><em>②</em><span>3의 4에 대한 비</span></ol>
-                                                        <ol><em>③</em><span>4에 대한 3의 비</span></ol>
-                                                        <ol><em>④</em><span>3에 대한 4의 비</span></ol>
-                                                        <ol><em>⑤</em><span>3과 4의 비</span></ol>
-                                                    </ul>
-                                                </div>
-                                                <div className="que-bottom">
-                                                    <div className="data-area">
-                                                        <div className="que-info">
-                                                            <p className="answer"><span className="label">해설</span></p>
-                                                            <div className="data-answer-area">
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt">해설 텍스트가 나오는 영역입니다.해설
-																텍스트가
-																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
-                                                                </div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt">해설 텍스트가 나오는 영역입니다.해설
-																텍스트가
-																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
-                                                                </div>
+                                                            <button type="button" className="btn-delete-2" style={{
+                                                                position: "absolute",
+                                                                right: "40px",
+                                                                top: "10px",
+                                                                zIndex: "2",
+                                                                width: "22px",
+                                                                height: "22px",
+                                                                fontSize: "16px"
+                                                            }}></button>
+                                                            <div className="passage" style={{
+                                                                border: "1px solid #ccc",
+                                                                borderRadius: "8px",
+                                                                padding: "10px"
+                                                            }}>
+                                                                <img src={group.passageUrl} alt="지문 이미지"
+                                                                     style={{width: "100%"}}/>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="data-area type01">
-                                                        <div className="que-info">
-                                                            <p className="answer"><span
-                                                                className="label type01">정답</span></p>
-                                                            <div className="data-answer-area">
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
-                                                            </div>
-                                                        </div>
-                                                        <button type="button" className="btn-similar-que btn-default"><i
-                                                            className="similar"></i> 유사 문제
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                            </div>
-                                            <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
-                                            </div>
-                                        </div>
-                                        <div className="view-que-box">
-                                            <div className="que-top">
-                                                <div className="title">
-                                                    <span className="num">3</span>
-                                                    <div className="que-badge-group">
-                                                        <span className="que-badge purple">하</span>
-                                                        <span className="que-badge gray">주관식</span>
-                                                    </div>
-                                                </div>
-                                                <div className="btn-wrap">
-                                                    <button type="button" className="btn-error pop-btn"
-                                                            data-pop="error-report-pop"></button>
-                                                    <button type="button" className="btn-delete"></button>
-                                                </div>
-                                            </div>
-                                            <div className="view-que">
-                                                <div className="que-content">
-                                                    <p className="txt">5×5×13×13×13×13을 거듭제곱으로 나타낼 5의 지수를 a, 13의 거듭제곱의
-                                                        밑을 b라
-                                                        하자. 이때 b−a의 값을 구하시오.
-                                                        5×5×13×13×13×13을 거듭제곱으로 나타낼 5의 지수를 a, 13의 거듭제곱의 밑을 b라 하자. 이때
-                                                        b−a의 값을 구하시오. 5×5×13×13×13×13을
-                                                        거듭제곱으로
-                                                        나타낼 5의 지수를 a, 13의 거듭제곱의 밑을 b라 하자. 이때 b−a의 값을 구하시오.</p>
-                                                    <ul>
-                                                        <ol><em>①</em><span>3의 4에 대한 비3의 4에 대한 비3의 4에 대한 비3의 4에 대한 비3의 4에 대한 비3의 4에 대한 비3의 4에 대한 비3의 4에
-														대한
-														비3의 4에 대한 비3의 4에 대한 비3의 4에 대한 비3의 4에 대한 비</span></ol>
-                                                        <ol><em>②</em><span>3의 4에 대한 비</span></ol>
-                                                        <ol><em>③</em><span>4에 대한 3의 비</span></ol>
-                                                        <ol><em>④</em><span>3에 대한 4의 비</span></ol>
-                                                        <ol><em>⑤</em><span>3과 4의 비</span></ol>
-                                                    </ul>
-                                                </div>
-                                                <div className="que-bottom">
-                                                    <button type="button" className="btn-similar-que btn-default"><i
-                                                        className="similar"></i> 유사 문제
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
-                                            </div>
-                                        </div>
-                                        <div className="view-que-box">
-                                            <div className="que-top">
-                                                <div className="title">
-                                                    <span className="num">4</span>
-                                                    <div className="que-badge-group">
-                                                        <span className="que-badge yellow">상</span>
-                                                        <span className="que-badge gray">주관식</span>
-                                                    </div>
-                                                </div>
-                                                <div className="btn-wrap">
-                                                    <button type="button" className="btn-error pop-btn"
-                                                            data-pop="error-report-pop"></button>
-                                                    <button type="button" className="btn-delete"></button>
-                                                </div>
-                                            </div>
-                                            <div className="view-que">
-                                                <div className="que-content">
-                                                    <p className="txt">5×5×13×13×13×13을 거듭제곱으로 나타낼 5의 지수를 a, 13의 거듭제곱의
-                                                        밑을 b라
-                                                        하자. 이때 b−a의 값을 구하시오.</p>
-                                                </div>
-                                                <div className="que-bottom">
-                                                    <div className="data-area">
-                                                        <div className="que-info">
-                                                            <p className="answer"><span className="label">해설</span></p>
-                                                            <div className="data-answer-area">
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt">해설 텍스트가 나오는 영역입니다.해설
-																텍스트가
-																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
+                                                    )}
+                                                    {group.items.map((item, index) => (
+                                                        <div key={`item-${item.itemId}-${index}`}
+                                                             id={`question-${item.itemId}`}
+                                                             className="view-que-box"
+                                                             style={{marginTop: "10px"}}>
+                                                            <div className="que-top">
+                                                                <div className="title">
+                                                                    <span
+                                                                        className="num">{itemList.indexOf(item) + 1}</span>
+                                                                    <div className="que-badge-group">
+                                    <span className={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
+                                        {item.difficultyName}
+                                    </span>
+                                                                        <span className="que-badge gray">
+                                        {item.questionFormCode <= 50 ? "객관식" : "주관식"}
+                                    </span>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt">해설 텍스트가 나오는 영역입니다.해설
-																텍스트가
-																나오는 영역입니다.해설 텍스트가 나오는 영역입니다.해설 텍스트가 나오는 영역입니다.</span>
+                                                                <div className="btn-wrap">
+                                                                    <button type="button"
+                                                                            className="btn-error pop-btn"
+                                                                            data-pop="error-report-pop"></button>
+                                                                    <button type="button"
+                                                                            className="btn-delete"></button>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="data-area type01">
-                                                        <div className="que-info">
-                                                            <p className="answer"><span
-                                                                className="label type01">정답</span></p>
-                                                            <div className="data-answer-area">
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
-                                                                <div className="paragraph"
-                                                                     style={{textAlign: "justify"}}><span
-                                                                    className="txt"> ①</span></div>
+                                                            <div className="view-que">
+                                                                <div className="que-content">
+                                                                    {item.questionUrl ? (
+                                                                        <img src={item.questionUrl} alt="문제 이미지"/>
+                                                                    ) : (
+                                                                        <p className="txt">문제 텍스트 없음</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="que-bottom">
+                                                                    {(selectedOption === "문제+정답 보기" || selectedOption === "문제+정답+해설 보기") && (
+                                                                        <div className="data-area">
+                                                                            <div className="que-info">
+                                                                                <p className="answer">
+                                                                                    <span className="label type01"
+                                                                                          style={{
+                                                                                              display: "block",
+                                                                                              textAlign: "left",
+                                                                                              paddingLeft: "20px"
+                                                                                          }}>정답</span>
+                                                                                </p>
+                                                                                <div className="data-answer-area">
+                                                                                    {item.answerUrl ? (
+                                                                                        <img src={item.answerUrl}
+                                                                                             alt="정답 이미지"/>
+                                                                                    ) : (
+                                                                                        <div className="paragraph"
+                                                                                             style={{textAlign: "justify"}}>
+                                                                                            <span
+                                                                                                className="txt">정답 없음</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    {selectedOption === "문제+정답+해설 보기" && (
+                                                                        <div className="data-area">
+                                                                            <div className="que-info">
+                                                                                <p className="answer">
+                                                                                    <span className="label" style={{
+                                                                                        display: "block",
+                                                                                        textAlign: "left",
+                                                                                        paddingLeft: "20px"
+                                                                                    }}>해설</span>
+                                                                                </p>
+                                                                                <div className="data-answer-area">
+                                                                                    {item.explainUrl ? (
+                                                                                        <img src={item.explainUrl}
+                                                                                             alt="해설 이미지"/>
+                                                                                    ) : (
+                                                                                        <div className="paragraph"
+                                                                                             style={{textAlign: "justify"}}>
+                                                                                            <span
+                                                                                                className="txt">해설 없음</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="data-area type01">
+                                                                        <button type="button"
+                                                                                className="btn-similar-que btn-default">
+                                                                            <i className="similar"></i> 유사 문제
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="que-info-last">
+                                                                <p className="chapter">
+                                                                    {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
+                                                                </p>
                                                             </div>
                                                         </div>
-                                                        <button type="button" className="btn-similar-que btn-default"><i
-                                                            className="similar"></i> 유사 문제
-                                                        </button>
-                                                    </div>
+                                                    ))}
                                                 </div>
-                                            </div>
-                                            <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
-                                            </div>
-                                        </div>
-                                        <div className="view-que-box">
-                                            <div className="que-top">
-                                                <div className="title">
-                                                    <span className="num">5</span>
-                                                    <div className="que-badge-group">
-                                                        <span className="que-badge purple">하</span>
-                                                        <span className="que-badge gray">주관식</span>
-                                                    </div>
-                                                </div>
-                                                <div className="btn-wrap">
-                                                    <button type="button" className="btn-error pop-btn"
-                                                            data-pop="error-report-pop"></button>
-                                                    <button type="button" className="btn-delete"></button>
-                                                </div>
-                                            </div>
-                                            <div className="view-que">
-                                                <div className="que-content">
-                                                    <p className="txt">5×5×13×13×13×13을 거듭제곱으로 나타낼 5의 지수를 a, 13의 거듭제곱의
-                                                        밑을 b라
-                                                        하자. 이때 b−a의 값을 구하시오.</p>
-                                                    <ul>
-                                                        <ol><em>①</em><span>3 대 4</span></ol>
-                                                        <ol><em>②</em><span>3의 4에 대한 비</span></ol>
-                                                        <ol><em>③</em><span>4에 대한 3의 비</span></ol>
-                                                        <ol><em>④</em><span>3에 대한 4의 비</span></ol>
-                                                        <ol><em>⑤</em><span>3과 4의 비</span></ol>
-                                                    </ul>
-                                                </div>
-                                                <div className="que-bottom">
-                                                    <button type="button" className="btn-similar-que btn-default"><i
-                                                        className="similar"></i> 유사 문제
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="que-info-last">
-                                                <p className="chapter">자연수의 성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
-                                            </div>
-                                        </div>
+                                            ))
+                                        ) : (
+                                            <div>문제가 없습니다.</div>
+                                        )}
                                     </div>
                                     <div className="bottom-box">
                                         <div className="que-badge-group type01">
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge purple">하</span>
-                                                <span className="num">5</span>
-                                            </div>
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge green">중</span>
-                                                <span className="num">15</span>
-                                            </div>
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge yellow">상</span>
-                                                <span className="num">25</span>
-                                            </div>
+                                            {difficultyCounts.filter(d => d.count > 0).map(difficulty => (
+                                                <div key={difficulty.level} className="que-badge-wrap">
+            <span className={`que-badge`} style={{color: getDifficultyColor(difficulty.level)}}>
+                {difficulty.level}
+            </span>
+                                                    <span className="num">{difficulty.count}</span>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <p className="total-num">총 <span>30</span>문제</p>
+                                        <p className="total-num">총 <span>{totalQuestions}</span>문제</p>
                                     </div>
                                 </div>
                                 <div className="cnt-box type01">
-                                    <div className="tab-wrap">
-                                        <ul className="tab-menu-type01">
-                                            <li className="ui-tab-btn active">
-                                                <a href="javascript:;">문제지 요약</a>
-                                            </li>
-                                            <li className="ui-tab-btn">
-                                                <a href="javascript:;">유사 문제</a>
-                                            </li>
-                                            <li className="ui-tab-btn">
-                                                <a href="javascript:;">삭제 문항</a>
-                                            </li>
-                                        </ul>
-                                        <div className="contents on">
-                                            <div className="table half-type no-passage">
-                                                <div className="fix-head">
-                                                    <span>이동</span>
-                                                    <span>번호</span>
-                                                    <span>시험지명</span>
-                                                    <span>문제 형태</span>
-                                                    <span>난이도</span>
-                                                </div>
-                                                <div className="tbody">
-                                                    <div className="scroll-inner">
-                                                        <div className="test ui-sortable" id="table-1">
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>1</span>
-                                                                    <span className="tit">
-																<div
-                                                                    className="txt">자연수의 성질&gt;소인수분해&gt;거듭제곱&gt;거듭제곱으로표현</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">하</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>2</span>
-                                                                    <span className="tit">
-																<div
-                                                                    className="txt">자연수의 성질&gt;소인수분해&gt;거듭제곱&gt;거듭제곱으로표현</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>객관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>3</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>4</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>객관식</span>
-                                                                    <span>
-																<span className="que-badge">하</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>5</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>6</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>7</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>객관식</span>
-                                                                    <span>
-																<span className="que-badge">상</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>8</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>9</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>객관식</span>
-                                                                    <span>
-																<span className="que-badge">상</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>10</span>
-                                                                    <span className="tit">
-																<div
-                                                                    className="txt">자연수의 성질&gt;소인수분해&gt;거듭제곱&gt;거듭제곱으로표현</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">하</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>1</span>
-                                                                    <span className="tit">
-																<div
-                                                                    className="txt">자연수의 성질&gt;소인수분해&gt;거듭제곱&gt;거듭제곱으로표현</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">하</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>2</span>
-                                                                    <span className="tit">
-																<div
-                                                                    className="txt">자연수의 성질&gt;소인수분해&gt;거듭제곱&gt;거듭제곱으로표현</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>객관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>3</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>4</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>객관식</span>
-                                                                    <span>
-																<span className="que-badge">하</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>5</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>6</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>7</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>객관식</span>
-                                                                    <span>
-																<span className="que-badge">하</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>8</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">중</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>9</span>
-                                                                    <span className="tit">
-																<div className="txt">대단원&gt;중단원&gt;소단원&gt;토픽</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>객관식</span>
-                                                                    <span>
-																<span className="que-badge">상</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                            <div className="col">
-                                                                <a href="javascript:;">
-															<span className="dragHandle ui-sortable-handle"><img
-                                                                src="../images/common/ico_move_type01.png"
-                                                                alt=""></img></span>
-                                                                    <span>10</span>
-                                                                    <span className="tit">
-																<div
-                                                                    className="txt">자연수의 성질&gt;소인수분해&gt;거듭제곱&gt;거듭제곱으로표현</div>
-																<div className="tooltip-wrap">
-																	<button type="button" className="btn-tip"></button>
-																	<div className="tooltip type01">
-																		<div className="tool-type01">
-																			시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~시험지명블라블라~~</div>
-																	</div>
-																</div>
-															</span>
-                                                                    <span>주관식</span>
-                                                                    <span>
-																<span className="que-badge">하</span>
-															</span>
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="bottom-box">
-                                                <div className="que-badge-group">
-                                                    <div className="que-badge-wrap">
-                                                        <span className="que-badge gray">객관식</span>
-                                                        <span className="num">35</span>
-                                                    </div>
-                                                    <div className="que-badge-wrap">
-                                                        <span className="que-badge gray">주관식</span>
-                                                        <span className="num">15</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="contents">
-                                            탭 컨텐츠 (2)
-                                        </div>
-                                        <div className="contents">
-                                            탭 컨텐츠 (3)
-                                        </div>
-                                    </div>
-                                </div>
+                                    <Step2RightSideComponent itemList={itemList} onDragEnd={handleDragEnd}/></div>
                             </div>
                         </div>
                     </div>
                     <div className="step-btn-wrap">
-                        <button type="button" className="btn-step">STEP 1 단원 선택</button>
-                        <button type="button" className="btn-step next">STEP 3 시험지 저장</button>
+                        <Button
+                            variant="contained"
+                            onClick={handleClickMoveToStepOne}
+                            className="btn-step"
+                        >
+                            <BorderColorOutlinedIcon/>STEP 1 단원 선택
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleClickMoveToStepThree}
+                            className="btn-step next"
+                        >
+                            <BorderColorOutlinedIcon/>STEP 3 시험지 저장
+                        </Button>
                     </div>
                 </div>
             </div>
         </>
-    )
+    );
 }

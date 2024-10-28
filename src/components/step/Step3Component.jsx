@@ -1,36 +1,12 @@
 import React, {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import axios from "axios";
+import CommonResource from "../../util/CommonResource.jsx";
+import {useSelector} from "react-redux";
 export default function Step3Component() {
-
-    useEffect(() => {
-        // 공통 CSS
-        const commonLink = document.createElement("link");
-        const VITE_COMMON_LINK = import.meta.env.VITE_COMMON_LINK
-        commonLink.href = VITE_COMMON_LINK;
-        commonLink.rel = "stylesheet";
-        document.head.appendChild(commonLink);
-
-        // 폰트 CSS
-        const fontLink = document.createElement("link");
-        const VITE_FONT_LINK = import.meta.env.VITE_FONT_LINK
-        fontLink.href = VITE_FONT_LINK;
-        fontLink.rel = "stylesheet";
-        document.head.appendChild(fontLink);
-
-        // 리셋 CSS
-        const resetLink = document.createElement("link");
-        const VITE_RESET_LINK = import.meta.env.VITE_RESET_LINK
-        resetLink.href = VITE_RESET_LINK;
-        resetLink.rel = "stylesheet";
-        document.head.appendChild(resetLink);
-
-        return () => {
-            document.head.removeChild(commonLink);
-            document.head.removeChild(fontLink);
-            document.head.removeChild(resetLink);
-        };
-    }, []);
+    const { bookId, groupedItems } = useSelector((state) => state.examDataSlice);
+    console.log('Step2로부터 전송된 bookId:', bookId);
+    console.log('Step2로부터 전송된 지문과 문제 데이터 목록: ', groupedItems);
 
     const [itemList, setItemList] = useState([]);
 
@@ -47,6 +23,7 @@ export default function Step3Component() {
 
     return (
         <div className="view-box">
+            <CommonResource />
             <div className="view-top">
                 <div className="paper-info">
                     <span>수학 1</span> 이준열(2015)

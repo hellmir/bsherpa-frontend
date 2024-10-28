@@ -8,11 +8,10 @@ import useCustomMove from "../../hooks/useCustomMove.jsx";
 
 export default function CardComponent({bookName,bookId,author}) {
 
-  const {moveToPath} = useCustomMove()
+  const {moveToStepWithData} = useCustomMove()
 
   const handleClickCreate = () => {
-    console.log(bookId)
-    moveToPath(`/exam/step0/${bookId}`)
+    moveToStepWithData(`step0`,{id:bookId,name:bookName,author})
   }
 
   return (

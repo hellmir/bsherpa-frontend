@@ -13,6 +13,8 @@ import {useState} from "react";
 import useCustomLogin from "../../hooks/useCustomLogin.jsx";
 import ModalComponent from "./ModalComponent.jsx";
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
+import TextField from "@mui/material/TextField";
+import HomeIcon from '@mui/icons-material/Home';
 
 const drawerWidth = 240;
 const initState = {
@@ -25,7 +27,7 @@ function DrawerComponent() {
   const [result, setResult] = useState(null)
   const [success, setSuccess] = useState(false)
   const [fail, setFail] = useState(false)
-const {doLogin,moveToPath} = useCustomLogin()
+const {doLogin,doLogout,moveToPath,isLogin,loginState} = useCustomLogin()
   const [user, setUser] = useState(initState)
 
 const handleChange = (e) => {
@@ -35,15 +37,24 @@ const handleChange = (e) => {
 
 const handleClickLogin = () => {
   console.log('로그인 클릭')
+  console.log(user)
   doLogin(user)
   .then(data => {
-    if (data.ERROR) {
+    console.log(data)
+    if (data.error) {
       setFail(true)
     } else {
+      console.log('로그인 성공')
+
       setSuccess(true)
       setResult(data.username)
     }
   })
+}
+
+const handleClickLogOut = () => {
+    doLogout()
+    moveToPath('/')
 }
 
 const handleClickText = (e) => {
@@ -51,6 +62,9 @@ const handleClickText = (e) => {
   console.log(value)
   if (value==='회원가입'){
     moveToPath('/users/join')
+  }
+  if (value==='홈'){
+    moveToPath('/')
   }
 }
   const handleClose = () => {
@@ -94,42 +108,80 @@ const handleClickText = (e) => {
         <Toolbar />
         <Divider />
         <List>
-          {['로그인'].map((text, index) => (
-              <ListItem key={text} disablePadding>
-                <ListItemButton>
-                  <ListItemIcon>
-                    {index % 2 === 0 ? <LoginIcon onClick={handleClickLogin}/> : <MailIcon />}
-                  </ListItemIcon>
-                  <ListItemText
-                      primary={text}
-                      onClick={handleClickLogin}
-                  />
-                </ListItemButton>
-              </ListItem>
-          ))}
-          <TextFieldComponent
-          id={'email'}
-          type={'email'}
-          label={'이메일'}
-          value={user.email}
-          handleChange={handleChange}
-          />
-          <TextFieldComponent
-              auto={false}
-              id={'password'}
-              type={'password'}
-              label={'비밀번호'}
-              value={user.password}
-              handleChange={handleChange}
-          />
+
+          {isLogin?
+              <>{
+                ['로그아웃'].map((text, index) => (
+                    <ListItem key={text} disablePadding>
+                      <ListItemButton>
+                        <ListItemIcon>
+                          {index % 2 === 0 ? <LoginIcon
+                              onClick={handleClickLogOut}/> : <MailIcon/>}
+                        </ListItemIcon>
+                        <ListItemText
+                            primary={text}
+                            onClick={handleClickLogOut}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                ))}
+                <TextField
+                    readOnly
+                    margin="dense"
+                    id={'loginUserName'}
+                    name={'username'}
+                    type={'text'}
+                    label={'유저명'}
+                    value={loginState.username}
+                    fullWidth
+                    variant="filled"
+                />
+
+
+              </>
+                :
+              <>
+                {['로그인'].map((text, index) => (
+                    <ListItem key={text} disablePadding>
+                      <ListItemButton>
+                        <ListItemIcon>
+                          {index % 2 === 0 ? <LoginIcon
+                              onClick={handleClickLogin}/> : <MailIcon/>}
+                        </ListItemIcon>
+                        <ListItemText
+                            primary={text}
+                            onClick={handleClickLogin}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                ))}
+                <TextFieldComponent
+                    id={'email'}
+                    name={'email'}
+                    type={'email'}
+                    label={'이메일'}
+                    value={user.email}
+                    handleChange={handleChange}
+                />
+                <TextFieldComponent
+                    auto={false}
+                    id={'password'}
+                    name={'password'}
+                    type={'password'}
+                    label={'비밀번호'}
+                    value={user.password}
+                    handleChange={handleChange}
+                />
+              </>
+          }
         </List>
         <Divider />
         <List>
-          {['회원가입', 'Trash', 'Spam'].map((text, index) => (
+          {['회원가입', '홈'].map((text, index) => (
               <ListItem key={text} disablePadding>
                 <ListItemButton>
                   <ListItemIcon>
-                    {index % 2 === 0 ? <PersonAddAltIcon /> : <MailIcon />}
+                    {index % 2 === 0 ? <PersonAddAltIcon /> : <HomeIcon />}
                   </ListItemIcon>
                   <ListItemText primary={text}
                                 onClick={handleClickText}
