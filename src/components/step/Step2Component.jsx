@@ -12,6 +12,8 @@ import {setExamData} from "../../slices/examDataSlice.js";
 import {useDispatch, useSelector} from "react-redux";
 import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
 import ModalComponent from "../common/ModalComponent.jsx";
+import DifficultyCountComponent from "../common/DifficultyCountComponent.jsx";
+import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -291,23 +293,6 @@ export default function Step2Component() {
         dispatch(setExamData({bookId, groupedItems}));
         moveToStepWithData('step3', {bookId, groupedItems});
     };
-
-    function getDifficultyColor(difficultyName) {
-        switch (difficultyName) {
-            case "최상":
-                return "red";
-            case "상":
-                return "orange";
-            case "중":
-                return "green";
-            case "하":
-                return "purple";
-            case "최하":
-                return "black";
-            default:
-                return "gray";
-        }
-    }
 
     const handleDragEnd = (result) => {
         const {destination, source, type} = result;
@@ -637,19 +622,11 @@ export default function Step2Component() {
                                             <div>문제가 없습니다.</div>
                                         )}
                                     </div>
-                                    <div className="bottom-box">
-                                        <div className="que-badge-group type01">
-                                            {difficultyCounts.filter(d => d.count > 0).map(difficulty => (
-                                                <div key={difficulty.level} className="que-badge-wrap">
-            <span className={`que-badge`} style={{color: getDifficultyColor(difficulty.level)}}>
-                {difficulty.level}
-            </span>
-                                                    <span className="num">{difficulty.count}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <p className="total-num">총 <span>{totalQuestions}</span>문제</p>
-                                    </div>
+                                    <DifficultyCountComponent
+                                        difficultyCounts={difficultyCounts}
+                                        getDifficultyColor={getDifficultyColor}
+                                        totalQuestions={totalQuestions}
+                                    />
                                 </div>
                                 <div className="cnt-box type01">
                                     <Step2RightSideComponent itemList={itemList} onDragEnd={handleDragEnd}/></div>
