@@ -4,17 +4,6 @@ import CommonResource from "../../util/CommonResource.jsx";
 import ExamSummaryComponent from "../common/ExamSummaryComponent.jsx";
 
 export default function Step2RightSideComponent({itemList, onDragEnd}) {
-    const truncateText = (text, maxLength) => {
-        return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
-    };
-
-    const handleScrollToQuestion = (itemId) => {
-        const element = document.getElementById(`question-${itemId}`);
-        if (element) {
-            element.scrollIntoView({behavior: 'smooth', block: 'start'});
-        }
-    };
-
     const groupByPassage = (items) => {
         return items.reduce((acc, item) => {
             const passageId = item.passageId || "noPassage";
@@ -27,14 +16,6 @@ export default function Step2RightSideComponent({itemList, onDragEnd}) {
     };
 
     const groupedItems = groupByPassage(itemList);
-
-    const sortedGroupedItems = Object.keys(groupedItems)
-        .map((passageId) => ({
-            passageId,
-            items: groupedItems[passageId],
-            firstIndex: itemList.findIndex((i) => i.itemId === groupedItems[passageId][0].itemId)
-        }))
-        .sort((a, b) => a.firstIndex - b.firstIndex);
 
     return (
         <>
@@ -54,8 +35,6 @@ export default function Step2RightSideComponent({itemList, onDragEnd}) {
                     </ul>
                     <ExamSummaryComponent
                         itemList={itemList}
-                        sortedGroupedItems={sortedGroupedItems}
-                        truncateText={truncateText}
                     />
                 </div>
             </DragDropContext>
