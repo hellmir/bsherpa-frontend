@@ -2,7 +2,7 @@ import {Draggable, Droppable} from "react-beautiful-dnd";
 import React from "react";
 import QuesionTypeCountComponent from "./QuesionTypeCountComponent.jsx";
 
-export default function ExamSummaryComponent({itemList}) {
+export default function ExamSummaryComponent({itemList, groupedItems}) {
     const sortedGroupedItems = Object.keys(groupedItems)
         .map((passageId) => ({
             passageId,
@@ -65,7 +65,7 @@ export default function ExamSummaryComponent({itemList}) {
                                                         {...innerProvided.droppableProps}
                                                         className="col-group"
                                                     >
-                                                        {items.map((item, index) => {
+                                                        {items.map((item) => {
                                                             const overallIndex = itemList.findIndex(i => i.itemId === item.itemId);
                                                             return (
                                                                 <Draggable

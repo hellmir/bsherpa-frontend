@@ -35,6 +35,7 @@ export default function Step2RightSideComponent({itemList, onDragEnd}) {
                     </ul>
                     <ExamSummaryComponent
                         itemList={itemList}
+                        groupedItems={groupedItems}
                     />
                 </div>
             </DragDropContext>
