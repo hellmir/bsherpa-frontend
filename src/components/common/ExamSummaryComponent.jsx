@@ -2,7 +2,26 @@ import {Draggable, Droppable} from "react-beautiful-dnd";
 import React from "react";
 import QuesionTypeCountComponent from "./QuesionTypeCountComponent.jsx";
 
-export default function ExamSummaryComponent({itemList, sortedGroupedItems, truncateText}) {
+export default function ExamSummaryComponent({itemList}) {
+    const sortedGroupedItems = Object.keys(groupedItems)
+        .map((passageId) => ({
+            passageId,
+            items: groupedItems[passageId],
+            firstIndex: itemList.findIndex((i) => i.itemId === groupedItems[passageId][0].itemId)
+        }))
+        .sort((a, b) => a.firstIndex - b.firstIndex);
+
+    const handleScrollToQuestion = (itemId) => {
+        const element = document.getElementById(`question-${itemId}`);
+        if (element) {
+            element.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+    };
+
+    const truncateText = (text, maxLength) => {
+        return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+    };
+
     return (
         <div className="contents on">
             <div className="table half-type no-passage" style={{overflowY: "auto", maxHeight: "400px"}}>
