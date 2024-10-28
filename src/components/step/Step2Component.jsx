@@ -314,8 +314,9 @@ export default function Step2Component() {
 
         if (!destination) return;
 
+        const updatedGroups = JSON.parse(JSON.stringify(groupedItems));
+
         if (type === "PASSAGE_GROUP") {
-            const updatedGroups = Array.from(groupedItems);
             const [movedGroup] = updatedGroups.splice(source.index, 1);
             updatedGroups.splice(destination.index, 0, movedGroup);
 
@@ -333,7 +334,7 @@ export default function Step2Component() {
             const destinationPassageIdNumber = Number(destinationPassageId);
 
             console.log(`sourcePassageId: ${sourcePassageIdNumber}, destinationPassageId: ${destinationPassageIdNumber}`);
-            console.log('현재 groupedItems:', groupedItems.map(group => group.passageId));
+            console.log('현재 groupedItems:', updatedGroups.map(group => group.passageId));
 
             if (sourcePassageIdNumber !== destinationPassageIdNumber) {
                 console.log('다른 지문으로 이동할 수 없습니다.');
@@ -343,7 +344,6 @@ export default function Step2Component() {
 
             console.log(`문항을 ${source.index}에서 ${destination.index}로 이동`);
 
-            const updatedGroups = [...groupedItems];
             const groupIndex = updatedGroups.findIndex(group => group.passageId === sourcePassageIdNumber);
 
             if (groupIndex === -1) {
@@ -353,8 +353,23 @@ export default function Step2Component() {
 
             const group = updatedGroups[groupIndex];
 
-            const [movedItem] = group.items.splice(source.index, 1);
-            group.items.splice(destination.index, 0, movedItem);
+            const itemIndexInGroup = source.index - itemList.findIndex(item => item.passageId === sourcePassageIdNumber);
+
+            if (itemIndexInGroup < 0 || itemIndexInGroup >= group.items.length) {
+                console.error('item 인덱스가 존재하지 않습니다.');
+                return;
+            }
+
+            const [movedItem] = group.items.splice(itemIndexInGroup, 1);
+
+            if (!movedItem || !movedItem.itemId) {
+                console.error(`movedItem이 올바르지 않거나 itemId가 존재하지 않습니다: `, movedItem);
+                return;
+            }
+
+            const destinationIndexInGroup = destination.index - itemList.findIndex(item => item.passageId === destinationPassageIdNumber);
+
+            group.items.splice(destinationIndexInGroup, 0, movedItem);
 
             setGroupedItems(updatedGroups);
 
@@ -362,7 +377,6 @@ export default function Step2Component() {
             setItemList(newSortedItemList);
         }
     };
-
 
     return (
         <>

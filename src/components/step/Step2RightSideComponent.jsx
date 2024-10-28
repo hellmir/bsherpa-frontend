@@ -118,7 +118,8 @@ export default function Step2RightSideComponent({itemList, onDragEnd}) {
                                                                                                     {truncateText(`${item.largeChapterName} > ${item.mediumChapterName} > ${item.smallChapterName} > ${item.topicChapterName}`, 30)}
                                                                                                 </div>
                                                                                             </span>
-                                                                                            <span className="question-type-data">{item.questionFormCode <= 50 ? "객관식" : "주관식"}</span>
+                                                                                            <span
+                                                                                                className="question-type-data">{item.questionFormCode <= 50 ? "객관식" : "주관식"}</span>
                                                                                             <span>
                                                                                                 <span
                                                                                                     className={`que-badge ${item.difficultyName}`}>{item.difficultyName}</span>
