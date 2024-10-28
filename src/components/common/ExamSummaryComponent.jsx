@@ -1,5 +1,6 @@
 import {Draggable, Droppable} from "react-beautiful-dnd";
 import React from "react";
+import QuesionTypeCountComponent from "./QuesionTypeCountComponent.jsx";
 
 export default function ExamSummaryComponent({itemList, sortedGroupedItems, truncateText}) {
     return (
@@ -95,20 +96,7 @@ export default function ExamSummaryComponent({itemList, sortedGroupedItems, trun
                     )}
                 </Droppable>
             </div>
-            <div className="bottom-box">
-                <div className="que-badge-group">
-                    <div className="que-badge-wrap">
-                        <span className="que-badge gray">객관식</span>
-                        <span
-                            className="num">{itemList.filter(item => item.questionFormCode <= 50).length}</span>
-                    </div>
-                    <div className="que-badge-wrap">
-                        <span className="que-badge gray">주관식</span>
-                        <span
-                            className="num">{itemList.filter(item => item.questionFormCode > 50).length}</span>
-                    </div>
-                </div>
-            </div>
+            <QuesionTypeCountComponent itemList={itemList}/>
         </div>
     );
 }
