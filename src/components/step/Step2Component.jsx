@@ -1,7 +1,12 @@
 import React, {useEffect, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
-import {useMutation, useQuery} from "@tanstack/react-query";
-import {getBookFromTsherpa, getEvaluationsFromTsherpa, getItemImagesFromTsherpa} from "../../api/step2Api.js";
+import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
+import {
+    getBookFromTsherpa,
+    getChapterItemImagesFromTsherpa,
+    getEvaluationsFromTsherpa,
+    getExamItemImagesFromTsherpa
+} from "../../api/step2Api.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import Button from "@mui/material/Button";
@@ -36,6 +41,7 @@ export default function Step2Component() {
     const [isSorted, setIsSorted] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
 
@@ -56,6 +62,21 @@ export default function Step2Component() {
     const subjectName = bookData?.subjectInfoList?.[0]?.subjectName?.split('(')[0] || "과목명 없음";
     const author = bookData?.subjectInfoList?.[0]?.subjectName?.match(/\(([^)]+)\)/)?.[1] || "저자 정보 없음";
     const curriculumYear = bookData?.subjectInfoList?.[0]?.curriculumName || "년도 정보 없음";
+
+    const examIdList = useSelector((state) => state.examIdSlice);
+    const questionQueries = useQueries({
+        queries: examIdList?.length
+            ? examIdList.map((examId) => ({
+                queryKey: ["questionData", examId],
+                queryFn: () => getExamItemImagesFromTsherpa(examId),
+                staleTime: 1000 * 3,
+            }))
+            : [],
+    });
+
+    const questionsDataFromExams = questionQueries
+        .filter((query) => query.isSuccess)
+        .map((query) => query.data.itemList);
 
     const {data: evaluationsData} = useQuery({
         queryKey: ['evaluationsData', bookId],
@@ -88,8 +109,15 @@ export default function Step2Component() {
         : null;
     console.log(itemsRequestForm);
 
+    const {data: questionsData, isLoading, error} = useQuery({
+        queryKey: ["getChapterItemsRequest", itemsRequestForm],
+        queryFn: () => getChapterItemImagesFromTsherpa(itemsRequestForm),
+        enabled: !examIdList?.length && !!itemsRequestForm,
+        staleTime: 1000 * 3,
+    });
+
     const fetchQuestions = useMutation({
-        mutationFn: (form) => getItemImagesFromTsherpa(form),
+        mutationFn: (form) => getChapterItemImagesFromTsherpa(form),
         onSuccess: (data) => {
             const newTempItemList = [...data.data.itemList];
             const counts = [
@@ -117,13 +145,6 @@ export default function Step2Component() {
         }
     });
 
-    const {data: questionsData, isLoading, error} = useQuery({
-        queryKey: ['getChapterItemsRequest', itemsRequestForm],
-        queryFn: () => getItemImagesFromTsherpa(itemsRequestForm),
-        enabled: !!itemsRequestForm,
-        staleTime: 1000 * 3
-    });
-
     useEffect(() => {
         if (!isSorted && groupedItems.length > 0) {
             sortGroupedItems();
@@ -142,9 +163,22 @@ export default function Step2Component() {
     }, [isProblemOptionsOpen]);
 
     useEffect(() => {
+        if (examIdList?.length && questionsDataFromExams.length > 0 && itemList.length === 0) {
+            const combinedData = {data: {itemList: questionsDataFromExams.flat()}};
+            console.log("questionsData 전체 구조:", combinedData);
+            console.log("questionsData.data.itemList 확인:", combinedData.data.itemList);
+
+            setItemList(combinedData.data.itemList);
+            setTempItemList(combinedData.data.itemList);
+            organizeItems(combinedData.data.itemList);
+        }
+    }, [questionsDataFromExams]);
+
+    useEffect(() => {
         if (questionsData?.data?.itemList && itemList.length === 0) {
             console.log("questionsData 전체 구조:", questionsData);
             console.log("questionsData.data.itemList 확인:", questionsData.data.itemList);
+
             setItemList(questionsData.data.itemList);
             setTempItemList(questionsData.data.itemList);
             organizeItems(questionsData.data.itemList);
@@ -314,6 +348,7 @@ export default function Step2Component() {
         } else if (type === "ITEM") {
             const sourcePassageId = source.droppableId;
             const destinationPassageId = destination.droppableId;
+            console.log(sourcePassageId, destinationPassageId, 'asdlfjads');
 
             const sourcePassageIdNumber = Number(sourcePassageId);
             const destinationPassageIdNumber = Number(destinationPassageId);
@@ -321,7 +356,7 @@ export default function Step2Component() {
             console.log(`sourcePassageId: ${sourcePassageIdNumber}, destinationPassageId: ${destinationPassageIdNumber}`);
             console.log('현재 groupedItems:', updatedGroups.map(group => group.passageId));
 
-            if (sourcePassageIdNumber !== destinationPassageIdNumber) {
+            if (sourcePassageId !== destinationPassageId && sourcePassageId !== "noPassage" && destinationPassageId !== "noPassage") {
                 console.log('다른 지문으로 이동할 수 없습니다.');
                 handleOpenModal();
                 return;
@@ -329,8 +364,15 @@ export default function Step2Component() {
 
             console.log(`문항을 ${source.index}에서 ${destination.index}로 이동`);
 
-            const groupIndex = updatedGroups.findIndex(group => group.passageId === sourcePassageIdNumber);
-
+            const groupIndex = updatedGroups.findIndex(group => {
+                if (typeof group.passageId === "string" && group.passageId === sourcePassageId) {
+                    return true;
+                }
+                if (typeof group.passageId === "number" && group.passageId === sourcePassageIdNumber) {
+                    return true;
+                }
+                return false;
+            });
             if (groupIndex === -1) {
                 console.error('해당 지문 그룹을 찾을 수 없습니다.');
                 return;

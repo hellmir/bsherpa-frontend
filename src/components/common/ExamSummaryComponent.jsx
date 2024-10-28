@@ -45,6 +45,7 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                                     key={`passage-${passageId}`}
                                     draggableId={`passage-${passageId}`}
                                     index={groupIndex}
+                                    isDragDisabled={passageId === "noPassage"} // noPassage인 경우 드래그 비활성화
                                 >
                                     {(provided) => (
                                         <div
@@ -52,13 +53,16 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                                             {...provided.draggableProps}
                                             className={`depth-01 ${passageId !== "noPassage" ? "has-passage" : "no-passage"}`}
                                         >
+                                            {/* passageId가 "noPassage"가 아닐 때만 드래그 핸들 표시 */}
                                             {passageId !== "noPassage" && (
                                                 <div
                                                     className="dragHandle ui-sortable-handle ico-move-type02"
                                                     {...provided.dragHandleProps}
-                                                ></div>
+                                                >
+                                                </div>
                                             )}
-                                            <Droppable droppableId={passageId} type="ITEM">
+
+                                            <Droppable droppableId={`${passageId}`} type="ITEM">
                                                 {(innerProvided) => (
                                                     <div
                                                         ref={innerProvided.innerRef}
@@ -69,7 +73,7 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                                                             const overallIndex = itemList.findIndex(i => i.itemId === item.itemId);
                                                             return (
                                                                 <Draggable
-                                                                    key={`it-${item.itemId}`}
+                                                                    key={`item-${item.itemId}`}
                                                                     draggableId={`item-${item.itemId}`}
                                                                     index={overallIndex}
                                                                 >
@@ -82,20 +86,21 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                                                                             onClick={() => handleScrollToQuestion(item.itemId)}
                                                                         >
                                                                             <a href="#">
-                                                                                            <span
-                                                                                                className="dragHandle ui-sortable-handle ico-move-type01"></span>
+                                                                                <span
+                                                                                    className="dragHandle ui-sortable-handle ico-move-type01"></span>
                                                                                 <span>{overallIndex + 1}</span>
                                                                                 <span className="tit">
-                                                                                                <div className="txt">
-                                                                                                    {truncateText(`${item.largeChapterName} > ${item.mediumChapterName} > ${item.smallChapterName} > ${item.topicChapterName}`, 30)}
-                                                                                                </div>
-                                                                                            </span>
-                                                                                <span
-                                                                                    className="question-type-data">{item.questionFormCode <= 50 ? "객관식" : "주관식"}</span>
+                                                                                    <div className="txt">
+                                                                                        {truncateText(`${item.largeChapterName} > ${item.mediumChapterName} > ${item.smallChapterName} > ${item.topicChapterName}`, 30)}
+                                                                                    </div>
+                                                                                </span>
+                                                                                <span className="question-type-data">
+                                                                                    {item.questionFormCode <= 50 ? "객관식" : "주관식"}
+                                                                                </span>
                                                                                 <span>
-                                                                                                <span
-                                                                                                    className={`que-badge ${item.difficultyName}`}>{item.difficultyName}</span>
-                                                                                            </span>
+                                                                                    <span
+                                                                                        className={`que-badge ${item.difficultyName}`}>{item.difficultyName}</span>
+                                                                                </span>
                                                                             </a>
                                                                         </div>
                                                                     )}
