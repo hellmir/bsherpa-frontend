@@ -57,7 +57,7 @@ function Step0Component() {
 
   const handleClickSelectedExamEdit = () => {
     console.log(`선택한 시험지 만들기 : ${examIdList}`);
-    moveToStepWithData('step1', examIdList);
+    moveToStepWithData('step2', examIdList);
   };
 
   const handleClickNewExamEdit = () => {
