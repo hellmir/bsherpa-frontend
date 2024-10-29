@@ -1,0 +1,23 @@
+{
+  "title": "join.json",
+  "description": "회원가입 유효성 검증 스키마",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "pattern": "[a-z0-9]+@[a-z]+\\.[a-z]{2,3}",
+      "description": "이메일 형식이 바르지 않습니다."
+    },
+    "password": {
+      "type": "string",
+      "pattern": "^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()._-]{6,16}$",
+      "description": "비밀번호는 6자 이상 16자 이하, 영어 또는 숫자 또는 한글로 구성되어야 합니다."
+    },
+    "username": {
+      "type": "string",
+      "pattern": "^(?=.*[a-z0-9가-힣])[a-z0-9가-힣]{2,16}$",
+      "description": "유저명은 2자 이상 16자 이하, 영어 또는 숫자 또는 한글로 구성되어야 합니다."
+    }
+  },
+  "required": ["email","username","password"]
+}
