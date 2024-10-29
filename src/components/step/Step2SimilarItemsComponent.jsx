@@ -14,6 +14,10 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
         ? items
         : items.filter(item => item.difficultyName === selectedDifficulty);
 
+    const questionRange = filteredItems.length > 0
+        ? `${items.findIndex(i => i === filteredItems[0]) + 1} ~ ${items.findIndex(i => i === filteredItems[filteredItems.length - 1]) + 1}`
+        : null;
+
     return (
         <div className="similar-items-container" style={{
             height: "100%",
@@ -21,67 +25,35 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
             padding: "20px",
             boxSizing: "border-box"
         }}>
-            {filteredItems.length > 0 && (
-                <div style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "20px"
-                }}>
-                    <h2>{questionNumber}번 유사 문제</h2>
-                    <div>
-                        <label htmlFor="difficulty-select" style={{marginRight: "10px"}}>난이도</label>
-                        <select
-                            id="difficulty-select"
-                            value={selectedDifficulty}
-                            onChange={handleDifficultyChange}
-                            style={{
-                                padding: "5px 10px",
-                                fontSize: "14px",
-                                border: "1px solid #ddd",
-                                borderRadius: "4px"
-                            }}
-                        >
-                            <option value="전체">난이도 전체</option>
-                            <option value="최상">최상</option>
-                            <option value="상">상</option>
-                            <option value="중">중</option>
-                            <option value="하">하</option>
-                            <option value="최하">최하</option>
-                        </select>
-                    </div>
+            <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "20px"
+            }}>
+                <h2 style={{fontSize: "21px", fontWeight: "bold"}}>{questionNumber}번 유사 문제</h2>
+                <div>
+                    <label htmlFor="difficulty-select" style={{marginRight: "10px"}}>난이도</label>
+                    <select
+                        id="difficulty-select"
+                        value={selectedDifficulty}
+                        onChange={handleDifficultyChange}
+                        style={{
+                            padding: "5px 10px",
+                            fontSize: "14px",
+                            border: "1px solid #ddd",
+                            borderRadius: "4px"
+                        }}
+                    >
+                        <option value="전체">난이도 전체</option>
+                        <option value="최상">최상</option>
+                        <option value="상">상</option>
+                        <option value="중">중</option>
+                        <option value="하">하</option>
+                        <option value="최하">최하</option>
+                    </select>
                 </div>
-            )}
-
-            {hasPassage && filteredItems.length > 0 && (
-                <div className="passage-group-wrapper" style={{
-                    border: "1px solid #ddd",
-                    padding: "20px",
-                    borderRadius: "8px",
-                    marginBottom: "20px",
-                    maxWidth: "100%"
-                }}>
-                    <div className="passage-group-header" style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        borderBottom: "1px solid #ddd",
-                        paddingBottom: "5px",
-                        marginBottom: "10px"
-                    }}>
-                        <span style={{fontSize: "18px", fontWeight: "bold"}}>지문</span>
-                    </div>
-                    <div className="passage" style={{
-                        border: "1px solid #ccc",
-                        borderRadius: "8px",
-                        padding: "10px",
-                        maxHeight: "300px",
-                        overflowY: "auto"
-                    }}>
-                        <img src={items[0].passageUrl} alt="지문 이미지" style={{width: "100%", display: "block"}}/>
-                    </div>
-                </div>
-            )}
+            </div>
 
             {filteredItems.length > 0 ? (
                 <div className="view-que-list scroll-inner" style={{overflowY: "auto", maxHeight: "60vh"}}>
@@ -100,6 +72,11 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
                                         </span>
                                     </div>
                                 </div>
+                                <div className="btn-wrap">
+                                    <button type="button"
+                                            className="btn-error pop-btn"
+                                            data-pop="error-report-pop"></button>
+                                </div>
                             </div>
                             <div className="view-que">
                                 <div className="que-content">
@@ -109,36 +86,17 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
                                         <p className="txt">문제 텍스트 없음</p>
                                     )}
                                 </div>
-                                <div className="que-bottom">
-                                    {item.answerUrl && (
-                                        <div className="data-area">
-                                            <div className="que-info">
-                                                <p className="answer">
-                                                    <span className="label type01"
-                                                          style={{textAlign: "left", paddingLeft: "20px"}}>
-                                                        정답
-                                                    </span>
-                                                </p>
-                                                <div className="data-answer-area">
-                                                    <img src={item.answerUrl} alt="정답 이미지" style={{width: "100%"}}/>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {item.explainUrl && (
-                                        <div className="data-area">
-                                            <div className="que-info">
-                                                <p className="answer">
-                                                    <span className="label"
-                                                          style={{textAlign: "left", paddingLeft: "20px"}}>해설</span>
-                                                </p>
-                                                <div className="data-answer-area">
-                                                    <img src={item.explainUrl} alt="해설 이미지" style={{width: "100%"}}/>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                            </div>
+                            <div className="que-bottom">
+                                <div className="btn-wrap">
+                                    <button type="button" className="btn-default"><i className="add-type02"></i>추가
+                                    </button>
                                 </div>
+                            </div>
+                            <div className="que-info-last">
+                                <p className="chapter">
+                                    {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
+                                </p>
                             </div>
                         </div>
                     ))}
@@ -146,6 +104,7 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
             ) : (
                 <div style={{
                     display: "flex",
+                    flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
                     height: "60vh",
@@ -153,9 +112,7 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
                     color: "#555",
                     textAlign: "center",
                 }}>
-                    좌측 문제 목록에서&nbsp;&nbsp;
-                    <div className="btn-similar-que btn-default"><i className="similar"></i> 유사문제</div>
-                    &nbsp;&nbsp;버튼을 클릭해 주세요.
+                    <p>해당 난이도의 유사 문제는 존재하지 않습니다.</p>
                 </div>
             )}
         </div>
