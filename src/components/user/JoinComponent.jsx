@@ -1,9 +1,10 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import TextFieldComponent from "../common/TextFieldComponent.jsx";
 import {Box, Stack} from "@mui/material";
 import Button from "@mui/material/Button";
 import {postJoin} from "../../api/userApi.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
+import {validator} from "../../util/validator.js";
 
 const initState = {
   email: '',
@@ -22,6 +23,12 @@ function JoinComponent() {
   }
 
   const handleClickJoin = () => {
+    const validatorResult = validator('join',user)
+    if (!validatorResult.isValid){
+      alert(validatorResult.errors)
+      return
+    }
+
     postJoin(user).then(data => {
       console.log(`가입 성공: `)
       console.log(data)
@@ -32,6 +39,7 @@ function JoinComponent() {
       console.log('가입 에러', err)
     })
   }
+
 
   return (
       <Box
