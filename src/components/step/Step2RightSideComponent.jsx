@@ -2,9 +2,9 @@ import React, {useState} from "react";
 import {DragDropContext} from "react-beautiful-dnd";
 import CommonResource from "../../util/CommonResource.jsx";
 import ExamSummaryComponent from "../common/ExamSummaryComponent.jsx";
-import Step2SimilarItems from "./Step2SimilarItems.jsx";
+import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent.jsx";
 
-export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimilar, questionIndex}) {
+export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimilar, questionIndex, similarItems}) {
     const [activeTab, setActiveTab] = useState("summary");
     const [selectedItemId, setSelectedItemId] = useState(null);
 
@@ -47,8 +47,8 @@ export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimi
                     {activeTab === "summary" ? (
                         <ExamSummaryComponent itemList={itemList} groupedItems={groupByPassage(itemList)}/>
                     ) : (
-                        <Step2SimilarItems
-                            items={itemList}
+                        <Step2SimilarItemsComponent
+                            items={similarItems}
                             onBack={() => setActiveTab("summary")}
                             questionNumber={questionIndex}
                         />
