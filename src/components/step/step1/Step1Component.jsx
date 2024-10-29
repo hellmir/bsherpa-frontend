@@ -150,6 +150,7 @@ const extractCheckedNodesData = (checkedNodes, hierarchyData) => {
 };
 
 // DynamicAccordionItem 컴포넌트
+// DynamicAccordionItem 컴포넌트 수정
 const DynamicAccordionItem = ({
                                 title,
                                 id,
@@ -159,7 +160,8 @@ const DynamicAccordionItem = ({
                                 onToggle,
                                 onCheckChange,
                                 children,
-                                depth = 0
+                                depth = 0,
+                                itemCount // 추가된 prop
                               }) => {
   const checkboxRef = React.useRef();
 
@@ -168,6 +170,9 @@ const DynamicAccordionItem = ({
       checkboxRef.current.indeterminate = isIndeterminate;
     }
   }, [isIndeterminate]);
+
+  // 소단원인지 확인 (id가 3자리 숫자인 경우)
+  const isSmallChapter = id.replace('node-', '').length === 3;
 
   return (
       <div className={`check-group title ${isActive ? 'on' : ''}`}>
@@ -186,15 +191,20 @@ const DynamicAccordionItem = ({
               onChange={onCheckChange}
               className="que-allCheck depth01"
           />
-          <label htmlFor={id} style={{ width: '100%' }}>
+          <label htmlFor={id} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button
                 type="button"
                 className={`dep-btn ${isActive ? 'active' : ''}`}
                 onClick={onToggle}
-                style={{ textAlign: 'left', width: '100%' }}
+                style={{ textAlign: 'left' }}
             >
               {title}
             </button>
+            {isSmallChapter && itemCount !== undefined && (
+                <span className="ml-2 px-2 py-1 bg-gray-100 rounded-full text-sm text-gray-600">
+                  {itemCount}
+                </span>
+            )}
           </label>
         </div>
         {children && (
@@ -209,7 +219,7 @@ const DynamicAccordionItem = ({
   );
 };
 
-// RenderHierarchy 컴포넌트
+// RenderHierarchy 컴포넌트 수정
 const RenderHierarchy = ({
                            data,
                            activeNodes,
@@ -217,11 +227,16 @@ const RenderHierarchy = ({
                            onToggle,
                            onCheckChange,
                            depth = 0,
-                           hierarchyData
+                           hierarchyData,
+                           countsData = [] // 추가된 prop
                          }) => {
   return Object.entries(data).map(([key, value]) => {
     const hasChildren = Object.keys(value.children || {}).length > 0;
     const nodeId = `node-${value.id}`;
+
+    // 소단원인 경우 itemCount 찾기
+    const isSmallChapter = value.id.toString().length === 3;
+    const itemCount = isSmallChapter ? countsData[value.id] : undefined;
 
     const childNodeIds = hasChildren ? getAllChildNodeIds(value) : [];
     const checkedChildCount = childNodeIds.filter(id => checkedNodes.includes(id)).length;
@@ -284,6 +299,7 @@ const RenderHierarchy = ({
               onCheckChange(newCheckedNodes);
             }}
             depth={depth}
+            itemCount={itemCount}
         >
           {hasChildren && (
               <RenderHierarchy
@@ -294,6 +310,7 @@ const RenderHierarchy = ({
                   onCheckChange={onCheckChange}
                   depth={depth + 1}
                   hierarchyData={hierarchyData}
+                  countsData={countsData}
               />
           )}
         </DynamicAccordionItem>
@@ -313,6 +330,15 @@ const Step1Component = () => {
   const {moveToStepWithData} = useCustomMove();
   const bookId = useLocation().state.data;
   const [evaluation, setEvaluation] = useState({});
+  const [curriculumCode, setCurriculumCode] = useState('');
+  const [subjectId, setSubjectId] = useState('');
+  const [largeChapterId, setLargeChapterId] = useState('');
+  const [mediumChapterId, setMediumChapterId] = useState('');
+  const [smallChapterId, setSmallChapterId] = useState('');
+  const [countsData, setCountsData] = useState([]);
+  const [chapterList, setChapterList] = useState([]);
+
+  // CSS 스타일시트 로딩
   useEffect(() => {
     const commonLink = document.createElement("link");
     commonLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/common.css";
@@ -335,40 +361,71 @@ const Step1Component = () => {
       document.head.removeChild(resetLink);
     };
   }, []);
-  const [countsData, setCountsData] = useState([]); // 배열을 저장할 상태
-  const [chapterList, setChapterList] = useState([]);
 
-  useEffect(()=>{
+  // 평가 데이터 로드
+  useEffect(() => {
     axios.get(`http://localhost:8080/books/external/evaluations?subjectId=${bookId}`)
-        .then((response) =>{
-
-
-
-          console.log('evaluation2233 '+response.data.evaluationList)
-          setEvaluation(response.data.evaluationList)
-          console.log('evaluation2223232' +JSON.stringify(evaluation))
-
+        .then((response) => {
+          console.log('Evaluation Response:', response.data);
+          if (response.data.evaluationList) {
+            setEvaluation(response.data.evaluationList);
+          }
         })
-  })
+        .catch((error) => {
+          console.error('Error loading evaluation:', error);
+        });
+  }, [bookId]);
 
-
-
-
-
-
+  // 챕터 데이터 로드
   useEffect(() => {
     axios.post(`http://localhost:8080/step1/chapters/${bookId}`)
         .then((response) => {
+          console.log('Chapter Response:', response.data);
           const transformed = transformData(response.data.chapterList);
+
+          // 챕터 데이터 설정
+          if (response.data.chapterList?.[0]) {
+            setCurriculumCode(response.data.chapterList[0].curriculumCode || '');
+            setSubjectId(response.data.chapterList[0].subjectId || '');
+            setLargeChapterId(response.data.chapterList[0].largeChapterId || '');
+            setMediumChapterId(response.data.chapterList[0].mediumChapterId || '');
+            setSmallChapterId(response.data.chapterList[0].smallChapterId || '');
+          }
+
           setHierarchyData(transformed);
+          setChapterList(response.data.chapterList);
         })
         .catch((error) => {
-          console.error('Error:', error);
+          console.error('Error loading chapters:', error);
         });
-  }, []);
+  }, [bookId]);
 
+  // 카운트 데이터 로드
+  useEffect(() => {
+    if (!curriculumCode || !subjectId || !largeChapterId || !mediumChapterId || !smallChapterId) {
+      console.log('Waiting for all required fields...');
+      return;
+    }
 
+    const requestData = {
+      curriculumCode: String(curriculumCode),
+      subjectId: String(subjectId),
+      largeChapterId: String(largeChapterId),
+      mediumChapterId: String(mediumChapterId),
+      smallChapterId: String(smallChapterId)
+    };
 
+    console.log('Sending counts request with data:', requestData);
+    axios.post('https://bsherpa.duckdns.org/questions/external/counts', requestData)
+        .then((response) => {
+          const itemCounts = response.data.listTopicItemCount.map(item => item.itemCount);
+          console.log('Extracted itemCounts:', itemCounts);
+          setCountsData(itemCounts);
+        })
+        .catch((error) => {
+          console.error('Error loading counts:', error);
+        });
+  }, [curriculumCode, subjectId, largeChapterId, mediumChapterId, smallChapterId]);
 
   const handleToggle = (nodeId) => {
     setActiveNodes(prev =>
@@ -380,12 +437,7 @@ const Step1Component = () => {
 
   const handleCheckChange = (newCheckedNodes) => {
     setCheckedNodes(newCheckedNodes);
-
-    // 체크된 노드들의 실제 데이터 추출
-    const checkedData = extractCheckedNodesData(newCheckedNodes, hierarchyData);
-
-    console.log('Checked Node IDs:', newCheckedNodes);
-    console.log('Checked Node Data:', checkedData);
+    console.log('Updated checked nodes:', newCheckedNodes);
   };
 
   const handleRangeButtonClick = (value) => {
@@ -420,11 +472,7 @@ const Step1Component = () => {
     setSource(prev => prev === sourceType ? '' : sourceType);
   };
 
-
-
   const submitToStep2 = () => {
-
-    // 현재 상태 값들을 직접 사용
     const currentSubmitData = {
       range: range,
       selectedSteps: selectedSteps,
@@ -433,15 +481,12 @@ const Step1Component = () => {
       source: source,
       bookId,
       checkedNodes
-
     };
 
-    // 로그 확인
-    console.log('Current Submit Data:', currentSubmitData);
-
-    // moveToStepWithData에 현재 데이터를 직접 전달
+    console.log('Submitting data to Step 2:', currentSubmitData);
     moveToStepWithData('step2', currentSubmitData);
   };
+
 
   return (
       <div id="wrap" className="full-pop-que">

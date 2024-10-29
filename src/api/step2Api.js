@@ -2,7 +2,7 @@ import axios from "axios";
 import {BOOK, EXTERNAL, QUESTION_IMAGE} from "./config.js";
 
 export const getBookFromTsherpa = async (bookId) => {
-    return (await axios.get(`${BOOK}/${EXTERNAL}`, {params: {subjectId: bookId}})).data;
+    return (await axios.get(`${BOOK}/${EXTERNAL}`, {pams: {subjectId: bookId}})).data;
 }
 
 export const getEvaluationsFromTsherpa = async (bookId) => {
