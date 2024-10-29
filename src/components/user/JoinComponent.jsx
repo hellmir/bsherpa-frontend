@@ -5,6 +5,7 @@ import Button from "@mui/material/Button";
 import {postJoin} from "../../api/userApi.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import {validator} from "../../util/validator.js";
+import ModalComponent from "../common/ModalComponent.jsx";
 
 const initState = {
   email: '',
@@ -16,6 +17,8 @@ function JoinComponent() {
 
   const [user, setUser] = useState(initState)
   const {moveToPath} = useCustomMove()
+  const [result, setResult] = useState(null)
+  const [open, setOpen] = useState(false)
 
   const handleChange = (e) => {
     user[e.target.name] = e.target.value
@@ -25,10 +28,10 @@ function JoinComponent() {
   const handleClickJoin = () => {
     const validatorResult = validator('join',user)
     if (!validatorResult.isValid){
-      alert(validatorResult.errors)
+      setResult(validatorResult.errors)
+      setOpen(true)
       return
     }
-
     postJoin(user).then(data => {
       console.log(`가입 성공: `)
       console.log(data)
@@ -40,8 +43,22 @@ function JoinComponent() {
     })
   }
 
+  const handleClickCloseModal = () => {
+    setOpen(false)
+    setResult(null)
+  }
 
   return (
+      <>{result?
+        <ModalComponent
+        title={'잘못된 입력입니다'}
+        content={result}
+        handleClose={handleClickCloseModal}
+        open={open}
+        />
+        :
+          <></>
+      }
       <Box
           component="main"
           sx={{
@@ -89,6 +106,7 @@ function JoinComponent() {
           </Stack>
         </Box>
       </Box>
+      </>
   );
 }
 
