@@ -1,50 +1,106 @@
 import React, {useEffect, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
-import {useQuery} from "@tanstack/react-query";
-import {getEvaluationsFromTsherpa, getItemImagesFromTsherpa} from "../../api/step2Api.js";
-import {useLocation} from "react-router-dom";
+import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
+import {
+    getBookFromTsherpa,
+    getChapterItemImagesFromTsherpa,
+    getEvaluationsFromTsherpa,
+    getExamItemImagesFromTsherpa
+} from "../../api/step2Api.js";
+import useCustomMove from "../../hooks/useCustomMove.jsx";
+import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
+import Button from "@mui/material/Button";
+import ConfirmationModal from "../common/ConfirmationModal.jsx";
+import "../../assets/css/confirmationModal.css";
+import "../../assets/css/comboBox.css";
+import {setExamData} from "../../slices/examDataSlice.js";
+import {useDispatch, useSelector} from "react-redux";
+import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
+import ModalComponent from "../common/ModalComponent.jsx";
+import DifficultyCountComponent from "../common/DifficultyCountComponent.jsx";
+import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
 
 export default function Step2Component() {
+    const dispatch = useDispatch();
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
     const [selectedSortOption, setSelectedSortOption] = useState("단원순");
-    const bookId = 1154;
-    const locationState = useLocation().state;
-    useEffect(() => {
-        // 1. Object.keys()를 사용한 방법
-        Object.keys(locationState).forEach(key => {
-            console.log(`keykey${key}:`, locationState[key]);
-        });
+    const [groupedItems, setGroupedItems] = useState([]);
+    const [itemList, setItemList] = useState([]);
+    const [tempItemList, setTempItemList] = useState([]);
+    const [difficultyCounts, setDifficultyCounts] = useState([
+        {level: "최하", count: 0},
+        {level: "하", count: 0},
+        {level: "중", count: 0},
+        {level: "상", count: 0},
+        {level: "최상", count: 0}
+    ]);
+    const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [isSorted, setIsSorted] = useState(false);
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleOpenModal = () => setIsModalOpen(true);
+    const handleCloseModal = () => setIsModalOpen(false);
+
+    const bookId = useSelector((state) => state.bookIdSlice);
+    console.log(`교재 ID: ${bookId}`)
+
+    const {moveToStepWithData, moveToPath} = useCustomMove();
+
+    const {data: bookData} = useQuery({
+        queryKey: ['bookData', bookId],
+        queryFn: () => getBookFromTsherpa(bookId),
+        staleTime: 1000 * 3,
+        enabled: !!bookId
+    });
+    console.log('교재 정보: ', bookData)
+
+    const subjectName = bookData?.subjectInfoList?.[0]?.subjectName?.split('(')[0] || "과목명 없음";
+    const author = bookData?.subjectInfoList?.[0]?.subjectName?.match(/\(([^)]+)\)/)?.[1] || "저자 정보 없음";
+    const curriculumYear = bookData?.subjectInfoList?.[0]?.curriculumName || "년도 정보 없음";
+
+    const examIdList = useSelector((state) => state.examIdSlice);
+    const questionQueries = useQueries({
+        queries: examIdList?.length
+            ? examIdList.map((examId) => ({
+                queryKey: ["questionData", examId],
+                queryFn: () => getExamItemImagesFromTsherpa(examId),
+                staleTime: 1000 * 3,
+            }))
+            : [],
     });
 
-// TODO: Step0으로부터 교재 ID 정보 받아서 연동
+    const questionsDataFromExams = questionQueries
+        .filter((query) => query.isSuccess)
+        .map((query) => query.data.itemList);
+
     const {data: evaluationsData} = useQuery({
-        queryKey: [],
+        queryKey: ['evaluationsData', bookId],
         queryFn: () => getEvaluationsFromTsherpa(bookId),
         staleTime: 1000 * 3
     })
-    console.log(evaluationsData)
+    console.log('평가 영역 데이터: ', evaluationsData)
 
-    const activityCategoryList = Array.isArray(evaluationsData?.evaluationList)
-        ? evaluationsData.evaluationList.map(evaluation => evaluation?.domainId)
+    const activityCategoryList = evaluationsData
+        ? evaluationsData.evaluationList.map(evaluation => evaluation.domainId)
         : [];
 
-    console.log(activityCategoryList)
+    console.log(`평가 영역 목록: ${activityCategoryList}`)
 
     // TODO: Step1으로부터 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
     const itemsRequestForm = evaluationsData
         ? {
             activityCategoryList: activityCategoryList,
-            levelCnt: [5, 5, 5, 5, 5],
+            levelCnt: [1, 1, 1, 1, 1],
             minorClassification: [
                 {
                     large: 115401,
                     medium: 11540101,
                     small: 1154010101,
-                    subject: 1154,
-                    topic: 115401010101
+                    subject: 1154
                 }
             ],
             questionForm: "multiple,subjective"
@@ -53,11 +109,47 @@ export default function Step2Component() {
     console.log(itemsRequestForm);
 
     const {data: questionsData, isLoading, error} = useQuery({
-        queryKey: ['getChapterItemsRequest', itemsRequestForm],
-        queryFn: () => getItemImagesFromTsherpa(itemsRequestForm),
-        enabled: !!itemsRequestForm,
-        staleTime: 1000 * 3
+        queryKey: ["getChapterItemsRequest", itemsRequestForm],
+        queryFn: () => getChapterItemImagesFromTsherpa(itemsRequestForm),
+        enabled: !examIdList?.length && !!itemsRequestForm,
+        staleTime: 1000 * 3,
     });
+
+    const fetchQuestions = useMutation({
+        mutationFn: (form) => getChapterItemImagesFromTsherpa(form),
+        onSuccess: (data) => {
+            const newTempItemList = [...data.data.itemList];
+            const counts = [
+                {level: "최하", count: 0},
+                {level: "하", count: 0},
+                {level: "중", count: 0},
+                {level: "상", count: 0},
+                {level: "최상", count: 0}
+            ];
+            newTempItemList.forEach(item => {
+                const difficulty = counts.find(d => d.level === item.difficultyName);
+                if (difficulty) difficulty.count += 1;
+            });
+
+            setTempItemList(newTempItemList);
+            setTempDifficultyCounts(counts);
+
+            console.log('새로 받아 온 문제 목록: ', data.data.itemList);
+            console.log('새로 받아 온 난이도 별 문제 수: ', counts);
+
+            setIsConfirmOpen(true);
+        },
+        onError: (error) => {
+            console.error("문항 재검색 실패: ", error);
+        }
+    });
+
+    useEffect(() => {
+        if (!isSorted && groupedItems.length > 0) {
+            sortGroupedItems();
+            setIsSorted(true);
+        }
+    }, [groupedItems]);
 
     useEffect(() => {
         if (!isLoading && questionsData) {
@@ -70,11 +162,131 @@ export default function Step2Component() {
     }, [isProblemOptionsOpen]);
 
     useEffect(() => {
-        if (questionsData) {
+        if (examIdList?.length && questionsDataFromExams.length > 0 && itemList.length === 0) {
+            const combinedData = {data: {itemList: questionsDataFromExams.flat()}};
+            console.log("questionsData 전체 구조:", combinedData);
+            console.log("questionsData.data.itemList 확인:", combinedData.data.itemList);
+
+            setItemList(combinedData.data.itemList);
+            setTempItemList(combinedData.data.itemList);
+            organizeItems(combinedData.data.itemList);
+        }
+    }, [questionsDataFromExams]);
+
+    useEffect(() => {
+        if (questionsData?.data?.itemList && itemList.length === 0) {
             console.log("questionsData 전체 구조:", questionsData);
             console.log("questionsData.data.itemList 확인:", questionsData.data.itemList);
+
+            setItemList(questionsData.data.itemList);
+            setTempItemList(questionsData.data.itemList);
+            organizeItems(questionsData.data.itemList);
         }
     }, [questionsData]);
+
+
+    const organizeItems = (items) => {
+        const passageGroups = items.reduce((acc, item) => {
+            const passageId = item.passageId || "noPassage";
+            if (!acc[passageId]) {
+                acc[passageId] = {passageId, passageUrl: item.passageUrl, items: []};
+            }
+            acc[passageId].items.push(item);
+            return acc;
+        }, {});
+
+        const groupedArray = Object.values(passageGroups).map(group => {
+            group.items.sort((a, b) => a.itemNo - b.itemNo);
+            return group;
+        });
+
+        groupedArray.sort((a, b) => {
+            const firstItemA = a.items[0].itemNo;
+            const firstItemB = b.items[0].itemNo;
+            return firstItemA - firstItemB;
+        });
+
+        setGroupedItems(groupedArray);
+        setIsSorted(false);
+    };
+
+    useEffect(() => {
+        const counts = [
+            {level: "최하", count: 0},
+            {level: "하", count: 0},
+            {level: "중", count: 0},
+            {level: "상", count: 0},
+            {level: "최상", count: 0}
+        ];
+        itemList.forEach(item => {
+            const difficulty = counts.find(d => d.level === item.difficultyName);
+            if (difficulty) difficulty.count += 1;
+        });
+        setDifficultyCounts(counts.filter(c => c.count > 0));
+    }, [itemList]);
+    console.log('난이도 별 문제 수: ', difficultyCounts);
+
+    useEffect(() => {
+        sortGroupedItems();
+    }, [selectedSortOption]);
+
+    const sortGroupedItems = () => {
+        const sortedGroups = groupedItems.map(group => {
+            const sortedItems = [...group.items];
+
+            if (selectedSortOption === "단원순") {
+                sortedItems.sort((a, b) =>
+                    a.largeChapterId - b.largeChapterId ||
+                    a.mediumChapterId - b.mediumChapterId ||
+                    a.smallChapterId - b.smallChapterId ||
+                    a.topicChapterId - b.topicChapterId
+                );
+            } else if (selectedSortOption === "난이도순") {
+                const difficultyOrder = ["최하", "하", "중", "상", "최상"];
+                sortedItems.sort((a, b) =>
+                    difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
+                );
+            } else if (selectedSortOption === "문제 형태순") {
+                sortedItems.sort((a, b) =>
+                    (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
+                );
+            }
+
+            return {...group, items: sortedItems};
+        });
+
+        setGroupedItems(sortedGroups);
+
+        const newSortedItemList = sortedGroups.flatMap(group => group.items);
+        setItemList(newSortedItemList);
+    };
+
+    useEffect(() => {
+        console.log("itemList가 업데이트되었습니다: ", itemList);
+    }, [itemList]);
+
+    const totalQuestions = itemList.length;
+
+    const [forceRender, setForceRender] = useState(false);
+
+    const handleReSearchClick = () => {
+        if (itemsRequestForm) {
+            fetchQuestions.mutate(itemsRequestForm, {
+                onSuccess: () => {
+                    setForceRender(!forceRender);
+                }
+            });
+        } else {
+            console.warn("itemsRequestForm 값이 존재하지 않습니다.");
+        }
+    };
+
+    const handleConfirm = () => {
+        setItemList([...tempItemList]);
+        setDifficultyCounts([...tempDifficultyCounts]);
+        setIsConfirmOpen(false);
+        organizeItems(tempItemList);
+    };
 
     if (isLoading) {
         return <div>데이터 로드 중...</div>;
@@ -86,7 +298,7 @@ export default function Step2Component() {
 
     const toggleProblemOptions = () => {
         setIsProblemOptionsOpen(!isProblemOptionsOpen);
-        console.log("Problem options open:", !isProblemOptionsOpen);
+        console.log("Step2RightSideComponent options open:", !isProblemOptionsOpen);
     };
 
     const toggleSortOptions = () => {
@@ -104,9 +316,112 @@ export default function Step2Component() {
         setIsSortOptionsOpen(false);
     };
 
+    const handleClickMoveToStepOne = () => {
+        console.log('STEP 1 단원 선택');
+        moveToPath('../step1')
+    };
+
+    const handleClickMoveToStepThree = () => {
+        console.log(`STEP 3 시험지 저장 : ${bookId, totalQuestions, itemList}`);
+        dispatch(setExamData({bookId, totalQuestions, groupedItems}));
+        moveToStepWithData('step3', {bookId, groupedItems});
+    };
+
+    const handleDragEnd = (result) => {
+        const {destination, source, type} = result;
+
+        if (!destination) return;
+
+        const updatedGroups = JSON.parse(JSON.stringify(groupedItems));
+
+        if (type === "PASSAGE_GROUP") {
+            const [movedGroup] = updatedGroups.splice(source.index, 1);
+            updatedGroups.splice(destination.index, 0, movedGroup);
+
+            setGroupedItems(updatedGroups);
+
+            const newSortedItemList = updatedGroups.flatMap(group => group.items);
+            setItemList(newSortedItemList);
+
+            console.log(`지문을 ${source.index}에서 ${destination.index}로 이동`);
+        } else if (type === "ITEM") {
+            const sourcePassageId = source.droppableId;
+            const destinationPassageId = destination.droppableId;
+            console.log(sourcePassageId, destinationPassageId, 'asdlfjads');
+
+            const sourcePassageIdNumber = Number(sourcePassageId);
+            const destinationPassageIdNumber = Number(destinationPassageId);
+
+            console.log(`sourcePassageId: ${sourcePassageIdNumber}, destinationPassageId: ${destinationPassageIdNumber}`);
+            console.log('현재 groupedItems:', updatedGroups.map(group => group.passageId));
+
+            if (sourcePassageId !== destinationPassageId && sourcePassageId !== "noPassage" && destinationPassageId !== "noPassage") {
+                console.log('다른 지문으로 이동할 수 없습니다.');
+                handleOpenModal();
+                return;
+            }
+
+            console.log(`문항을 ${source.index}에서 ${destination.index}로 이동`);
+
+            const groupIndex = updatedGroups.findIndex(group => {
+                if (typeof group.passageId === "string" && group.passageId === sourcePassageId) {
+                    return true;
+                }
+                if (typeof group.passageId === "number" && group.passageId === sourcePassageIdNumber) {
+                    return true;
+                }
+                return false;
+            });
+            if (groupIndex === -1) {
+                console.error('해당 지문 그룹을 찾을 수 없습니다.');
+                return;
+            }
+
+            const group = updatedGroups[groupIndex];
+
+            const itemIndexInGroup = source.index - itemList.findIndex(item => item.passageId === sourcePassageIdNumber);
+
+            if (itemIndexInGroup < 0 || itemIndexInGroup >= group.items.length) {
+                console.error('item 인덱스가 존재하지 않습니다.');
+                return;
+            }
+
+            const [movedItem] = group.items.splice(itemIndexInGroup, 1);
+
+            if (!movedItem || !movedItem.itemId) {
+                console.error(`movedItem이 올바르지 않거나 itemId가 존재하지 않습니다: `, movedItem);
+                return;
+            }
+
+            const destinationIndexInGroup = destination.index - itemList.findIndex(item => item.passageId === destinationPassageIdNumber);
+
+            group.items.splice(destinationIndexInGroup, 0, movedItem);
+
+            setGroupedItems(updatedGroups);
+
+            const newSortedItemList = updatedGroups.flatMap(group => group.items);
+            setItemList(newSortedItemList);
+        }
+    };
+
     return (
         <>
             <CommonResource/>
+            {isConfirmOpen && (
+                <ConfirmationModal
+                    title="문항 재검색"
+                    message="문항 구성이 자동으로 변경됩니다."
+                    details={tempDifficultyCounts.filter(count => count.count > 0)}
+                    onCancel={() => setIsConfirmOpen(false)}
+                    onConfirm={handleConfirm}
+                />
+            )}
+            <ModalComponent
+                title="이동 불가"
+                content="다른 지문으로 이동할 수 없습니다."
+                handleClose={handleCloseModal}
+                open={isModalOpen}
+            />
             <div id="wrap" className="full-pop-que">
                 <div className="full-pop-wrap">
                     <div className="pop-header">
@@ -121,9 +436,13 @@ export default function Step2Component() {
                         <div className="view-box">
                             <div className="view-top">
                                 <div className="paper-info">
-                                    <span>수학 1</span> 이준열(2015)
+                                    <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                <button className="btn-default btn-research"><i className="research"></i>재검색</button>
+                                {!examIdList.length && (
+                                    <button className="btn-default btn-research" onClick={handleReSearchClick}>
+                                        <i className="research"></i>재검색
+                                    </button>
+                                )}
                                 <button className="btn-default pop-btn" data-pop="que-scope-pop">출제범위</button>
                             </div>
                             <div className="view-bottom type01">
@@ -142,19 +461,19 @@ export default function Step2Component() {
                                                 {isProblemOptionsOpen && (
                                                     <ul className="select-list open">
                                                         <li>
-                                                            <span onClick={() => handleOptionSelect("문제만 보기")}>
-                                                                문제만 보기
-                                                            </span>
+                <span onClick={() => handleOptionSelect("문제만 보기")}>
+                    문제만 보기
+                </span>
                                                         </li>
                                                         <li>
-                                                            <span onClick={() => handleOptionSelect("문제+정답 보기")}>
-                                                                문제+정답 보기
-                                                            </span>
+                <span onClick={() => handleOptionSelect("문제+정답 보기")}>
+                    문제+정답 보기
+                </span>
                                                         </li>
                                                         <li>
-                                                            <span onClick={() => handleOptionSelect("문제+해설+정답 보기")}>
-                                                                문제+해설+정답 보기
-                                                            </span>
+                <span onClick={() => handleOptionSelect("문제+정답+해설 보기")}>
+                    문제+정답+해설 보기
+                </span>
                                                         </li>
                                                     </ul>
                                                 )}
@@ -169,6 +488,11 @@ export default function Step2Component() {
                                                 </button>
                                                 {isSortOptionsOpen && (
                                                     <ul className="select-list open">
+                                                        <li>
+                                                            <span onClick={() => handleSortOptionSelect("사용자 정렬")}>
+                                                                사용자 정렬
+                                                            </span>
+                                                        </li>
                                                         <li>
                                                             <span onClick={() => handleSortOptionSelect("단원순")}>
                                                                 단원순
@@ -190,100 +514,183 @@ export default function Step2Component() {
                                         </div>
                                     </div>
                                     <div className="view-que-list scroll-inner">
-                                        {questionsData?.data?.itemList?.length > 0 ? (
-                                            questionsData.data.itemList.map((item, index) => (
-                                                <div key={index} className="view-que-box">
-                                                    <div className="que-top">
-                                                        <div className="title">
-                                                            <span className="num">{index + 1}</span>
-                                                            <div className="que-badge-group">
-                                                                <span className="que-badge yellow">상</span>
-                                                                <span className="que-badge gray">주관식</span>
+                                        {groupedItems.length > 0 ? (
+                                            groupedItems.map((group, groupIndex) => (
+                                                <div key={`group-${group.passageId}-${groupIndex}`}
+                                                     className="passage-group">
+                                                    {group.passageId !== "noPassage" && (
+                                                        <div className="passage-group-wrapper" style={{
+                                                            border: "1px solid #ddd",
+                                                            padding: "20px",
+                                                            borderRadius: "8px",
+                                                            marginBottom: "20px",
+                                                            position: "relative"
+                                                        }}>
+                                                            <div className="passage-group-header" style={{
+                                                                display: "flex",
+                                                                justifyContent: "space-between",
+                                                                alignItems: "flex-start",
+                                                                borderBottom: "1px solid #ddd",
+                                                                paddingBottom: "5px",
+                                                                marginBottom: "10px"
+                                                            }}>
+    <span style={{fontSize: "18px", fontWeight: "bold", marginTop: "-10px"}}>
+    {itemList.indexOf(group.items[0]) + 1} ~ {itemList.indexOf(group.items[group.items.length - 1]) + 1}
+</span>
+                                                            </div>
+
+                                                            <button type="button" className="btn-delete-2" style={{
+                                                                position: "absolute",
+                                                                right: "40px",
+                                                                top: "10px",
+                                                                zIndex: "2",
+                                                                width: "22px",
+                                                                height: "22px",
+                                                                fontSize: "16px"
+                                                            }}></button>
+                                                            <div className="passage" style={{
+                                                                border: "1px solid #ccc",
+                                                                borderRadius: "8px",
+                                                                padding: "10px"
+                                                            }}>
+                                                                <img src={group.passageUrl} alt="지문 이미지"
+                                                                     style={{width: "100%"}}/>
                                                             </div>
                                                         </div>
-                                                        <div className="btn-wrap">
-                                                            <button type="button" className="btn-error pop-btn"
-                                                                    data-pop="error-report-pop"></button>
-                                                            <button type="button" className="btn-delete"></button>
-                                                        </div>
-                                                    </div>
-                                                    <div className="view-que">
-                                                        <div className="que-content">
-                                                            {item.questionUrl ? (
-                                                                <img src={item.questionUrl} alt="문제 이미지"/>
-                                                            ) : (
-                                                                <p className="txt">문제 텍스트 없음</p>
-                                                            )}
-                                                        </div>
-                                                        <div className="que-bottom">
-                                                            <div className="data-area">
-                                                                <div className="que-info">
-                                                                    <p className="answer"><span
-                                                                        className="label">해설</span></p>
-                                                                    <div className="data-answer-area">
-                                                                        <div className="paragraph"
-                                                                             style={{textAlign: "justify"}}>
-                                                                            <span
-                                                                                className="txt">해설 텍스트가 나오는 영역입니다.</span>
+                                                    )}
+                                                    {group.items.map((item, index) => (
+                                                        <div key={`item-${item.itemId}-${index}`}
+                                                             id={`question-${item.itemId}`}
+                                                             className="view-que-box"
+                                                             style={{marginTop: "10px"}}>
+                                                            <div className="que-top">
+                                                                <div className="title">
+                                                                    <span
+                                                                        className="num">{itemList.indexOf(item) + 1}</span>
+                                                                    <div className="que-badge-group">
+                                    <span className={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
+                                        {item.difficultyName}
+                                    </span>
+                                                                        <span className="que-badge gray">
+                                        {item.questionFormCode <= 50 ? "객관식" : "주관식"}
+                                    </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="btn-wrap">
+                                                                    <button type="button"
+                                                                            className="btn-error pop-btn"
+                                                                            data-pop="error-report-pop"></button>
+                                                                    <button type="button"
+                                                                            className="btn-delete"></button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="view-que">
+                                                                <div className="que-content">
+                                                                    {item.questionUrl ? (
+                                                                        <img src={item.questionUrl} alt="문제 이미지"/>
+                                                                    ) : (
+                                                                        <p className="txt">문제 텍스트 없음</p>
+                                                                    )}
+                                                                </div>
+                                                                <div className="que-bottom">
+                                                                    {(selectedOption === "문제+정답 보기" || selectedOption === "문제+정답+해설 보기") && (
+                                                                        <div className="data-area">
+                                                                            <div className="que-info">
+                                                                                <p className="answer">
+                                                                                    <span className="label type01"
+                                                                                          style={{
+                                                                                              display: "block",
+                                                                                              textAlign: "left",
+                                                                                              paddingLeft: "20px"
+                                                                                          }}>정답</span>
+                                                                                </p>
+                                                                                <div className="data-answer-area">
+                                                                                    {item.answerUrl ? (
+                                                                                        <img src={item.answerUrl}
+                                                                                             alt="정답 이미지"/>
+                                                                                    ) : (
+                                                                                        <div className="paragraph"
+                                                                                             style={{textAlign: "justify"}}>
+                                                                                            <span
+                                                                                                className="txt">정답 없음</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
+                                                                    )}
+                                                                    {selectedOption === "문제+정답+해설 보기" && (
+                                                                        <div className="data-area">
+                                                                            <div className="que-info">
+                                                                                <p className="answer">
+                                                                                    <span className="label" style={{
+                                                                                        display: "block",
+                                                                                        textAlign: "left",
+                                                                                        paddingLeft: "20px"
+                                                                                    }}>해설</span>
+                                                                                </p>
+                                                                                <div className="data-answer-area">
+                                                                                    {item.explainUrl ? (
+                                                                                        <img src={item.explainUrl}
+                                                                                             alt="해설 이미지"/>
+                                                                                    ) : (
+                                                                                        <div className="paragraph"
+                                                                                             style={{textAlign: "justify"}}>
+                                                                                            <span
+                                                                                                className="txt">해설 없음</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="data-area type01">
+                                                                        <button type="button"
+                                                                                className="btn-similar-que btn-default">
+                                                                            <i className="similar"></i> 유사 문제
+                                                                        </button>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="data-area type01">
-                                                                <div className="que-info">
-                                                                    <p className="answer"><span
-                                                                        className="label type01">정답</span></p>
-                                                                    <div className="data-answer-area">
-                                                                        <div className="paragraph"
-                                                                             style={{textAlign: "justify"}}>
-                                                                            <span className="txt"> ①</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <button type="button"
-                                                                        className="btn-similar-que btn-default">
-                                                                    <i className="similar"></i> 유사 문제
-                                                                </button>
+                                                            <div className="que-info-last">
+                                                                <p className="chapter">
+                                                                    {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
+                                                                </p>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="que-info-last">
-                                                        <p className="chapter">자연수의
-                                                            성질 &gt; 소인수분해 &gt; 거듭제곱 &gt; 거듭제곱으로표현</p>
-                                                    </div>
+                                                    ))}
                                                 </div>
                                             ))
                                         ) : (
                                             <div>문제가 없습니다.</div>
                                         )}
                                     </div>
-                                    <div className="bottom-box">
-                                        <div className="que-badge-group type01">
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge purple">하</span>
-                                                <span className="num">5</span>
-                                            </div>
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge green">중</span>
-                                                <span className="num">15</span>
-                                            </div>
-                                            <div className="que-badge-wrap">
-                                                <span className="que-badge yellow">상</span>
-                                                <span className="num">25</span>
-                                            </div>
-                                        </div>
-                                        <p className="total-num">총 <span>30</span>문제</p>
-                                    </div>
+                                    <DifficultyCountComponent
+                                        difficultyCounts={difficultyCounts}
+                                        getDifficultyColor={getDifficultyColor}
+                                        totalQuestions={totalQuestions}
+                                    />
                                 </div>
                                 <div className="cnt-box type01">
-                                    {/* 오른쪽의 정답, 해설, 유사 문제 및 삭제 문항 부분 유지 */}
-                                </div>
+                                    <Step2RightSideComponent itemList={itemList} onDragEnd={handleDragEnd}/></div>
                             </div>
                         </div>
                     </div>
                     <div className="step-btn-wrap">
-                        <button type="button" className="btn-step">STEP 1 단원 선택</button>
-                        <button type="button" className="btn-step next">STEP 3 시험지 저장</button>
+                        <Button
+                            variant="contained"
+                            onClick={handleClickMoveToStepOne}
+                            className="btn-step"
+                        >
+                            <BorderColorOutlinedIcon/>STEP 1 단원 선택
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleClickMoveToStepThree}
+                            className="btn-step next"
+                        >
+                            <BorderColorOutlinedIcon/>STEP 3 시험지 저장
+                        </Button>
                     </div>
                 </div>
             </div>
