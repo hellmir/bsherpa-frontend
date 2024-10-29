@@ -45,7 +45,6 @@ export default function Step2Component() {
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
 
-    // TODO: Step0으로부터 시험지 정보 받아서 연동
     const bookId = useSelector((state) => state.bookIdSlice);
     console.log(`교재 ID: ${bookId}`)
 
@@ -323,8 +322,8 @@ export default function Step2Component() {
     };
 
     const handleClickMoveToStepThree = () => {
-        console.log(`STEP 3 시험지 저장 : ${bookId, itemList}`);
-        dispatch(setExamData({bookId, groupedItems}));
+        console.log(`STEP 3 시험지 저장 : ${bookId, totalQuestions, itemList}`);
+        dispatch(setExamData({bookId, totalQuestions, groupedItems}));
         moveToStepWithData('step3', {bookId, groupedItems});
     };
 

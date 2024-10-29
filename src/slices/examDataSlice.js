@@ -2,6 +2,7 @@ import {createSlice} from '@reduxjs/toolkit';
 
 const initialState = {
     bookId: null,
+    totalQuestions: null,
     groupedItems: [],
 };
 
@@ -11,10 +12,12 @@ const examDataSlice = createSlice({
     reducers: {
         setExamData(state, action) {
             state.bookId = action.payload.bookId;
+            state.totalQuestions = action.payload.totalQuestions;
             state.groupedItems = action.payload.groupedItems;
         },
         clearExamData(state) {
             state.bookId = null;
+            state.totalQuestions = null;
             state.groupedItems = [];
         }
     },
