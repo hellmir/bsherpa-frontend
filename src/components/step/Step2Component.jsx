@@ -702,10 +702,11 @@ export default function Step2Component() {
                                 </div>
                                 <div className="cnt-box type01">
                                     <Step2RightSideComponent
-                                        itemList={similarItems}
+                                        itemList={itemList}
                                         onDragEnd={handleDragEnd}
                                         onShowSimilar={(item) => handleSimilarPageToggle(item, itemList.indexOf(item) + 1)}
                                         questionIndex={questionIndex}
+                                        similarItems={similarItems}
                                     />
                                 </div>
                             </div>

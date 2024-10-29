@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
 
-export default function Step2SimilarItems({items, onBack, questionNumber}) {
+export default function Step2SimilarItemsComponent({items, onBack, questionNumber}) {
     const [selectedDifficulty, setSelectedDifficulty] = useState("전체");
 
     const hasPassage = items.some((item) => item.passageId && item.passageUrl);
