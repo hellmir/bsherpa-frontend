@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
 import {
@@ -23,6 +23,8 @@ import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
+    const itemContainerRef = useRef(null);
+
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
@@ -375,15 +377,21 @@ export default function Step2Component() {
         setGroupedItems(updatedGroupedItems);
     };
 
-    const handleClickMoveToStepOne = () => {
-        console.log('STEP 1 단원 선택');
-        moveToPath('../step1')
+    const scrollToNewItem = (newItemId) => {
+        const newItemElement = document.getElementById(`question-${newItemId}`);
+        if (newItemElement) {
+            newItemElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
     };
 
-    const handleClickMoveToStepThree = () => {
-        console.log(`STEP 3 시험지 저장 : ${bookId, totalQuestions, itemList}`);
-        dispatch(setExamData({bookId, totalQuestions, groupedItems}));
-        moveToStepWithData('step3', {bookId, groupedItems});
+    const handleAddItem = (newItem) => {
+        setItemList((prevItemList) => {
+            const updatedItemList = [...prevItemList, newItem];
+            setTimeout(() => {
+                scrollToNewItem(newItem.itemId);
+            }, 0);
+            return updatedItemList;
+        });
     };
 
     const handleDragEnd = (result) => {
@@ -461,6 +469,17 @@ export default function Step2Component() {
             const newSortedItemList = updatedGroups.flatMap(group => group.items);
             setItemList(newSortedItemList);
         }
+    };
+
+    const handleClickMoveToStepOne = () => {
+        console.log('STEP 1 단원 선택');
+        moveToPath('../step1')
+    };
+
+    const handleClickMoveToStepThree = () => {
+        console.log(`STEP 3 시험지 저장 : ${bookId, totalQuestions, itemList}`);
+        dispatch(setExamData({bookId, totalQuestions, groupedItems}));
+        moveToStepWithData('step3', {bookId, groupedItems});
     };
 
     return (
@@ -753,6 +772,7 @@ export default function Step2Component() {
                                         questionIndex={questionIndex}
                                         similarItems={similarItems}
                                         deletedItems={deletedItems}
+                                        onAddItem={handleAddItem}
                                     />
                                 </div>
                             </div>
