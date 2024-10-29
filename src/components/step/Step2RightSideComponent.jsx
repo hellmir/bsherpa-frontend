@@ -5,7 +5,15 @@ import ExamSummaryComponent from "../common/ExamSummaryComponent.jsx";
 import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent.jsx";
 import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent.jsx";
 
-export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimilar, questionIndex, similarItems, deletedItems}) {
+export default function Step2RightSideComponent({
+                                                    itemList,
+                                                    onDragEnd,
+                                                    onShowSimilar,
+                                                    questionIndex,
+                                                    similarItems,
+                                                    deletedItems,
+                                                    onAddItem
+                                                }) {
     const [activeTab, setActiveTab] = useState("summary");
     const [selectedItemId, setSelectedItemId] = useState(null);
 
@@ -46,19 +54,21 @@ export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimi
                     </ul>
 
                     {activeTab === "summary" && (
-                        <ExamSummaryComponent itemList={itemList} groupedItems={groupByPassage(itemList)} />
+                        <ExamSummaryComponent itemList={itemList} groupedItems={groupByPassage(itemList)}/>
                     )}
                     {activeTab === "similar" && (
                         <Step2SimilarItemsComponent
                             items={similarItems}
                             onBack={() => setActiveTab("summary")}
                             questionNumber={questionIndex}
+                            onAddItem={onAddItem}
                         />
                     )}
                     {activeTab === "deleted" && (
                         <Step2DeletedItemsComponent
                             deletedItems={deletedItems}
                             onBack={() => setActiveTab("summary")}
+                            onRestoreItem={onAddItem}
                         />
                     )}
                 </div>

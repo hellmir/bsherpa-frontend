@@ -1,7 +1,7 @@
 import React from "react";
 import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
 
-export default function DeletedItemsComponent({deletedItems, onBack}) {
+export default function DeletedItemsComponent({deletedItems, onBack, onRestoreItem}) {
     return (
         <div className="deleted-items-container" style={{
             height: "100%",
@@ -26,6 +26,11 @@ export default function DeletedItemsComponent({deletedItems, onBack}) {
                                         </span>
                                     </div>
                                 </div>
+                                <div className="btn-wrap">
+                                    <button type="button"
+                                            className="btn-error pop-btn"
+                                            data-pop="error-report-pop"></button>
+                                </div>
                             </div>
                             <div className="view-que">
                                 <div className="que-content">
@@ -34,6 +39,18 @@ export default function DeletedItemsComponent({deletedItems, onBack}) {
                                     ) : (
                                         <p className="txt">문제 텍스트 없음</p>
                                     )}
+                                </div>
+                            </div>
+                            <div className="que-bottom">
+                                <div className="btn-wrap">
+                                    <button
+                                        type="button"
+                                        className="btn-default"
+                                        style={{fontSize: "16px", padding: "8px 12px"}}
+                                        onClick={() => onRestoreItem(item)}
+                                    >
+                                        <i className="add-type02"></i>추가
+                                    </button>
                                 </div>
                             </div>
                         </div>
