@@ -45,14 +45,21 @@ export default function Step2Component() {
     const [isSimilarPage, setIsSimilarPage] = useState(false);
     const [similarItems, setSimilarItems] = useState([]);
     const [questionIndex, setQuestionIndex] = useState(null);
+    const [noSimilarItemsMessage, setNoSimilarItemsMessage] = useState("");
+    const [isNoSimilarItemsModalOpen, setIsNoSimilarItemsModalOpen] = useState(false);
 
     const fetchSimilarItems = (itemId, questionIndex) => {
         getSimilarItemsImagesFromTsherpa(itemId)
             .then((data) => {
-                setSimilarItems(data.itemList);
-                setIsSimilarPage(true);
-                setQuestionIndex(questionIndex);
-                console.log("유사 문제 목록: ", data.itemList);
+                if (data.itemList.length === 0) {
+                    setNoSimilarItemsMessage("검색된 유사 문제가 없습니다.");
+                    setIsNoSimilarItemsModalOpen(true);
+                } else {
+                    setSimilarItems(data.itemList);
+                    setIsSimilarPage(true);
+                    setQuestionIndex(questionIndex);
+                    console.log("유사 문제 목록: ", data.itemList);
+                }
             })
             .catch((error) => {
                 console.error("유사 문제 가져오기 실패:", error);
@@ -60,7 +67,8 @@ export default function Step2Component() {
     };
 
     const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false);
+    const handleCloseModal = () => setIsModalOpen(false)
+    const handleCloseNoSimilarItemsModal = () => setIsNoSimilarItemsModalOpen(false);
 
     const bookId = useSelector((state) => state.bookIdSlice);
     console.log(`교재 ID: ${bookId}`)
@@ -447,6 +455,12 @@ export default function Step2Component() {
                 content="다른 지문으로 이동할 수 없습니다."
                 handleClose={handleCloseModal}
                 open={isModalOpen}
+            />
+            <ModalComponent
+                title="검색 결과 없음"
+                content={noSimilarItemsMessage}
+                handleClose={handleCloseNoSimilarItemsModal}
+                open={isNoSimilarItemsModalOpen}
             />
             <div id="wrap" className="full-pop-que">
                 <div className="full-pop-wrap">
