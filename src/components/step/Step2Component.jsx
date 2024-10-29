@@ -45,6 +45,7 @@ export default function Step2Component() {
     const [isSimilarPage, setIsSimilarPage] = useState(false);
     const [similarItems, setSimilarItems] = useState([]);
     const [questionIndex, setQuestionIndex] = useState(null);
+    const [deletedItems, setDeletedItems] = useState([]);
     const [noSimilarItemsMessage, setNoSimilarItemsMessage] = useState("");
     const [isNoSimilarItemsModalOpen, setIsNoSimilarItemsModalOpen] = useState(false);
 
@@ -345,9 +346,33 @@ export default function Step2Component() {
         fetchSimilarItems(itemId, questionIndex);
     };
 
-    const handleBackToMainPage = () => {
-        setIsSimilarPage(false);
-        setSimilarItems([]);
+    const handleDeleteItem = (itemId) => {
+        const itemToDelete = itemList.find((item) => item.itemId === itemId);
+        if (itemToDelete) {
+            setDeletedItems((prevDeletedItems) => [...prevDeletedItems, itemToDelete]);
+
+            const updatedItemList = itemList.filter((item) => item.itemId !== itemId);
+            setItemList(updatedItemList);
+
+            const updatedGroupedItems = groupedItems.map((group) => ({
+                ...group,
+                items: group.items.filter((item) => item.itemId !== itemId),
+            })).filter((group) => group.items.length > 0);
+
+            setGroupedItems(updatedGroupedItems);
+        }
+    };
+
+    const handleDeletePassage = (passageId) => {
+        const itemsToDelete = itemList.filter((item) => item.passageId === passageId);
+
+        setDeletedItems((prevDeletedItems) => [...prevDeletedItems, ...itemsToDelete]);
+
+        const updatedItemList = itemList.filter((item) => item.passageId !== passageId);
+        setItemList(updatedItemList);
+
+        const updatedGroupedItems = groupedItems.filter((group) => group.passageId !== passageId);
+        setGroupedItems(updatedGroupedItems);
     };
 
     const handleClickMoveToStepOne = () => {
@@ -587,7 +612,10 @@ export default function Step2Component() {
                                                                 width: "22px",
                                                                 height: "22px",
                                                                 fontSize: "16px"
-                                                            }}></button>
+                                                            }}
+                                                                    onClick={() => handleDeletePassage(group.passageId)}
+                                                            >
+                                                            </button>
                                                             <div className="passage" style={{
                                                                 border: "1px solid #ccc",
                                                                 borderRadius: "8px",
@@ -621,7 +649,10 @@ export default function Step2Component() {
                                                                             className="btn-error pop-btn"
                                                                             data-pop="error-report-pop"></button>
                                                                     <button type="button"
-                                                                            className="btn-delete"></button>
+                                                                            className="btn-delete"
+                                                                            onClick={() => handleDeleteItem(item.itemId)}
+                                                                    >
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                             <div className="view-que">
@@ -721,6 +752,7 @@ export default function Step2Component() {
                                         onShowSimilar={(item) => handleSimilarPageToggle(item, itemList.indexOf(item) + 1)}
                                         questionIndex={questionIndex}
                                         similarItems={similarItems}
+                                        deletedItems={deletedItems}
                                     />
                                 </div>
                             </div>
