@@ -5,7 +5,8 @@ import {
     getBookFromTsherpa,
     getChapterItemImagesFromTsherpa,
     getEvaluationsFromTsherpa,
-    getExamItemImagesFromTsherpa
+    getExamItemImagesFromTsherpa,
+    getSimilarItemsImagesFromTsherpa
 } from "../../api/step2Api.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
@@ -39,8 +40,24 @@ export default function Step2Component() {
     const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isSorted, setIsSorted] = useState(false);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [isSimilarPage, setIsSimilarPage] = useState(false);
+    const [similarItems, setSimilarItems] = useState([]);
+    const [questionIndex, setQuestionIndex] = useState(null);
+
+    const fetchSimilarItems = (itemId, questionIndex) => {
+        getSimilarItemsImagesFromTsherpa(itemId)
+            .then((data) => {
+                setSimilarItems(data.itemList);
+                setIsSimilarPage(true);
+                setQuestionIndex(questionIndex);
+                console.log("유사 문제 목록: ", data.itemList);
+            })
+            .catch((error) => {
+                console.error("유사 문제 가져오기 실패:", error);
+            });
+    };
 
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
@@ -314,6 +331,15 @@ export default function Step2Component() {
     const handleSortOptionSelect = (option) => {
         setSelectedSortOption(option);
         setIsSortOptionsOpen(false);
+    };
+
+    const handleSimilarPageToggle = (itemId, questionIndex) => {
+        fetchSimilarItems(itemId, questionIndex);
+    };
+
+    const handleBackToMainPage = () => {
+        setIsSimilarPage(false);
+        setSimilarItems([]);
     };
 
     const handleClickMoveToStepOne = () => {
@@ -645,8 +671,11 @@ export default function Step2Component() {
                                                                         </div>
                                                                     )}
                                                                     <div className="data-area type01">
-                                                                        <button type="button"
-                                                                                className="btn-similar-que btn-default">
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn-similar-que btn-default"
+                                                                            onClick={() => handleSimilarPageToggle(item.itemId, itemList.indexOf(item) + 1)}
+                                                                        >
                                                                             <i className="similar"></i> 유사 문제
                                                                         </button>
                                                                     </div>
@@ -672,7 +701,13 @@ export default function Step2Component() {
                                     />
                                 </div>
                                 <div className="cnt-box type01">
-                                    <Step2RightSideComponent itemList={itemList} onDragEnd={handleDragEnd}/></div>
+                                    <Step2RightSideComponent
+                                        itemList={similarItems}
+                                        onDragEnd={handleDragEnd}
+                                        onShowSimilar={(item) => handleSimilarPageToggle(item, itemList.indexOf(item) + 1)}
+                                        questionIndex={questionIndex}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -1,9 +1,13 @@
-import React from "react";
+import React, {useState} from "react";
 import {DragDropContext} from "react-beautiful-dnd";
 import CommonResource from "../../util/CommonResource.jsx";
 import ExamSummaryComponent from "../common/ExamSummaryComponent.jsx";
+import Step2SimilarItems from "./Step2SimilarItems.jsx";
 
-export default function Step2RightSideComponent({itemList, onDragEnd}) {
+export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimilar, questionIndex}) {
+    const [activeTab, setActiveTab] = useState("summary");
+    const [selectedItemId, setSelectedItemId] = useState(null);
+
     const groupByPassage = (items) => {
         return items.reduce((acc, item) => {
             const passageId = item.passageId || "noPassage";
@@ -15,7 +19,13 @@ export default function Step2RightSideComponent({itemList, onDragEnd}) {
         }, {});
     };
 
-    const groupedItems = groupByPassage(itemList);
+    const handleTabClick = (tab, itemId = null, index = null) => {
+        setActiveTab(tab);
+        if (tab === "similar" && itemId && index) {
+            setSelectedItemId(itemId);
+            onShowSimilar(itemId, index);
+        }
+    };
 
     return (
         <>
@@ -23,20 +33,26 @@ export default function Step2RightSideComponent({itemList, onDragEnd}) {
             <DragDropContext onDragEnd={onDragEnd}>
                 <div className="tab-wrap">
                     <ul className="tab-menu-type01">
-                        <li className="ui-tab-btn active">
-                            <a href="#">문제지 요약</a>
+                        <li className={`ui-tab-btn ${activeTab === "summary" ? "active" : ""}`}>
+                            <a href="#" onClick={() => handleTabClick("summary")}>문제지 요약</a>
                         </li>
-                        <li className="ui-tab-btn">
-                            <a href="#">유사 문제</a>
+                        <li className={`ui-tab-btn ${activeTab === "similar" ? "active" : ""}`}>
+                            <a href="#" onClick={() => handleTabClick("similar")}>유사 문제</a>
                         </li>
                         <li className="ui-tab-btn">
                             <a href="#">삭제 문항</a>
                         </li>
                     </ul>
-                    <ExamSummaryComponent
-                        itemList={itemList}
-                        groupedItems={groupedItems}
-                    />
+
+                    {activeTab === "summary" ? (
+                        <ExamSummaryComponent itemList={itemList} groupedItems={groupByPassage(itemList)}/>
+                    ) : (
+                        <Step2SimilarItems
+                            items={itemList}
+                            onBack={() => setActiveTab("summary")}
+                            questionNumber={questionIndex}
+                        />
+                    )}
                 </div>
             </DragDropContext>
         </>
