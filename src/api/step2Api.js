@@ -17,7 +17,6 @@ export const getChapterItemImagesFromTsherpa = async (itemsRequestForm) => {
 
 export const getExamItemImagesFromTsherpa = async (examId) => {
     return (await axios.get(`${QUESTION_IMAGE}/${EXTERNAL}/exam`, {params: {examId: examId}})).data;
-}
 
 export const getSimilarItemsImagesFromTsherpa = async (itemId) => {
     return (await axios.get(`${QUESTION_IMAGE}/${EXTERNAL}/similar-items`, {
