@@ -3,8 +3,9 @@ import {DragDropContext} from "react-beautiful-dnd";
 import CommonResource from "../../util/CommonResource.jsx";
 import ExamSummaryComponent from "../common/ExamSummaryComponent.jsx";
 import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent.jsx";
+import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent.jsx";
 
-export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimilar, questionIndex, similarItems}) {
+export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimilar, questionIndex, similarItems, deletedItems}) {
     const [activeTab, setActiveTab] = useState("summary");
     const [selectedItemId, setSelectedItemId] = useState(null);
 
@@ -39,18 +40,25 @@ export default function Step2RightSideComponent({itemList, onDragEnd, onShowSimi
                         <li className={`ui-tab-btn ${activeTab === "similar" ? "active" : ""}`}>
                             <a href="#" onClick={() => handleTabClick("similar")}>유사 문제</a>
                         </li>
-                        <li className="ui-tab-btn">
-                            <a href="#">삭제 문항</a>
+                        <li className={`ui-tab-btn ${activeTab === "deleted" ? "active" : ""}`}>
+                            <a href="#" onClick={() => handleTabClick("deleted")}>삭제 문항</a>
                         </li>
                     </ul>
 
-                    {activeTab === "summary" ? (
-                        <ExamSummaryComponent itemList={itemList} groupedItems={groupByPassage(itemList)}/>
-                    ) : (
+                    {activeTab === "summary" && (
+                        <ExamSummaryComponent itemList={itemList} groupedItems={groupByPassage(itemList)} />
+                    )}
+                    {activeTab === "similar" && (
                         <Step2SimilarItemsComponent
                             items={similarItems}
                             onBack={() => setActiveTab("summary")}
                             questionNumber={questionIndex}
+                        />
+                    )}
+                    {activeTab === "deleted" && (
+                        <Step2DeletedItemsComponent
+                            deletedItems={deletedItems}
+                            onBack={() => setActiveTab("summary")}
                         />
                     )}
                 </div>
