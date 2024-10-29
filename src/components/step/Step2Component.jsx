@@ -438,9 +438,11 @@ export default function Step2Component() {
                                 <div className="paper-info">
                                     <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                <button className="btn-default btn-research" onClick={handleReSearchClick}>
-                                    <i className="research"></i>재검색
-                                </button>
+                                {!examIdList.length && (
+                                    <button className="btn-default btn-research" onClick={handleReSearchClick}>
+                                        <i className="research"></i>재검색
+                                    </button>
+                                )}
                                 <button className="btn-default pop-btn" data-pop="que-scope-pop">출제범위</button>
                             </div>
                             <div className="view-bottom type01">
