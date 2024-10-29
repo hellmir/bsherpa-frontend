@@ -1,699 +1,668 @@
-import React, {useEffect, useState} from "react";
-import CommonResource from "../../util/CommonResource.jsx";
-import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
-import {
-    getBookFromTsherpa,
-    getChapterItemImagesFromTsherpa,
-    getEvaluationsFromTsherpa,
-    getExamItemImagesFromTsherpa
-} from "../../api/step2Api.js";
-import useCustomMove from "../../hooks/useCustomMove.jsx";
-import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
-import Button from "@mui/material/Button";
-import ConfirmationModal from "../common/ConfirmationModal.jsx";
-import "../../assets/css/confirmationModal.css";
-import "../../assets/css/comboBox.css";
-import {setExamData} from "../../slices/examDataSlice.js";
-import {useDispatch, useSelector} from "react-redux";
-import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
-import ModalComponent from "../common/ModalComponent.jsx";
-import DifficultyCountComponent from "../common/DifficultyCountComponent.jsx";
-import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import useCustomMove from "../../../hooks/useCustomMove";
+import {useLocation} from "react-router-dom";
+import DifficultyDisplay from './DifficultyDisplay.jsx';
 
-export default function Step2Component() {
-    const dispatch = useDispatch();
-    const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
-    const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
-    const [selectedOption, setSelectedOption] = useState("문제만 보기");
-    const [selectedSortOption, setSelectedSortOption] = useState("단원순");
-    const [groupedItems, setGroupedItems] = useState([]);
-    const [itemList, setItemList] = useState([]);
-    const [tempItemList, setTempItemList] = useState([]);
-    const [difficultyCounts, setDifficultyCounts] = useState([
-        {level: "최하", count: 0},
-        {level: "하", count: 0},
-        {level: "중", count: 0},
-        {level: "상", count: 0},
-        {level: "최상", count: 0}
-    ]);
-    const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const [isSorted, setIsSorted] = useState(false);
+// 데이터 변환 함수
+const transformData = (data) => {
+    const hierarchy = {};
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    data.forEach(item => {
+        const {
+            largeChapterName,
+            mediumChapterName,
+            smallChapterName,
+            topicChapterName,
+            largeChapterId,
+            mediumChapterId,
+            smallChapterId,
+            topicChapterId
+        } = item;
 
-    const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false);
+        // 대단원 레벨
+        if (!hierarchy[largeChapterName]) {
+            hierarchy[largeChapterName] = {
+                id: largeChapterId,
+                name: largeChapterName,
+                children: {}
+            };
+        }
 
-    const bookId = useSelector((state) => state.bookIdSlice);
-    console.log(`교재 ID: ${bookId}`)
+        // 중단원 레벨
+        if (mediumChapterName) {
+            if (!hierarchy[largeChapterName].children[mediumChapterName]) {
+                hierarchy[largeChapterName].children[mediumChapterName] = {
+                    id: mediumChapterId,
+                    name: mediumChapterName,
+                    children: {}
+                };
+            }
+        }
 
-    const {moveToStepWithData, moveToPath} = useCustomMove();
+        // 소단원 레벨
+        if (smallChapterName) {
+            const mediumChapter = hierarchy[largeChapterName].children[mediumChapterName];
+            if (mediumChapter && !mediumChapter.children[smallChapterName]) {
+                mediumChapter.children[smallChapterName] = {
+                    id: smallChapterId,
+                    name: smallChapterName,
+                    children: {}
+                };
+            }
+        }
 
-    const {data: bookData} = useQuery({
-        queryKey: ['bookData', bookId],
-        queryFn: () => getBookFromTsherpa(bookId),
-        staleTime: 1000 * 3,
-        enabled: !!bookId
-    });
-    console.log('교재 정보: ', bookData)
-
-    const subjectName = bookData?.subjectInfoList?.[0]?.subjectName?.split('(')[0] || "과목명 없음";
-    const author = bookData?.subjectInfoList?.[0]?.subjectName?.match(/\(([^)]+)\)/)?.[1] || "저자 정보 없음";
-    const curriculumYear = bookData?.subjectInfoList?.[0]?.curriculumName || "년도 정보 없음";
-
-    const examIdList = useSelector((state) => state.examIdSlice);
-    const questionQueries = useQueries({
-        queries: examIdList?.length
-            ? examIdList.map((examId) => ({
-                queryKey: ["questionData", examId],
-                queryFn: () => getExamItemImagesFromTsherpa(examId),
-                staleTime: 1000 * 3,
-            }))
-            : [],
+        // 토픽 레벨
+        if (topicChapterName && smallChapterName) {
+            const smallChapter = hierarchy[largeChapterName].children[mediumChapterName]?.children[smallChapterName];
+            if (smallChapter && !smallChapter.children[topicChapterName]) {
+                smallChapter.children[topicChapterName] = {
+                    id: topicChapterId,
+                    name: topicChapterName
+                };
+            }
+        }
     });
 
-    const questionsDataFromExams = questionQueries
-        .filter((query) => query.isSuccess)
-        .map((query) => query.data.itemList);
+    return hierarchy;
+};
 
-    const {data: evaluationsData} = useQuery({
-        queryKey: ['evaluationsData', bookId],
-        queryFn: () => getEvaluationsFromTsherpa(bookId),
-        staleTime: 1000 * 3
+// 모든 하위 노드의 ID를 가져오는 함수
+const getAllChildNodeIds = (node) => {
+    let ids = [`node-${node.id}`];
+    if (node.children) {
+        Object.values(node.children).forEach(child => {
+            ids = [...ids, ...getAllChildNodeIds(child)];
+        });
+    }
+    return ids;
+};
+
+// 모든 노드의 ID를 가져오는 함수
+const getAllNodeIds = (data) => {
+    let ids = [];
+    Object.values(data).forEach(node => {
+        ids = [...ids, ...getAllChildNodeIds(node)];
+    });
+    return ids;
+};
+
+// 상위 노드의 ID를 가져오는 함수
+const getParentNodeId = (hierarchyData, targetId) => {
+    let parentId = null;
+
+    const searchParent = (data, target, currentParentId = null) => {
+        Object.entries(data).forEach(([_, value]) => {
+            if (value.children) {
+                Object.values(value.children).forEach(child => {
+                    if (`node-${child.id}` === target) {
+                        parentId = `node-${value.id}`;
+                    }
+                    searchParent(value.children, target, `node-${value.id}`);
+                });
+            }
+        });
+    };
+
+    searchParent(hierarchyData, targetId);
+    return parentId;
+};
+
+// 체크된 노드의 실제 데이터를 찾는 함수
+const findNodeData = (nodeId, data) => {
+    const id = nodeId.replace('node-', '');
+    let foundNode = null;
+
+    const search = (currentData) => {
+        Object.values(currentData).forEach(node => {
+            if (`${node.id}` === id) {
+                foundNode = node;
+                return;
+            }
+            if (node.children) {
+                search(node.children);
+            }
+        });
+    };
+
+    search(data);
+    return foundNode;
+};
+
+// 체크된 노드들의 계층 구조를 유지하면서 데이터 추출
+const extractCheckedNodesData = (checkedNodes, hierarchyData) => {
+    const checkedData = [];
+
+    checkedNodes.forEach(nodeId => {
+        const nodeData = findNodeData(nodeId, hierarchyData);
+        if (nodeData) {
+            checkedData.push({
+                id: nodeData.id,
+                name: nodeData.name,
+                level: nodeId.split('-')[1].length === 1 ? 'large' :
+                    nodeId.split('-')[1].length === 2 ? 'medium' :
+                        nodeId.split('-')[1].length === 3 ? 'small' : 'topic'
+            });
+        }
+    });
+
+    return checkedData;
+};
+
+// DynamicAccordionItem 컴포넌트
+const DynamicAccordionItem = ({
+                                  title,
+                                  id,
+                                  isActive,
+                                  isChecked,
+                                  isIndeterminate,
+                                  onToggle,
+                                  onCheckChange,
+                                  children,
+                                  depth = 0
+                              }) => {
+    const checkboxRef = React.useRef();
+
+    React.useEffect(() => {
+        if (checkboxRef.current) {
+            checkboxRef.current.indeterminate = isIndeterminate;
+        }
+    }, [isIndeterminate]);
+
+    return (
+        <div className={`check-group title ${isActive ? 'on' : ''}`}>
+            <div className="title-chk" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                width: '100%',
+                paddingLeft: `${depth * 20}px`
+            }}>
+                <input
+                    ref={checkboxRef}
+                    type="checkbox"
+                    id={id}
+                    checked={isChecked}
+                    onChange={onCheckChange}
+                    className="que-allCheck depth01"
+                />
+                <label htmlFor={id} style={{ width: '100%' }}>
+                    <button
+                        type="button"
+                        className={`dep-btn ${isActive ? 'active' : ''}`}
+                        onClick={onToggle}
+                        style={{ textAlign: 'left', width: '100%' }}
+                    >
+                        {title}
+                    </button>
+                </label>
+            </div>
+            {children && (
+                <div className="depth02" style={{
+                    display: isActive ? 'block' : 'none',
+                    width: '100%'
+                }}>
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// RenderHierarchy 컴포넌트
+const RenderHierarchy = ({
+                             data,
+                             activeNodes,
+                             checkedNodes,
+                             onToggle,
+                             onCheckChange,
+                             depth = 0,
+                             hierarchyData
+                         }) => {
+    return Object.entries(data).map(([key, value]) => {
+        const hasChildren = Object.keys(value.children || {}).length > 0;
+        const nodeId = `node-${value.id}`;
+
+        const childNodeIds = hasChildren ? getAllChildNodeIds(value) : [];
+        const checkedChildCount = childNodeIds.filter(id => checkedNodes.includes(id)).length;
+        const isIndeterminate = hasChildren && checkedChildCount > 0 && checkedChildCount < childNodeIds.length;
+        const isChecked = hasChildren ? checkedChildCount === childNodeIds.length : checkedNodes.includes(nodeId);
+
+        const updateParentNodes = (nodeId, newCheckedNodes) => {
+            let currentNodeId = nodeId;
+            while (true) {
+                const parentId = getParentNodeId(hierarchyData, currentNodeId);
+                if (!parentId) break;
+
+                const parentNode = Object.values(hierarchyData).find(node => `node-${node.id}` === parentId);
+                if (!parentNode) break;
+
+                const parentChildIds = getAllChildNodeIds(parentNode).filter(id => id !== parentId);
+                const anyChildChecked = parentChildIds.some(id => newCheckedNodes.includes(id));
+
+                if (!anyChildChecked) {
+                    newCheckedNodes = newCheckedNodes.filter(id => id !== parentId);
+                }
+
+                currentNodeId = parentId;
+            }
+            return newCheckedNodes;
+        };
+
+        return (
+            <DynamicAccordionItem
+                key={nodeId}
+                title={value.name}
+                id={nodeId}
+                isActive={activeNodes.includes(nodeId)}
+                isChecked={isChecked}
+                isIndeterminate={isIndeterminate}
+                onToggle={() => onToggle(nodeId)}
+                onCheckChange={(e) => {
+                    const newChecked = e.target.checked;
+                    let newCheckedNodes = [...checkedNodes];
+
+                    if (newChecked) {
+                        newCheckedNodes.push(nodeId);
+                        if (hasChildren) {
+                            const childIds = getAllChildNodeIds(value);
+                            childIds.forEach(id => {
+                                if (!newCheckedNodes.includes(id)) {
+                                    newCheckedNodes.push(id);
+                                }
+                            });
+                        }
+                    } else {
+                        newCheckedNodes = newCheckedNodes.filter(id => id !== nodeId);
+                        if (hasChildren) {
+                            const childIds = getAllChildNodeIds(value);
+                            newCheckedNodes = newCheckedNodes.filter(id => !childIds.includes(id));
+                        }
+                        newCheckedNodes = updateParentNodes(nodeId, newCheckedNodes);
+                    }
+
+                    onCheckChange(newCheckedNodes);
+                }}
+                depth={depth}
+            >
+                {hasChildren && (
+                    <RenderHierarchy
+                        data={value.children}
+                        activeNodes={activeNodes}
+                        checkedNodes={checkedNodes}
+                        onToggle={onToggle}
+                        onCheckChange={onCheckChange}
+                        depth={depth + 1}
+                        hierarchyData={hierarchyData}
+                    />
+                )}
+            </DynamicAccordionItem>
+        );
+    });
+};
+
+const Step1Component = () => {
+    const [hierarchyData, setHierarchyData] = useState({});
+    const [activeNodes, setActiveNodes] = useState([]);
+    const [checkedNodes, setCheckedNodes] = useState([]);
+    const [range, setRange] = useState('30');
+    const [selectedSteps, setSelectedSteps] = useState([]);
+    const [selectedEvaluation, setSelectedEvaluation] = useState([]);
+    const [selectedQuestiontype, setSelectedQuestiontype] = useState('');
+    const [source, setSource] = useState('');
+    const {moveToStepWithData} = useCustomMove();
+    const bookId = useLocation().state.data;
+    const [evaluation, setEvaluation] = useState({});
+    useEffect(() => {
+        const commonLink = document.createElement("link");
+        commonLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/common.css";
+        commonLink.rel = "stylesheet";
+        document.head.appendChild(commonLink);
+
+        const fontLink = document.createElement("link");
+        fontLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/font.css";
+        fontLink.rel = "stylesheet";
+        document.head.appendChild(fontLink);
+
+        const resetLink = document.createElement("link");
+        resetLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/reset.css";
+        resetLink.rel = "stylesheet";
+        document.head.appendChild(resetLink);
+
+        return () => {
+            document.head.removeChild(commonLink);
+            document.head.removeChild(fontLink);
+            document.head.removeChild(resetLink);
+        };
+    }, []);
+    const [countsData, setCountsData] = useState([]); // 배열을 저장할 상태
+    const [chapterList, setChapterList] = useState([]);
+
+    useEffect(()=>{
+        axios.get(`http://localhost:8080/books/external/evaluations?subjectId=${bookId}`)
+            .then((response) =>{
+
+
+
+                console.log('evaluation2233 '+response.data.evaluationList)
+                setEvaluation(response.data.evaluationList)
+                console.log('evaluation2223232' +JSON.stringify(evaluation))
+
+            })
     })
-    console.log('평가 영역 데이터: ', evaluationsData)
 
-    const activityCategoryList = evaluationsData
-        ? evaluationsData.evaluationList.map(evaluation => evaluation.domainId)
-        : [];
 
-    console.log(`평가 영역 목록: ${activityCategoryList}`)
 
-    // TODO: Step1으로부터 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
-    const itemsRequestForm = evaluationsData
-        ? {
-            activityCategoryList: activityCategoryList,
-            levelCnt: [1, 1, 1, 1, 1],
-            minorClassification: [
-                {
-                    large: 115401,
-                    medium: 11540101,
-                    small: 1154010101,
-                    subject: 1154
-                }
-            ],
-            questionForm: "multiple,subjective"
-        }
-        : null;
-    console.log(itemsRequestForm);
 
-    const {data: questionsData, isLoading, error} = useQuery({
-        queryKey: ["getChapterItemsRequest", itemsRequestForm],
-        queryFn: () => getChapterItemImagesFromTsherpa(itemsRequestForm),
-        enabled: !examIdList?.length && !!itemsRequestForm,
-        staleTime: 1000 * 3,
-    });
 
-    const fetchQuestions = useMutation({
-        mutationFn: (form) => getChapterItemImagesFromTsherpa(form),
-        onSuccess: (data) => {
-            const newTempItemList = [...data.data.itemList];
-            const counts = [
-                {level: "최하", count: 0},
-                {level: "하", count: 0},
-                {level: "중", count: 0},
-                {level: "상", count: 0},
-                {level: "최상", count: 0}
-            ];
-            newTempItemList.forEach(item => {
-                const difficulty = counts.find(d => d.level === item.difficultyName);
-                if (difficulty) difficulty.count += 1;
+
+    useEffect(() => {
+        axios.post(`http://localhost:8080/step1/chapters/${bookId}`)
+            .then((response) => {
+                const transformed = transformData(response.data.chapterList);
+                setHierarchyData(transformed);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
             });
-
-            setTempItemList(newTempItemList);
-            setTempDifficultyCounts(counts);
-
-            console.log('새로 받아 온 문제 목록: ', data.data.itemList);
-            console.log('새로 받아 온 난이도 별 문제 수: ', counts);
-
-            setIsConfirmOpen(true);
-        },
-        onError: (error) => {
-            console.error("문항 재검색 실패: ", error);
-        }
-    });
-
-    useEffect(() => {
-        if (!isSorted && groupedItems.length > 0) {
-            sortGroupedItems();
-            setIsSorted(true);
-        }
-    }, [groupedItems]);
-
-    useEffect(() => {
-        if (!isLoading && questionsData) {
-            console.log(questionsData);
-        }
-    }, [isLoading, questionsData]);
-
-    useEffect(() => {
-        console.log("isProblemOptionsOpen changed:", isProblemOptionsOpen);
-    }, [isProblemOptionsOpen]);
-
-    useEffect(() => {
-        if (examIdList?.length && questionsDataFromExams.length > 0 && itemList.length === 0) {
-            const combinedData = {data: {itemList: questionsDataFromExams.flat()}};
-            console.log("questionsData 전체 구조:", combinedData);
-            console.log("questionsData.data.itemList 확인:", combinedData.data.itemList);
-
-            setItemList(combinedData.data.itemList);
-            setTempItemList(combinedData.data.itemList);
-            organizeItems(combinedData.data.itemList);
-        }
-    }, [questionsDataFromExams]);
-
-    useEffect(() => {
-        if (questionsData?.data?.itemList && itemList.length === 0) {
-            console.log("questionsData 전체 구조:", questionsData);
-            console.log("questionsData.data.itemList 확인:", questionsData.data.itemList);
-
-            setItemList(questionsData.data.itemList);
-            setTempItemList(questionsData.data.itemList);
-            organizeItems(questionsData.data.itemList);
-        }
-    }, [questionsData]);
+    }, []);
 
 
-    const organizeItems = (items) => {
-        const passageGroups = items.reduce((acc, item) => {
-            const passageId = item.passageId || "noPassage";
-            if (!acc[passageId]) {
-                acc[passageId] = {passageId, passageUrl: item.passageUrl, items: []};
-            }
-            acc[passageId].items.push(item);
-            return acc;
-        }, {});
 
-        const groupedArray = Object.values(passageGroups).map(group => {
-            group.items.sort((a, b) => a.itemNo - b.itemNo);
-            return group;
-        });
 
-        groupedArray.sort((a, b) => {
-            const firstItemA = a.items[0].itemNo;
-            const firstItemB = b.items[0].itemNo;
-            return firstItemA - firstItemB;
-        });
-
-        setGroupedItems(groupedArray);
-        setIsSorted(false);
+    const handleToggle = (nodeId) => {
+        setActiveNodes(prev =>
+            prev.includes(nodeId)
+                ? prev.filter(id => id !== nodeId)
+                : [...prev, nodeId]
+        );
     };
 
-    useEffect(() => {
-        const counts = [
-            {level: "최하", count: 0},
-            {level: "하", count: 0},
-            {level: "중", count: 0},
-            {level: "상", count: 0},
-            {level: "최상", count: 0}
-        ];
-        itemList.forEach(item => {
-            const difficulty = counts.find(d => d.level === item.difficultyName);
-            if (difficulty) difficulty.count += 1;
-        });
-        setDifficultyCounts(counts.filter(c => c.count > 0));
-    }, [itemList]);
-    console.log('난이도 별 문제 수: ', difficultyCounts);
+    const handleCheckChange = (newCheckedNodes) => {
+        setCheckedNodes(newCheckedNodes);
 
-    useEffect(() => {
-        sortGroupedItems();
-    }, [selectedSortOption]);
+        // 체크된 노드들의 실제 데이터 추출
+        const checkedData = extractCheckedNodesData(newCheckedNodes, hierarchyData);
 
-    const sortGroupedItems = () => {
-        const sortedGroups = groupedItems.map(group => {
-            const sortedItems = [...group.items];
-
-            if (selectedSortOption === "단원순") {
-                sortedItems.sort((a, b) =>
-                    a.largeChapterId - b.largeChapterId ||
-                    a.mediumChapterId - b.mediumChapterId ||
-                    a.smallChapterId - b.smallChapterId ||
-                    a.topicChapterId - b.topicChapterId
-                );
-            } else if (selectedSortOption === "난이도순") {
-                const difficultyOrder = ["최하", "하", "중", "상", "최상"];
-                sortedItems.sort((a, b) =>
-                    difficultyOrder.indexOf(a.difficultyName) - difficultyOrder.indexOf(b.difficultyName)
-                );
-            } else if (selectedSortOption === "문제 형태순") {
-                sortedItems.sort((a, b) =>
-                    (a.questionFormCode <= 50 ? -1 : 1) - (b.questionFormCode <= 50 ? -1 : 1)
-                );
-            }
-
-            return {...group, items: sortedItems};
-        });
-
-        setGroupedItems(sortedGroups);
-
-        const newSortedItemList = sortedGroups.flatMap(group => group.items);
-        setItemList(newSortedItemList);
+        console.log('Checked Node IDs:', newCheckedNodes);
+        console.log('Checked Node Data:', checkedData);
     };
 
-    useEffect(() => {
-        console.log("itemList가 업데이트되었습니다: ", itemList);
-    }, [itemList]);
-
-    const totalQuestions = itemList.length;
-
-    const [forceRender, setForceRender] = useState(false);
-
-    const handleReSearchClick = () => {
-        if (itemsRequestForm) {
-            fetchQuestions.mutate(itemsRequestForm, {
-                onSuccess: () => {
-                    setForceRender(!forceRender);
-                }
-            });
-        } else {
-            console.warn("itemsRequestForm 값이 존재하지 않습니다.");
-        }
+    const handleRangeButtonClick = (value) => {
+        setRange(value);
     };
 
-    const handleConfirm = () => {
-        setItemList([...tempItemList]);
-        setDifficultyCounts([...tempDifficultyCounts]);
-        setIsConfirmOpen(false);
-        organizeItems(tempItemList);
+    const handleRangeInputChange = (event) => {
+        setRange(event.target.value);
     };
 
-    if (isLoading) {
-        return <div>데이터 로드 중...</div>;
-    }
-
-    if (error) {
-        return <div>데이터 로드 중 오류가 발생했습니다: {error.message}</div>;
-    }
-
-    const toggleProblemOptions = () => {
-        setIsProblemOptionsOpen(!isProblemOptionsOpen);
-        console.log("Step2RightSideComponent options open:", !isProblemOptionsOpen);
+    const handleStepButtonClick = (step) => {
+        setSelectedSteps(prev =>
+            prev.includes(step)
+                ? prev.filter(item => item !== step)
+                : [...prev, step]
+        );
     };
 
-    const toggleSortOptions = () => {
-        setIsSortOptionsOpen(!isSortOptionsOpen);
-        console.log("Sort options open:", !isSortOptionsOpen);
+    const handleEvaluationButtonClick = (evaluation) => {
+        setSelectedEvaluation(prev =>
+            prev.includes(evaluation)
+                ? prev.filter(item => item !== evaluation)
+                : [...prev, evaluation]
+        );
     };
 
-    const handleOptionSelect = (option) => {
-        setSelectedOption(option);
-        setIsProblemOptionsOpen(false);
+    const handleQuestionTypeClick = (questiontype) => {
+        setSelectedQuestiontype(prev => prev === questiontype ? '' : questiontype);
     };
 
-    const handleSortOptionSelect = (option) => {
-        setSelectedSortOption(option);
-        setIsSortOptionsOpen(false);
+    const handleSourceClick = (sourceType) => {
+        setSource(prev => prev === sourceType ? '' : sourceType);
     };
 
-    const handleClickMoveToStepOne = () => {
-        console.log('STEP 1 단원 선택');
-        moveToPath('../step1')
-    };
 
-    const handleClickMoveToStepThree = () => {
-        console.log(`STEP 3 시험지 저장 : ${bookId, totalQuestions, itemList}`);
-        dispatch(setExamData({bookId, totalQuestions, groupedItems}));
-        moveToStepWithData('step3', {bookId, groupedItems});
-    };
 
-    const handleDragEnd = (result) => {
-        const {destination, source, type} = result;
+    const submitToStep2 = () => {
 
-        if (!destination) return;
+        // 현재 상태 값들을 직접 사용
+        const currentSubmitData = {
+            range: range,
+            selectedSteps: selectedSteps,
+            selectedEvaluation: selectedEvaluation,
+            selectedQuestiontype: selectedQuestiontype,
+            source: source,
+            bookId,
+            checkedNodes
 
-        const updatedGroups = JSON.parse(JSON.stringify(groupedItems));
+        };
 
-        if (type === "PASSAGE_GROUP") {
-            const [movedGroup] = updatedGroups.splice(source.index, 1);
-            updatedGroups.splice(destination.index, 0, movedGroup);
+        // 로그 확인
+        console.log('Current Submit Data:', currentSubmitData);
 
-            setGroupedItems(updatedGroups);
-
-            const newSortedItemList = updatedGroups.flatMap(group => group.items);
-            setItemList(newSortedItemList);
-
-            console.log(`지문을 ${source.index}에서 ${destination.index}로 이동`);
-        } else if (type === "ITEM") {
-            const sourcePassageId = source.droppableId;
-            const destinationPassageId = destination.droppableId;
-            console.log(sourcePassageId, destinationPassageId, 'asdlfjads');
-
-            const sourcePassageIdNumber = Number(sourcePassageId);
-            const destinationPassageIdNumber = Number(destinationPassageId);
-
-            console.log(`sourcePassageId: ${sourcePassageIdNumber}, destinationPassageId: ${destinationPassageIdNumber}`);
-            console.log('현재 groupedItems:', updatedGroups.map(group => group.passageId));
-
-            if (sourcePassageId !== destinationPassageId && sourcePassageId !== "noPassage" && destinationPassageId !== "noPassage") {
-                console.log('다른 지문으로 이동할 수 없습니다.');
-                handleOpenModal();
-                return;
-            }
-
-            console.log(`문항을 ${source.index}에서 ${destination.index}로 이동`);
-
-            const groupIndex = updatedGroups.findIndex(group => {
-                if (typeof group.passageId === "string" && group.passageId === sourcePassageId) {
-                    return true;
-                }
-                if (typeof group.passageId === "number" && group.passageId === sourcePassageIdNumber) {
-                    return true;
-                }
-                return false;
-            });
-            if (groupIndex === -1) {
-                console.error('해당 지문 그룹을 찾을 수 없습니다.');
-                return;
-            }
-
-            const group = updatedGroups[groupIndex];
-
-            const itemIndexInGroup = source.index - itemList.findIndex(item => item.passageId === sourcePassageIdNumber);
-
-            if (itemIndexInGroup < 0 || itemIndexInGroup >= group.items.length) {
-                console.error('item 인덱스가 존재하지 않습니다.');
-                return;
-            }
-
-            const [movedItem] = group.items.splice(itemIndexInGroup, 1);
-
-            if (!movedItem || !movedItem.itemId) {
-                console.error(`movedItem이 올바르지 않거나 itemId가 존재하지 않습니다: `, movedItem);
-                return;
-            }
-
-            const destinationIndexInGroup = destination.index - itemList.findIndex(item => item.passageId === destinationPassageIdNumber);
-
-            group.items.splice(destinationIndexInGroup, 0, movedItem);
-
-            setGroupedItems(updatedGroups);
-
-            const newSortedItemList = updatedGroups.flatMap(group => group.items);
-            setItemList(newSortedItemList);
-        }
+        // moveToStepWithData에 현재 데이터를 직접 전달
+        moveToStepWithData('step2', currentSubmitData);
     };
 
     return (
-        <>
-            <CommonResource/>
-            {isConfirmOpen && (
-                <ConfirmationModal
-                    title="문항 재검색"
-                    message="문항 구성이 자동으로 변경됩니다."
-                    details={tempDifficultyCounts.filter(count => count.count > 0)}
-                    onCancel={() => setIsConfirmOpen(false)}
-                    onConfirm={handleConfirm}
-                />
-            )}
-            <ModalComponent
-                title="이동 불가"
-                content="다른 지문으로 이동할 수 없습니다."
-                handleClose={handleCloseModal}
-                open={isModalOpen}
-            />
-            <div id="wrap" className="full-pop-que">
-                <div className="full-pop-wrap">
-                    <div className="pop-header">
-                        <ul className="title">
-                            <li>STEP 1 단원선택</li>
-                            <li className="active">STEP 2 문항 편집</li>
-                            <li>STEP 3 시험지 저장</li>
-                        </ul>
-                        <button type="button" className="del-btn"></button>
-                    </div>
-                    <div className="pop-content">
-                        <div className="view-box">
-                            <div className="view-top">
-                                <div className="paper-info">
-                                    <span>{subjectName}</span> {author}({curriculumYear})
-                                </div>
-                                {!examIdList.length && (
-                                    <button className="btn-default btn-research" onClick={handleReSearchClick}>
-                                        <i className="research"></i>재검색
-                                    </button>
-                                )}
-                                <button className="btn-default pop-btn" data-pop="que-scope-pop">출제범위</button>
+        <div id="wrap" className="full-pop-que">
+            <div className="full-pop-wrap">
+                {/* 팝업 헤더 */}
+                <div className="pop-header">
+                    <ul className="title">
+                        <li className="active">STEP 1 단원선택</li>
+                        <li>STEP 2 문항 편집</li>
+                        <li>STEP 3 시험지 저장</li>
+                    </ul>
+                    <button type="button" className="del-btn"></button>
+                </div>
+
+                <div className="pop-content">
+                    <div className="view-box">
+                        <div className="view-top">
+                            <div className="paper-info">
+                                <span>국어 1-1</span>
+                                노미숙(2015)
                             </div>
-                            <div className="view-bottom type01">
-                                <div className="cnt-box">
-                                    <div className="cnt-top">
-                                        <span className="title">문제 목록</span>
-                                        <div className="right-area">
-                                            <div className="select-wrap">
-                                                <button
-                                                    type="button"
-                                                    className="select-btn"
-                                                    onClick={toggleProblemOptions}
-                                                >
-                                                    {selectedOption}
-                                                </button>
-                                                {isProblemOptionsOpen && (
-                                                    <ul className="select-list open">
-                                                        <li>
-                <span onClick={() => handleOptionSelect("문제만 보기")}>
-                    문제만 보기
-                </span>
-                                                        </li>
-                                                        <li>
-                <span onClick={() => handleOptionSelect("문제+정답 보기")}>
-                    문제+정답 보기
-                </span>
-                                                        </li>
-                                                        <li>
-                <span onClick={() => handleOptionSelect("문제+정답+해설 보기")}>
-                    문제+정답+해설 보기
-                </span>
-                                                        </li>
-                                                    </ul>
-                                                )}
+                        </div>
+
+                        <div className="view-bottom">
+                            <div className="view-box-wrap">
+                                <div className="unit-box-wrap">
+                                    <div className="unit-box">
+                                        <div className="unit-cnt scroll-inner">
+                                            <div className="title-top">
+                                                <span>단원정보</span>
+                                                <input
+                                                    type="checkbox"
+                                                    id="allCheck"
+                                                    onChange={(e) => {
+                                                        const allNodeIds = getAllNodeIds(hierarchyData);
+                                                        setCheckedNodes(e.target.checked ? allNodeIds : []);
+                                                    }}
+                                                    className="allCheck"
+                                                />
+                                                <label htmlFor="allCheck">전체선택</label>
                                             </div>
-                                            <div className="select-wrap">
+                                            <ul style={{ width: '100%' }}>
+                                                <li style={{ width: '100%' }}>
+                                                    <RenderHierarchy
+                                                        data={hierarchyData}
+                                                        activeNodes={activeNodes}
+                                                        checkedNodes={checkedNodes}
+                                                        onToggle={handleToggle}
+                                                        onCheckChange={handleCheckChange}
+                                                        hierarchyData={hierarchyData}
+                                                    />
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 옵션 선택 */}
+                                <div className="type-box-wrap">
+                                    <div className="type-box scroll-inner">
+                                        <div className="title-top">
+                                            <span>출제옵션</span>
+                                        </div>
+
+                                        {/* 문제 수 */}
+                                        <div className="box">
+                                            <div className="title-wrap">
+                        <span className="tit-text">
+                          문제 수<em>최대 30문제</em>
+                        </span>
+                                            </div>
+                                            <div className="count-area">
+                                                <div className="btn-wrap">
+                                                    {['10', '15', '20', '25', '30'].map(value => (
+                                                        <button
+                                                            key={value}
+                                                            type="button"
+                                                            className={`btn-line ${range === value ? 'active' : ''}`}
+                                                            onClick={() => handleRangeButtonClick(value)}
+                                                        >
+                                                            {value}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <div className="input-area">
+                          <span className="num">
+                            총 <input type="text" value={range} onChange={handleRangeInputChange} /> 문제
+                          </span>
+                                                    <div className="txt">*5의 배수로 입력해주세요.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 출처 */}
+                                        <div className="box">
+                                            <div className="title-wrap">
+                                                <span className="tit-text">출처</span>
+                                            </div>
+                                            <div className="btn-wrap multi">
                                                 <button
                                                     type="button"
-                                                    className="select-btn"
-                                                    onClick={toggleSortOptions}
+                                                    className={`btn-line ${source === 'teacher' ? 'active' : ''}`}
+                                                    onClick={() => handleSourceClick('teacher')}
                                                 >
-                                                    {selectedSortOption}
+                                                    교사용(교사용 DVD, 지도서, 신규 개발 등)
                                                 </button>
-                                                {isSortOptionsOpen && (
-                                                    <ul className="select-list open">
-                                                        <li>
-                                                            <span onClick={() => handleSortOptionSelect("사용자 정렬")}>
-                                                                사용자 정렬
-                                                            </span>
-                                                        </li>
-                                                        <li>
-                                                            <span onClick={() => handleSortOptionSelect("단원순")}>
-                                                                단원순
-                                                            </span>
-                                                        </li>
-                                                        <li>
-                                                            <span onClick={() => handleSortOptionSelect("난이도순")}>
-                                                                난이도순
-                                                            </span>
-                                                        </li>
-                                                        <li>
-                                                            <span onClick={() => handleSortOptionSelect("문제 형태순")}>
-                                                                문제 형태순
-                                                            </span>
-                                                        </li>
-                                                    </ul>
+                                                <button
+                                                    type="button"
+                                                    className={`btn-line ${source === 'student' ? 'active' : ''}`}
+                                                    onClick={() => handleSourceClick('student')}
+                                                >
+                                                    학생용(자습서, 평가문제집 등)
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* 평가 영역 */}
+
+
+                                        <div className="box">
+                                            <div className="title-wrap">
+                                                <span className="tit-text">평가 영역</span>
+                                            </div>
+                                            <div className="btn-wrap multi">
+                                                {Array.isArray(evaluation) && evaluation.length > 0 ? (
+                                                    evaluation.map(item => (
+                                                        <button
+                                                            key={item.domainId}
+                                                            type="button"
+                                                            className={`btn-line ${selectedEvaluation.includes(item.domainId) ? 'active' : ''}`}
+                                                            onClick={() => handleEvaluationButtonClick(item.domainId)}
+                                                        >
+                                                            {item.domainName}
+                                                        </button>
+                                                    ))
+                                                ) : (
+                                                    <div>데이터가 없습니다.</div>
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="view-que-list scroll-inner">
-                                        {groupedItems.length > 0 ? (
-                                            groupedItems.map((group, groupIndex) => (
-                                                <div key={`group-${group.passageId}-${groupIndex}`}
-                                                     className="passage-group">
-                                                    {group.passageId !== "noPassage" && (
-                                                        <div className="passage-group-wrapper" style={{
-                                                            border: "1px solid #ddd",
-                                                            padding: "20px",
-                                                            borderRadius: "8px",
-                                                            marginBottom: "20px",
-                                                            position: "relative"
-                                                        }}>
-                                                            <div className="passage-group-header" style={{
-                                                                display: "flex",
-                                                                justifyContent: "space-between",
-                                                                alignItems: "flex-start",
-                                                                borderBottom: "1px solid #ddd",
-                                                                paddingBottom: "5px",
-                                                                marginBottom: "10px"
-                                                            }}>
-    <span style={{fontSize: "18px", fontWeight: "bold", marginTop: "-10px"}}>
-    {itemList.indexOf(group.items[0]) + 1} ~ {itemList.indexOf(group.items[group.items.length - 1]) + 1}
-</span>
-                                                            </div>
 
-                                                            <button type="button" className="btn-delete-2" style={{
-                                                                position: "absolute",
-                                                                right: "40px",
-                                                                top: "10px",
-                                                                zIndex: "2",
-                                                                width: "22px",
-                                                                height: "22px",
-                                                                fontSize: "16px"
-                                                            }}></button>
-                                                            <div className="passage" style={{
-                                                                border: "1px solid #ccc",
-                                                                borderRadius: "8px",
-                                                                padding: "10px"
-                                                            }}>
-                                                                <img src={group.passageUrl} alt="지문 이미지"
-                                                                     style={{width: "100%"}}/>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {group.items.map((item, index) => (
-                                                        <div key={`item-${item.itemId}-${index}`}
-                                                             id={`question-${item.itemId}`}
-                                                             className="view-que-box"
-                                                             style={{marginTop: "10px"}}>
-                                                            <div className="que-top">
-                                                                <div className="title">
-                                                                    <span
-                                                                        className="num">{itemList.indexOf(item) + 1}</span>
-                                                                    <div className="que-badge-group">
-                                    <span className={`que-badge ${getDifficultyColor(item.difficultyName)}`}>
-                                        {item.difficultyName}
-                                    </span>
-                                                                        <span className="que-badge gray">
-                                        {item.questionFormCode <= 50 ? "객관식" : "주관식"}
-                                    </span>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="btn-wrap">
-                                                                    <button type="button"
-                                                                            className="btn-error pop-btn"
-                                                                            data-pop="error-report-pop"></button>
-                                                                    <button type="button"
-                                                                            className="btn-delete"></button>
-                                                                </div>
-                                                            </div>
-                                                            <div className="view-que">
-                                                                <div className="que-content">
-                                                                    {item.questionUrl ? (
-                                                                        <img src={item.questionUrl} alt="문제 이미지"/>
-                                                                    ) : (
-                                                                        <p className="txt">문제 텍스트 없음</p>
-                                                                    )}
-                                                                </div>
-                                                                <div className="que-bottom">
-                                                                    {(selectedOption === "문제+정답 보기" || selectedOption === "문제+정답+해설 보기") && (
-                                                                        <div className="data-area">
-                                                                            <div className="que-info">
-                                                                                <p className="answer">
-                                                                                    <span className="label type01"
-                                                                                          style={{
-                                                                                              display: "block",
-                                                                                              textAlign: "left",
-                                                                                              paddingLeft: "20px"
-                                                                                          }}>정답</span>
-                                                                                </p>
-                                                                                <div className="data-answer-area">
-                                                                                    {item.answerUrl ? (
-                                                                                        <img src={item.answerUrl}
-                                                                                             alt="정답 이미지"/>
-                                                                                    ) : (
-                                                                                        <div className="paragraph"
-                                                                                             style={{textAlign: "justify"}}>
-                                                                                            <span
-                                                                                                className="txt">정답 없음</span>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                    {selectedOption === "문제+정답+해설 보기" && (
-                                                                        <div className="data-area">
-                                                                            <div className="que-info">
-                                                                                <p className="answer">
-                                                                                    <span className="label" style={{
-                                                                                        display: "block",
-                                                                                        textAlign: "left",
-                                                                                        paddingLeft: "20px"
-                                                                                    }}>해설</span>
-                                                                                </p>
-                                                                                <div className="data-answer-area">
-                                                                                    {item.explainUrl ? (
-                                                                                        <img src={item.explainUrl}
-                                                                                             alt="해설 이미지"/>
-                                                                                    ) : (
-                                                                                        <div className="paragraph"
-                                                                                             style={{textAlign: "justify"}}>
-                                                                                            <span
-                                                                                                className="txt">해설 없음</span>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                    <div className="data-area type01">
-                                                                        <button type="button"
-                                                                                className="btn-similar-que btn-default">
-                                                                            <i className="similar"></i> 유사 문제
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div className="que-info-last">
-                                                                <p className="chapter">
-                                                                    {item.largeChapterName} &gt; {item.mediumChapterName} &gt; {item.smallChapterName} &gt; {item.topicChapterName}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div>문제가 없습니다.</div>
-                                        )}
+
+
+                                        {/* 문제 형태 */}
+
+                                        <div className='box'>
+                                            <div className='title-wrap'>
+                                                <span className='tit-text'>문제 형태</span>
+                                            </div>
+                                            <div className='btn-wrap multi'>
+                                                <button
+                                                    type='button'
+                                                    className={`btn-line  ${
+                                                        selectedQuestiontype === 'objective' ? 'active' : ''
+                                                    }`}
+                                                    data-step='objective'
+                                                    onClick={() => handleQuestionTypeClick('objective')}
+                                                >
+                                                    객관식
+                                                </button>
+                                                <button
+                                                    type='button'
+                                                    className={`btn-line  ${
+                                                        selectedQuestiontype === 'subjective'
+                                                            ? 'active'
+                                                            : ''
+                                                    }`}
+                                                    data-step='subjective'
+                                                    onClick={() => handleQuestionTypeClick('subjective')}
+                                                >
+                                                    주관식
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* 난이도 구성 */}
+                                        <DifficultyDisplay/>
+                                        {/* 난이도별 문제수 */}
+
                                     </div>
-                                    <DifficultyCountComponent
-                                        difficultyCounts={difficultyCounts}
-                                        getDifficultyColor={getDifficultyColor}
-                                        totalQuestions={totalQuestions}
-                                    />
+                                    <div className='bottom-box'>
+                                        <p className='total-num'>
+                                            총 <span>{range}</span>문제
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="cnt-box type01">
-                                    <Step2RightSideComponent itemList={itemList} onDragEnd={handleDragEnd}/></div>
                             </div>
                         </div>
                     </div>
-                    <div className="step-btn-wrap">
-                        <Button
-                            variant="contained"
-                            onClick={handleClickMoveToStepOne}
-                            className="btn-step"
-                        >
-                            <BorderColorOutlinedIcon/>STEP 1 단원 선택
-                        </Button>
-                        <Button
-                            variant="contained"
-                            onClick={handleClickMoveToStepThree}
-                            className="btn-step next"
-                        >
-                            <BorderColorOutlinedIcon/>STEP 3 시험지 저장
-                        </Button>
-                    </div>
+                </div>
+
+                {/* 하단 버튼 */}
+                <div className='step-btn-wrap'>
+                    <button type='button' className='btn-step'>
+                        출제 방법 선택
+                    </button>
+                    <button
+                        type='button'
+                        className='btn-step next pop-btn'
+                        data-pop='que-pop'
+                        onClick={submitToStep2}
+                    >
+                        STEP2 문항 편집
+                    </button>
                 </div>
             </div>
-        </>
+            <div className='dim'></div>
+
+            {/* 난이도별 문제 수 설정 팝업 */}
+            <div className='pop-wrap range-type' data-pop='que-range-pop'>
+                {/* ... */}
+            </div>
+
+            {/* 문항 충족하지 않을 시 팝업 */}
+            <div className='pop-wrap range-type02' data-pop='que-pop'>
+                {/* ... */}
+            </div>
+        </div>
     );
-}
+};
+
+
+
+export default Step1Component;
