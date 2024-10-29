@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import useCustomMove from "../../../hooks/useCustomMove";
+import useCustomMove from "../../hooks/useCustomMove";
 import {useLocation} from "react-router-dom";
-import DifficultyDisplay from './DifficultyDisplay.jsx';
+import DifficultyDisplay from 'step1/DifficultyDisplay.jsx';
 
 // 데이터 변환 함수
 const transformData = (data) => {
