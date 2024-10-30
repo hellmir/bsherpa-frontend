@@ -1,10 +1,8 @@
 import Toolbar from "@mui/material/Toolbar";
 import Divider from "@mui/material/Divider";
 import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
-import MailIcon from "@mui/icons-material/Mail";
 import ListItemText from "@mui/material/ListItemText";
 import Drawer from "@mui/material/Drawer";
 import LoginIcon from '@mui/icons-material/Login';
@@ -12,9 +10,10 @@ import TextFieldComponent from "./TextFieldComponent.jsx";
 import {useState} from "react";
 import useCustomLogin from "../../hooks/useCustomLogin.jsx";
 import ModalComponent from "./ModalComponent.jsx";
-import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import TextField from "@mui/material/TextField";
 import HomeIcon from '@mui/icons-material/Home';
+import {Link} from "react-router-dom";
+import {getKakaoLink} from "../../api/kakaoApi.js";
 
 const drawerWidth = 240;
 const initState = {
@@ -111,20 +110,17 @@ const handleClickText = (e) => {
 
           {isLogin?
               <>{
-                ['로그아웃'].map((text, index) => (
-                    <ListItem key={text} disablePadding>
                       <ListItemButton>
                         <ListItemIcon>
-                          {index % 2 === 0 ? <LoginIcon
-                              onClick={handleClickLogOut}/> : <MailIcon/>}
+                          <LoginIcon
+                              onClick={handleClickLogOut}/>
                         </ListItemIcon>
                         <ListItemText
-                            primary={text}
+                            primary={'로그아웃'}
                             onClick={handleClickLogOut}
                         />
                       </ListItemButton>
-                    </ListItem>
-                ))}
+                }
                 <TextField
                     readOnly
                     margin="dense"
@@ -141,20 +137,22 @@ const handleClickText = (e) => {
               </>
                 :
               <>
-                {['로그인'].map((text, index) => (
-                    <ListItem key={text} disablePadding>
                       <ListItemButton>
                         <ListItemIcon>
-                          {index % 2 === 0 ? <LoginIcon
-                              onClick={handleClickLogin}/> : <MailIcon/>}
+                          <Link to={getKakaoLink()}>
+                          <LoginIcon
+                              // onClick={handleClickLogin}
+                          />
+                          </Link>
                         </ListItemIcon>
+                        <Link to={getKakaoLink()}>
+
                         <ListItemText
-                            primary={text}
-                            onClick={handleClickLogin}
+                            primary={'login'}
+                            // onClick={handleClickLogin}
                         />
+                        </Link>
                       </ListItemButton>
-                    </ListItem>
-                ))}
                 <TextFieldComponent
                     id={'email'}
                     name={'email'}
@@ -177,18 +175,16 @@ const handleClickText = (e) => {
         </List>
         <Divider />
         <List>
-          {['회원가입', '홈'].map((text, index) => (
-              <ListItem key={text} disablePadding>
+          {
                 <ListItemButton>
                   <ListItemIcon>
-                    {index % 2 === 0 ? <PersonAddAltIcon /> : <HomeIcon />}
+                     <HomeIcon />
                   </ListItemIcon>
-                  <ListItemText primary={text}
+                  <ListItemText primary={'Home'}
                                 onClick={handleClickText}
                   />
                 </ListItemButton>
-              </ListItem>
-          ))}
+          }
         </List>
       </Drawer>
       </>
