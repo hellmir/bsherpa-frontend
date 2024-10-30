@@ -125,12 +125,6 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
                                             <div className="btn-wrap">
                                                 <button type="button" className="btn-error pop-btn"
                                                         onClick={handleOpenErrorReport}></button>
-
-                                                <button type="button"
-                                                        className="btn-delete"
-                                                        onClick={() => handleDeleteItem(item.itemId)}
-                                                >
-                                                </button>
                                             </div>
                                         </div>
                                         <div className="view-que">
