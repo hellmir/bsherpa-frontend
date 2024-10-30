@@ -7,6 +7,7 @@ const Loading = <Box sx={{display: 'flex'}}><CircularProgress/></Box>
 const Main = lazy(() => import("../pages/MainPage.jsx"))
 const Join = lazy(()=>import("../pages/user/JoinPage.jsx"))
 const StepIndex = lazy(() => import("../pages/step/StepIndexPage.jsx"))
+const KakaoRedirect = lazy(()=>import("../pages/user/KakaoRedirectPage.jsx"))
 const Error404 = lazy(()=>import("../pages/Error404.jsx"))
 
 const root = createBrowserRouter([
@@ -22,6 +23,10 @@ const root = createBrowserRouter([
   {
     path:'/users/join',
     element: <Suspense fallback={Loading}><Join/></Suspense>
+  },
+  {
+    path:'/users/kakao',
+    element: <Suspense fallback={Loading}><KakaoRedirect/></Suspense>
   },
   {
     path: '*',
