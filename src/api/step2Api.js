@@ -1,5 +1,5 @@
 import axios from "axios";
-import {BOOK, EXTERNAL, QUESTION_IMAGE} from "./config.js";
+import {BOOK, ERROR_REPORT, EXTERNAL, QUESTION_IMAGE} from "./config.js";
 
 export const getBookFromTsherpa = async (bookId) => {
     return (await axios.get(`${BOOK}/${EXTERNAL}`, {params: {subjectId: bookId}})).data;
@@ -23,7 +23,13 @@ export const getSimilarItemsImagesFromTsherpa = async (itemId) => {
     return (await axios.get(`${QUESTION_IMAGE}/${EXTERNAL}/similar-items`, {
         params: {
             itemIds: itemId,
-            excludedItemIds: 1
+            excludedItemIds: 0
         }
     })).data;
+}
+
+export const postRegisterErrorReport = async (registerErrorReportForm) => {
+    const header = {headers: {'Content-Type': 'multipart/form-data'}}
+
+    return await axios.post(`${ERROR_REPORT}`, registerErrorReportForm, header)
 }
