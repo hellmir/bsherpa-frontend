@@ -52,6 +52,7 @@ export default function Step2Component() {
     const [noSimilarItemsMessage, setNoSimilarItemsMessage] = useState("");
     const [isNoSimilarItemsModalOpen, setIsNoSimilarItemsModalOpen] = useState(false);
     const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
+    const [lastAddedItemId, setLastAddedItemId] = useState(null);
 
     const fetchSimilarItems = (itemId, questionIndex) => {
         getSimilarItemsImagesFromTsherpa(itemId)
@@ -222,6 +223,11 @@ export default function Step2Component() {
         }
     }, [questionsData]);
 
+    useEffect(() => {
+        if (lastAddedItemId !== null) {
+            scrollToNewItem(lastAddedItemId);
+        }
+    }, [itemList, lastAddedItemId]);
 
     const organizeItems = (items) => {
         const passageGroups = items.reduce((acc, item) => {
@@ -423,12 +429,24 @@ export default function Step2Component() {
     };
 
     const handleAddItem = (newItem) => {
-        setItemList((prevItemList) => {
-            const updatedItemList = [...prevItemList, newItem];
+        setItemList((prevItemList) => [...prevItemList, newItem]);
+        setLastAddedItemId(newItem.itemId);
 
-            scrollToNewItem(newItem.itemId);
+        setGroupedItems((prevGroupedItems) => {
+            const existingGroup = prevGroupedItems.find(group => group.passageId === newItem.passageId);
 
-            return updatedItemList;
+            if (existingGroup) {
+                return prevGroupedItems.map(group =>
+                    group.passageId === newItem.passageId
+                        ? {...group, items: [...group.items, newItem]}
+                        : group
+                );
+            } else {
+                return [
+                    ...prevGroupedItems,
+                    {passageId: newItem.passageId, passageUrl: newItem.passageUrl, items: [newItem]}
+                ];
+            }
         });
 
         setDeletedItems((prevDeletedItems) =>
@@ -438,10 +456,6 @@ export default function Step2Component() {
                     items: group.items.filter((item) => item.itemId !== newItem.itemId),
                 }))
                 .filter((group) => group.items.length > 0)
-        );
-
-        setSimilarItems((prevSimilarItems) =>
-            prevSimilarItems.filter((item) => item.itemId !== newItem.itemId)
         );
     };
 
@@ -557,10 +571,10 @@ export default function Step2Component() {
                 handleClose={handleCloseNoSimilarItemsModal}
                 open={isNoSimilarItemsModalOpen}
             />
-            <ErrorReportModal isOpen={isErrorReportOpen} onClose={handleCloseErrorReport} />
-                <div id="wrap" className="full-pop-que">
-                    <div className="full-pop-wrap">
-                        <div className="pop-header">
+            <ErrorReportModal isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
+            <div id="wrap" className="full-pop-que">
+                <div className="full-pop-wrap">
+                    <div className="pop-header">
                         <ul className="title">
                             <li>STEP 1 단원선택</li>
                             <li className="active">STEP 2 문항 편집</li>
