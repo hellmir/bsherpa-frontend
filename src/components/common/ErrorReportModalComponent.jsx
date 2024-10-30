@@ -50,11 +50,14 @@ export default function ErrorReportModal({isOpen, onClose}) {
                     >
                         <option>문제오류</option>
                         <option>정답오류</option>
+                        <option>풀이오류</option>
+                        <option>이미지오류</option>
+                        <option>유형오류</option>
                         <option>기타</option>
                     </select>
                 </div>
                 <div>
-                    <label htmlFor="fileUpload">첨부파일</label>
+                <label htmlFor="fileUpload">첨부파일</label>
                     <input
                         type="file"
                         id="fileUpload"
