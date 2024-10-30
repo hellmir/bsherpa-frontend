@@ -6,6 +6,7 @@ import {postJoin} from "../../api/userApi.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import {validator} from "../../util/validator.js";
 import ModalComponent from "../common/ModalComponent.jsx";
+import {useLocation} from "react-router-dom";
 
 const initState = {
   email: '',
@@ -16,12 +17,18 @@ const initState = {
 function JoinComponent() {
 
   const [user, setUser] = useState(initState)
-  const {moveToPath} = useCustomMove()
+  const {moveToPath, moveToMainReturn} = useCustomMove()
   const [result, setResult] = useState(null)
   const [open, setOpen] = useState(false)
+  if(!useLocation().state){
+    return moveToMainReturn()
+  }
+
+  const email = useLocation().state.data
 
   const handleChange = (e) => {
     user[e.target.name] = e.target.value
+    user.email =email
     setUser({...user})
   }
 
@@ -78,8 +85,9 @@ function JoinComponent() {
                 name={'email'}
                 type={'email'}
                 label={'이메일'}
-                value={user.email}
+                value={email}
                 handleChange={handleChange}
+                disabled={true}
             />
             <TextFieldComponent
                 auto={false}
