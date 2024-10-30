@@ -379,7 +379,7 @@ const Step1Component = () => {
 
   // 평가 데이터 로드
   useEffect(() => {
-    axios.get(`http://localhost:8080/books/external/evaluations?subjectId=${bookId}`)
+    axios.get(`https://bsherpa.duckdns.org/books/external/evaluations?subjectId=${bookId}`)
       .then((response) => {
         console.log('Evaluation Response:', response.data);
         if (response.data.evaluationList) {
@@ -393,7 +393,7 @@ const Step1Component = () => {
 
   // 챕터 데이터 로드
   useEffect(() => {
-    axios.post(`http://localhost:8080/step1/chapters/${bookId}`)
+    axios.post(`https://bsherpa.duckdns.org/step1/chapters/${bookId}`)
       .then((response) => {
         console.log('Chapter Response:', response.data);
         if (response.data.chapterList) {
