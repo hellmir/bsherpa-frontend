@@ -1,0 +1,31 @@
+.error-report-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 8px;
+    width: 400px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.error-report-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.error-report-modal .close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}

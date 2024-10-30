@@ -20,6 +20,7 @@ import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
 import ModalComponent from "../common/ModalComponent.jsx";
 import DifficultyCountComponent from "../common/DifficultyCountComponent.jsx";
 import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
+import ErrorReportModal from "../common/ErrorReportModalComponent.jsx";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -50,6 +51,7 @@ export default function Step2Component() {
     const [deletedItems, setDeletedItems] = useState([]);
     const [noSimilarItemsMessage, setNoSimilarItemsMessage] = useState("");
     const [isNoSimilarItemsModalOpen, setIsNoSimilarItemsModalOpen] = useState(false);
+    const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
 
     const fetchSimilarItems = (itemId, questionIndex) => {
         getSimilarItemsImagesFromTsherpa(itemId)
@@ -72,6 +74,8 @@ export default function Step2Component() {
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false)
     const handleCloseNoSimilarItemsModal = () => setIsNoSimilarItemsModalOpen(false);
+    const handleOpenErrorReport = () => setIsErrorReportOpen(true);
+    const handleCloseErrorReport = () => setIsErrorReportOpen(false);
 
     const bookId = useSelector((state) => state.bookIdSlice);
     console.log(`교재 ID: ${bookId}`)
@@ -122,12 +126,18 @@ export default function Step2Component() {
     const itemsRequestForm = evaluationsData
         ? {
             activityCategoryList: activityCategoryList,
-            levelCnt: [1, 1, 1, 1, 1],
+            levelCnt: [3, 3, 3, 3, 3],
             minorClassification: [
                 {
                     large: 115401,
                     medium: 11540101,
                     small: 1154010101,
+                    subject: 1154
+                },
+                {
+                    large: 115402,
+                    medium: 11540202,
+                    small: 1154020202,
                     subject: 1154
                 }
             ],
@@ -351,7 +361,28 @@ export default function Step2Component() {
     const handleDeleteItem = (itemId) => {
         const itemToDelete = itemList.find((item) => item.itemId === itemId);
         if (itemToDelete) {
-            setDeletedItems((prevDeletedItems) => [...prevDeletedItems, itemToDelete]);
+            const relatedPassage = groupedItems.find(group => group.passageId === itemToDelete.passageId);
+            const passageInfo = relatedPassage ? {
+                passageId: relatedPassage.passageId,
+                passageUrl: relatedPassage.passageUrl
+            } : null;
+
+            setDeletedItems((prevDeletedItems) => {
+                const updatedDeletedItems = [...prevDeletedItems];
+                const existingGroup = updatedDeletedItems.find(group => group.passageId === itemToDelete.passageId);
+
+                if (existingGroup) {
+                    existingGroup.items.push(itemToDelete);
+                } else {
+                    updatedDeletedItems.push({
+                        passageId: itemToDelete.passageId,
+                        passageUrl: passageInfo?.passageUrl,
+                        items: [itemToDelete]
+                    });
+                }
+
+                return updatedDeletedItems;
+            });
 
             const updatedItemList = itemList.filter((item) => item.itemId !== itemId);
             setItemList(updatedItemList);
@@ -368,7 +399,14 @@ export default function Step2Component() {
     const handleDeletePassage = (passageId) => {
         const itemsToDelete = itemList.filter((item) => item.passageId === passageId);
 
-        setDeletedItems((prevDeletedItems) => [...prevDeletedItems, ...itemsToDelete]);
+        setDeletedItems((prevDeletedItems) => [
+            ...prevDeletedItems,
+            {
+                passageId: passageId,
+                passageUrl: itemsToDelete[0]?.passageUrl || null,
+                items: itemsToDelete,
+            },
+        ]);
 
         const updatedItemList = itemList.filter((item) => item.passageId !== passageId);
         setItemList(updatedItemList);
@@ -387,11 +425,24 @@ export default function Step2Component() {
     const handleAddItem = (newItem) => {
         setItemList((prevItemList) => {
             const updatedItemList = [...prevItemList, newItem];
-            setTimeout(() => {
-                scrollToNewItem(newItem.itemId);
-            }, 0);
+
+            scrollToNewItem(newItem.itemId);
+
             return updatedItemList;
         });
+
+        setDeletedItems((prevDeletedItems) =>
+            prevDeletedItems
+                .map((group) => ({
+                    ...group,
+                    items: group.items.filter((item) => item.itemId !== newItem.itemId),
+                }))
+                .filter((group) => group.items.length > 0)
+        );
+
+        setSimilarItems((prevSimilarItems) =>
+            prevSimilarItems.filter((item) => item.itemId !== newItem.itemId)
+        );
     };
 
     const handleDragEnd = (result) => {
@@ -506,9 +557,10 @@ export default function Step2Component() {
                 handleClose={handleCloseNoSimilarItemsModal}
                 open={isNoSimilarItemsModalOpen}
             />
-            <div id="wrap" className="full-pop-que">
-                <div className="full-pop-wrap">
-                    <div className="pop-header">
+            <ErrorReportModal isOpen={isErrorReportOpen} onClose={handleCloseErrorReport} />
+                <div id="wrap" className="full-pop-que">
+                    <div className="full-pop-wrap">
+                        <div className="pop-header">
                         <ul className="title">
                             <li>STEP 1 단원선택</li>
                             <li className="active">STEP 2 문항 편집</li>
@@ -664,9 +716,9 @@ export default function Step2Component() {
                                                                     </div>
                                                                 </div>
                                                                 <div className="btn-wrap">
-                                                                    <button type="button"
-                                                                            className="btn-error pop-btn"
-                                                                            data-pop="error-report-pop"></button>
+                                                                    <button type="button" className="btn-error pop-btn"
+                                                                            onClick={handleOpenErrorReport}></button>
+
                                                                     <button type="button"
                                                                             className="btn-delete"
                                                                             onClick={() => handleDeleteItem(item.itemId)}
