@@ -1,26 +1,30 @@
 import React, { useState } from 'react';
 
-const DifficultyDisplay = () => {
-  const [selectedSteps, setSelectedSteps] = useState(['step1', 'step2', 'step3']);
+const DifficultyDisplay = ({ isStudent = false }) => {
+  const [selectedSteps, setSelectedSteps] = useState(['step2', 'step3', 'step4']);
   const [showRangePopup, setShowRangePopup] = useState(false);
   const [showAutoChangePopup, setShowAutoChangePopup] = useState(false);
   const [counts, setCounts] = useState({
-    step1: 4,
-    step2: 4,
-    step3: 4,
-    step4: 4,
-    step5: 4
+    step1: 1,
+    step2: 10,
+    step3: 10,
+    step4: 10,
+    step5: 1
   });
 
   const difficulties = [
-    { step: 'step1', text: '최하', color: 'color01' },
-    { step: 'step2', text: '하', color: 'color02' },
-    { step: 'step3', text: '중', color: 'color03' },
-    { step: 'step4', text: '상', color: 'color04' },
-    { step: 'step5', text: '최상', color: 'color05' }
+    { step: 'step1', text: '최하', color: 'color01', disabled: true },
+    { step: 'step2', text: '하', color: 'color02', disabled: false },
+    { step: 'step3', text: '중', color: 'color03', disabled: false },
+    { step: 'step4', text: '상', color: 'color04', disabled: false },
+    { step: 'step5', text: '최상', color: 'color05', disabled: true }
   ];
 
   const handleStepClick = (step) => {
+    // 비활성화된 버튼이나 학생용일 경우 클릭 무시
+    const difficulty = difficulties.find(d => d.step === step);
+    if (difficulty.disabled || isStudent) return;
+
     setSelectedSteps(prev => 
       prev.includes(step) ? prev.filter(s => s !== step) : [...prev, step]
     );
@@ -28,11 +32,11 @@ const DifficultyDisplay = () => {
 
   const handleAutoChange = () => {
     setCounts({
-      step1: 2,
-      step2: 5,
-      step3: 6,
-      step4: 5,
-      step5: 2
+      step1: 1,
+      step2: 10,
+      step3: 10,
+      step4: 10,
+      step5: 1
     });
     setShowAutoChangePopup(false);
     setShowRangePopup(false);
@@ -45,14 +49,15 @@ const DifficultyDisplay = () => {
           <span className="tit-text">난이도 구성</span>
         </div>
         <div className="step-wrap">
-          {difficulties.map(({ step, text, color }) => (
+          {difficulties.map(({ step, text, color, disabled }) => (
             <button
               key={step}
               type="button"
               className={`btn-line type02 ${
                 selectedSteps.includes(step) ? `${color} active` : ''
-              }`}
+              } ${disabled || isStudent ? 'disabled' : ''}`}
               onClick={() => handleStepClick(step)}
+              disabled={disabled || isStudent}
             >
               {text}
             </button>
@@ -68,6 +73,7 @@ const DifficultyDisplay = () => {
               type="button"
               className="btn-icon2 pop-btn"
               onClick={() => setShowRangePopup(true)}
+              disabled={isStudent}
             >
               <i className="setting"></i>
             </button>
@@ -87,8 +93,8 @@ const DifficultyDisplay = () => {
         </div>
       </div>
 
-      {/* Popups */}
-      {showRangePopup && (
+      {/* 팝업 */}
+      {showRangePopup && !isStudent && (
         <div className="popup-overlay">
           <div className="popup-content">
             <div className="pop-header">
@@ -105,7 +111,7 @@ const DifficultyDisplay = () => {
                 난이도별 문제 수를 조정하세요.
               </span>
               <div className="range-wrap">
-                {difficulties.map(({ step, text, color }) => (
+                {difficulties.map(({ step, text, color, disabled }) => (
                   <div key={step} className={`range ${color}`}>
                     <span className={color}>{text}</span>
                     <input
@@ -117,6 +123,7 @@ const DifficultyDisplay = () => {
                           [step]: parseInt(e.target.value) || 0
                         }))
                       }
+                      disabled={disabled}
                     />
                   </div>
                 ))}
@@ -131,11 +138,11 @@ const DifficultyDisplay = () => {
             <div className="pop-footer">
               <button onClick={() => 
                 setCounts({
-                  step1: 4,
-                  step2: 4,
-                  step3: 4,
-                  step4: 4,
-                  step5: 4
+                  step1: 1,
+                  step2: 10,
+                  step3: 10,
+                  step4: 10,
+                  step5: 1
                 })
               }>
                 초기화
@@ -161,7 +168,7 @@ const DifficultyDisplay = () => {
         </div>
       )}
 
-      {showAutoChangePopup && (
+      {showAutoChangePopup && !isStudent && (
         <div className="popup-overlay">
           <div className="popup-content">
             <div className="pop-header">
@@ -180,27 +187,27 @@ const DifficultyDisplay = () => {
               <div className="range-wrap">
                 <div className="range">
                   <span className="color01">최하</span>
-                  <span className="num">2</span>
+                  <span className="num">1</span>
                 </div>
                 <div className="range">
                   <span className="color02">하</span>
-                  <span className="num">5</span>
+                  <span className="num">10</span>
                 </div>
                 <div className="range">
                   <span className="color03">중</span>
-                  <span className="num">6</span>
+                  <span className="num">10</span>
                 </div>
                 <div className="range">
                   <span className="color04">상</span>
-                  <span className="num">5</span>
+                  <span className="num">10</span>
                 </div>
                 <div className="range">
                   <span className="color05">최상</span>
-                  <span className="num">2</span>
+                  <span className="num">1</span>
                 </div>
                 <div className="range total">
                   <span>합계</span>
-                  <span className="num">20</span>
+                  <span className="num">30</span>
                 </div>
               </div>
               <span className="txt">해당 문제 구성으로 출제하시겠습니까?</span>
@@ -249,12 +256,22 @@ const DifficultyDisplay = () => {
           align-items: center;
           justify-content: center;
           color: #666;
+          cursor: pointer;
+        }
+        .btn-line.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          pointer-events: none;
         }
         .btn-icon2 {
           margin-left: 8px;
           background: none;
           border: none;
           cursor: pointer;
+        }
+        .btn-icon2:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         .setting:before {
           content: "⚙️";
@@ -330,6 +347,10 @@ const DifficultyDisplay = () => {
           padding: 4px;
           border: 1px solid #ddd;
           border-radius: 4px;
+        }
+        .range input:disabled {
+          background-color: #f5f5f5;
+          cursor: not-allowed;
         }
       `}</style>
     </div>
