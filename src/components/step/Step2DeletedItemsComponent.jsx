@@ -4,8 +4,12 @@ import ErrorReportModal from "../common/ErrorReportModalComponent.jsx";
 
 export default function DeletedItemsComponent({deletedItems, onRestoreItem}) {
     const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState(null);
 
-    const handleOpenErrorReport = () => setIsErrorReportOpen(true);
+    const handleOpenErrorReport = (itemId) => {
+        setSelectedItemId(itemId);
+        setIsErrorReportOpen(true);
+    };
     const handleCloseErrorReport = () => setIsErrorReportOpen(false);
 
     const handleDeleteItem = (itemId) => {
@@ -19,7 +23,7 @@ export default function DeletedItemsComponent({deletedItems, onRestoreItem}) {
 
     return (
         <>
-            <ErrorReportModal isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
+            <ErrorReportModal itemId={selectedItemId} isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
             <div className="deleted-items-container" style={{
                 height: "100%",
                 overflowY: "auto",
@@ -58,8 +62,8 @@ export default function DeletedItemsComponent({deletedItems, onRestoreItem}) {
                                             </div>
                                             <div className="btn-wrap">
                                                 <button type="button" className="btn-error pop-btn"
-                                                        onClick={handleOpenErrorReport}>
-                                                </button>
+                                                        onClick={() => handleOpenErrorReport(item.itemId)}
+                                                ></button>
                                             </div>
                                         </div>
                                         <div className="view-que">

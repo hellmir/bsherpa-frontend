@@ -1,13 +1,17 @@
 import React, {useState} from "react";
 import '../../assets/css/errorReportModal.css';
 import {postRegisterErrorReport} from "../../api/step2Api.js";
+import useCustomLogin from "../../hooks/useCustomLogin.jsx";
 
-export default function ErrorReportModal({isOpen, onClose}) {
+export default function ErrorReportModal({itemId, isOpen, onClose}) {
     const [selectedFile, setSelectedFile] = useState(null);
     const [errorType, setErrorType] = useState("문제오류");
     const [errorContent, setErrorContent] = useState("");
     const [submissionSuccess, setSubmissionSuccess] = useState(false);
     const [submissionFailure, setSubmissionFailure] = useState(false);
+    const [submissionFailureMessage, setSubmissionFailureMessage] = useState(null);
+    const {loginState, doLogout, moveToPath, isLogin, moveToLoginReturn}
+        = useCustomLogin()
 
     const handleFileChange = (event) => {
         setSelectedFile(event.target.files[0]);
@@ -15,19 +19,32 @@ export default function ErrorReportModal({isOpen, onClose}) {
 
     const handleSubmit = async () => {
         const formData = new FormData();
+        const userEmail = loginState.email ? loginState.email : "abc@abc.com" // 천재교육 네트워크 환경을 고려해 카카오 로그인 실패 시 대체 이메일 주소 사용
+        formData.append("userEmail", userEmail);
+        formData.append("itemId", itemId)
         formData.append("type", errorType);
         if (selectedFile) {
             formData.append("image", selectedFile);
         }
         formData.append("content", errorContent);
 
+        console.log(userEmail + "asdlfkj;s");
+        console.log(itemId + "asdlfkj;s");
+
         try {
             await postRegisterErrorReport(formData);
             console.log("오류 신고 제출 성공");
             setSubmissionSuccess(true);
         } catch (error) {
-            setSubmissionFailure(true);
-            console.error("오류 신고 제출 실패:", error);
+            if (error.response && error.response.status === 409) {
+                setSubmissionFailure(true);
+                setSubmissionFailureMessage("이미 신고가 접수된 문항입니다.");
+                console.error("이미 신고가 접수된 문항입니다:", error);
+            } else {
+                setSubmissionFailure(true);
+                setSubmissionFailureMessage("오류 신고 제출에 실패했습니다.");
+                console.error("오류 신고 제출 실패:", error);
+            }
         }
     };
 
@@ -69,7 +86,7 @@ export default function ErrorReportModal({isOpen, onClose}) {
                 ) : (submissionFailure
                     ? (
                         <div className="modal-content">
-                            <p>이미 신고가 접수된 문항입니다.</p>
+                            <p>{submissionFailureMessage}</p>
                             <button
                                 onClick={handleClose}
                                 style={{

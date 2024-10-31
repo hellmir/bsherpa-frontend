@@ -56,6 +56,7 @@ export default function Step2Component() {
     const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
     const [lastAddedItemId, setLastAddedItemId] = useState(null);
     const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState(null);
 
     const location = useLocation();
     const step1Data = useLocation().state?.data || null;
@@ -82,7 +83,10 @@ export default function Step2Component() {
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false)
     const handleCloseNoSimilarItemsModal = () => setIsNoSimilarItemsModalOpen(false);
-    const handleOpenErrorReport = () => setIsErrorReportOpen(true);
+    const handleOpenErrorReport = (itemId) => {
+        setSelectedItemId(itemId);
+        setIsErrorReportOpen(true);
+    };
     const handleCloseErrorReport = () => setIsErrorReportOpen(false);
 
     const bookId = useSelector((state) => state.bookIdSlice);
@@ -588,7 +592,7 @@ export default function Step2Component() {
                 handleClose={handleCloseNoSimilarItemsModal}
                 open={isNoSimilarItemsModalOpen}
             />
-            <ErrorReportModal isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
+            <ErrorReportModal itemId={selectedItemId} isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
             <div id="wrap" className="full-pop-que">
                 <div className="full-pop-wrap">
                     <div className="pop-header">
@@ -758,7 +762,8 @@ export default function Step2Component() {
                                                                 </div>
                                                                 <div className="btn-wrap">
                                                                     <button type="button" className="btn-error pop-btn"
-                                                                            onClick={handleOpenErrorReport}></button>
+                                                                            onClick={() => handleOpenErrorReport(item.itemId)}
+                                                                    ></button>
 
                                                                     <button type="button"
                                                                             className="btn-delete"
