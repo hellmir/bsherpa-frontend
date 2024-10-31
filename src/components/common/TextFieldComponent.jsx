@@ -1,7 +1,6 @@
-import React from 'react';
 import TextField from "@mui/material/TextField";
 
-function TextFieldComponent({auto = true,id,name,type,label,value,handleChange}) {
+function TextFieldComponent({auto = true,id,name,type,label,value,handleChange,disabled=false}) {
   return (
       <TextField
           autoFocus={auto}
@@ -15,6 +14,7 @@ function TextFieldComponent({auto = true,id,name,type,label,value,handleChange})
           variant="filled"
           value={value}
           onChange={handleChange}
+          disabled={disabled}
       />
   );
 }

@@ -25,6 +25,8 @@ function MainComponent() {
     staleTime: 1000,
   });
 
+  console.log(data)
+
   useEffect(() => {
     setSubject({ name: selectSubjectName });
   }, [selectSubjectName, refresh]);
@@ -60,16 +62,6 @@ function MainComponent() {
           ) : (
               <Typography variant="body1">{subject.name} 관련 도서가 없습니다.</Typography>
           )}
-        </Box>
-
-        <Box sx={{ marginBottom: 2, marginTop: 2 }}>
-          <Typography variant="h6">추가 도서</Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <CardComponent />
-            <CardComponent />
-            <CardComponent />
-            <CardComponent />
-          </Box>
         </Box>
       </Box>
   );
