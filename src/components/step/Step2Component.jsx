@@ -22,6 +22,7 @@ import DifficultyCountComponent from "../common/DifficultyCountComponent.jsx";
 import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
 import ErrorReportModal from "../common/ErrorReportModalComponent.jsx";
 import {useLocation} from "react-router-dom";
+import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent.jsx";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -54,9 +55,10 @@ export default function Step2Component() {
     const [isNoSimilarItemsModalOpen, setIsNoSimilarItemsModalOpen] = useState(false);
     const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
     const [lastAddedItemId, setLastAddedItemId] = useState(null);
+    const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
 
     const location = useLocation();
-    const step1Data = useLocation().state.data || null;
+    const step1Data = useLocation().state?.data || null;
     console.log('Step1으로부터 전송된 데이터: ', step1Data);
 
     const fetchSimilarItems = (itemId, questionIndex) => {
@@ -136,6 +138,15 @@ export default function Step2Component() {
         topic: item.topicChapterId
     })) || [];
 
+    const chapterNames = itemList.map(item => ({
+        largeChapterName: item.largeChapterName,
+        mediumChapterName: item.mediumChapterName,
+        smallChapterName: item.smallChapterName,
+        topicChapterName: item.topicChapterName
+    }));
+
+    const handleOpenScopeModal = () => setIsScopeModalOpen(true);
+    const handleCloseScopeModal = () => setIsScopeModalOpen(false);
 
     const itemsRequestForm = step1Data && step1Data.difficultyCounts && evaluationsData
         ? {
@@ -599,7 +610,17 @@ export default function Step2Component() {
                                         <i className="research"></i>재검색
                                     </button>
                                 )}
-                                <button className="btn-default pop-btn" data-pop="que-scope-pop">출제범위</button>
+                                <button className="btn-default pop-btn" onClick={handleOpenScopeModal}>
+                                    출제범위
+                                </button>
+                                <ChapterScopeModalComponent
+                                    open={isScopeModalOpen}
+                                    onClose={handleCloseScopeModal}
+                                    subjectName={subjectName}
+                                    author={author}
+                                    curriculumYear={curriculumYear}
+                                    chapters={chapterNames}
+                                />
                             </div>
                             <div className="view-bottom type01">
                                 <div className="cnt-box">
