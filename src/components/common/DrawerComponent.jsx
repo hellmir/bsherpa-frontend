@@ -145,10 +145,11 @@ const handleClickText = (e) => {
                           />
                           </Link>
                         </ListItemIcon>
-                        <Link to={getKakaoLink()}>
-
+                        <Link
+                            style={{textDecoration:'none',color:'inherit'}}
+                            to={getKakaoLink()}>
                         <ListItemText
-                            primary={'login'}
+                            primary={'로그인 및 회원가입'}
                             // onClick={handleClickLogin}
                         />
                         </Link>
