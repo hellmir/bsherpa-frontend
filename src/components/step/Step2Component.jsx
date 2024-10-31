@@ -21,6 +21,7 @@ import ModalComponent from "../common/ModalComponent.jsx";
 import DifficultyCountComponent from "../common/DifficultyCountComponent.jsx";
 import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
 import ErrorReportModal from "../common/ErrorReportModalComponent.jsx";
+import {useLocation} from "react-router-dom";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -53,6 +54,10 @@ export default function Step2Component() {
     const [isNoSimilarItemsModalOpen, setIsNoSimilarItemsModalOpen] = useState(false);
     const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
     const [lastAddedItemId, setLastAddedItemId] = useState(null);
+
+    const location = useLocation();
+    const step1Data = useLocation().state.data || null;
+    console.log('Step1으로부터 전송된 데이터: ', step1Data);
 
     const fetchSimilarItems = (itemId, questionIndex) => {
         getSimilarItemsImagesFromTsherpa(itemId)
@@ -123,29 +128,30 @@ export default function Step2Component() {
 
     console.log(`평가 영역 목록: ${activityCategoryList}`)
 
-    // TODO: Step1으로부터 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
-    const itemsRequestForm = evaluationsData
+    const minorClassification = step1Data?.apiResponse?.itemList?.map(item => ({
+        large: item.largeChapterId,
+        medium: item.mediumChapterId,
+        small: item.smallChapterId,
+        subject: item.bookId,
+        topic: item.topicChapterId
+    })) || [];
+
+
+    const itemsRequestForm = step1Data && step1Data.difficultyCounts && evaluationsData
         ? {
-            activityCategoryList: activityCategoryList,
-            levelCnt: [3, 3, 3, 3, 3],
-            minorClassification: [
-                {
-                    large: 115401,
-                    medium: 11540101,
-                    small: 1154010101,
-                    subject: 1154
-                },
-                {
-                    large: 115402,
-                    medium: 11540202,
-                    small: 1154020202,
-                    subject: 1154
-                }
+            activityCategoryList: step1Data.selectedEvaluation,
+            levelCnt: [
+                step1Data.difficultyCounts.step1,
+                step1Data.difficultyCounts.step2,
+                step1Data.difficultyCounts.step3,
+                step1Data.difficultyCounts.step4,
+                step1Data.difficultyCounts.step5
             ],
-            questionForm: "multiple,subjective"
+            minorClassification: minorClassification,
+            questionForm: step1Data.selectedQuestiontype,
         }
         : null;
-    console.log(itemsRequestForm);
+    console.log('문제 요청 양식: ', itemsRequestForm);
 
     const {data: questionsData, isLoading, error} = useQuery({
         queryKey: ["getChapterItemsRequest", itemsRequestForm],

@@ -57,7 +57,7 @@ export default function ErrorReportModal({isOpen, onClose}) {
                     </select>
                 </div>
                 <div>
-                <label htmlFor="fileUpload">첨부파일</label>
+                    <label htmlFor="fileUpload">첨부파일</label>
                     <input
                         type="file"
                         id="fileUpload"
