@@ -1191,18 +1191,9 @@ useEffect(() => {
       });
   };
   const submitToStep0 = () => {
-    // 미리 가져온 location 사용
-    moveToStepWithData('step0', { 
-      data: {
-        id: bookId,
-        name: location.state?.data?.name,
-        author: location.state?.data?.author
-      }
-    });
+    moveToStepWithData(`step0`,{id:bookId,name:'국어1-1',author:'노미숙'})
   };
-
-
-  
+ 
    
   // 확인 모달 핸들러
   const handleConfirm = () => {
