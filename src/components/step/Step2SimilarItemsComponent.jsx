@@ -5,6 +5,7 @@ import ErrorReportModal from "../common/ErrorReportModalComponent.jsx";
 export default function Step2SimilarItemsComponent({items, onBack, questionNumber, onAddItem}) {
     const [selectedDifficulty, setSelectedDifficulty] = useState("전체");
     const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState(null);
 
     const hasPassage = items.some((item) => item.passageId && item.passageUrl);
 
@@ -34,12 +35,15 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
         return groups;
     }, {});
 
-    const handleOpenErrorReport = () => setIsErrorReportOpen(true);
+    const handleOpenErrorReport = (itemId) => {
+        setSelectedItemId(itemId);
+        setIsErrorReportOpen(true);
+    };
     const handleCloseErrorReport = () => setIsErrorReportOpen(false);
 
     return (
         <>
-            <ErrorReportModal isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
+            <ErrorReportModal itemId={selectedItemId} isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
             <div className="similar-items-container" style={{
                 height: "100%",
                 overflowY: "auto",
