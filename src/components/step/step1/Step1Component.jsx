@@ -128,6 +128,7 @@ const Step2Modal = ({
         
         .pop-content {
           padding: 24px;
+         
         }
         
         .title-wrap {
@@ -428,15 +429,7 @@ const DynamicAccordionItem = ({
   
   const count = countObj?.itemCount;
 
-  // 디버깅 로그 추가
-  console.log('Component Debug:', {
-    title,
-    actualId,
-    isTopicLevel,
-    countsData,
-    countObj,
-    count
-  });
+  
 
   return (
     <div className={`check-group title ${isActive ? 'on' : ''}`}>
