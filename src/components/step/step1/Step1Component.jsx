@@ -195,41 +195,47 @@ const DynamicAccordionItem = ({
 
   return (
     <div className={`check-group title ${isActive ? 'on' : ''}`}>
-      <div className="title-chk" style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        width: '100%',
-        paddingLeft: `${depth * 20}px`
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-          <input
-            ref={checkboxRef}
-            type="checkbox"
-            id={id}
-            checked={isChecked}
-            onChange={onCheckChange}
-            className="que-allCheck depth01"
-          />
-          <label 
-            htmlFor={id} 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              flex: 1,
-              marginRight: '10px'
+    <div className="title-chk" style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      width: '100%',
+      paddingLeft: `${depth * 20}px`
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+        <input
+          ref={checkboxRef}
+          type="checkbox"
+          id={id}
+          checked={isChecked}
+          onChange={onCheckChange}
+          className="que-allCheck depth01"
+        />
+        <label 
+          htmlFor={id} 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            flex: 1,
+            marginRight: '10px'
+          }}
+        >
+          <button
+            type="button"
+            className={`dep-btn ${isActive ? 'active' : ''}`}
+            onClick={(e) => {
+              onToggle();
+              // 체크박스도 토글
+              if (!isChecked) {
+                onCheckChange({ target: { checked: true } });
+              }
             }}
+            style={{ textAlign: 'left', flex: 1 }}
           >
-            <button
-              type="button"
-              className={`dep-btn ${isActive ? 'active' : ''}`}
-              onClick={onToggle}
-              style={{ textAlign: 'left', flex: 1 }}
-            >
-              {title}
-              {isTopicLevel && ` (${countObj?.itemCount ?? 0})`} {/* ID 임시로 표시 */}
-            </button>
+            {title}
+            {isTopicLevel && ` (${countObj?.itemCount ?? 0})`}
+          </button>
             {isTopicLevel && (
               <div className="count-display" style={{
                 display: 'flex',
@@ -663,6 +669,22 @@ useEffect(() => {
   
   })
   const handleCheckChange = (newCheckedNodes) => {
+    // 체크된 노드가 하나라도 있으면 기본값 설정
+    if (newCheckedNodes.length > 0) {
+      // 출처 설정 - 교사용으로 기본 설정
+      setSource('teacher');
+
+      // 평가영역 설정 - 모든 항목 선택
+      if (Array.isArray(evaluation) && evaluation.length > 0) {
+        const allDomainIds = evaluation.map(item => item.domainId);
+        setSelectedEvaluation(allDomainIds);
+      }
+
+      // 문제형태 설정 - 객관식과 주관식 모두 선택
+      setSelectedQuestiontype('objective,subjective');
+    }
+
+    // 기존의 체크노드 업데이트 로직
     setCheckedNodes(newCheckedNodes);
     console.log('Updated checked nodes:', newCheckedNodes);
   };
@@ -683,6 +705,8 @@ useEffect(() => {
     );
   };
 
+
+  
   const handleEvaluationButtonClick = (evaluation) => {
     setSelectedEvaluation(prev =>
         prev.includes(evaluation)
@@ -691,8 +715,19 @@ useEffect(() => {
     );
   };
 
-  const handleQuestionTypeClick = (questiontype) => {
-    setSelectedQuestiontype(prev => prev === questiontype ? '' : questiontype);
+   // 문제 형태 클릭 핸들러 수정
+   const handleQuestionTypeClick = (questiontype) => {
+    if (questiontype === 'objective' && selectedQuestiontype.includes('subjective')) {
+      setSelectedQuestiontype('subjective');
+    } else if (questiontype === 'objective') {
+      setSelectedQuestiontype('objective');
+    } else if (questiontype === 'subjective' && selectedQuestiontype.includes('objective')) {
+      setSelectedQuestiontype('objective');
+    } else if (questiontype === 'subjective') {
+      setSelectedQuestiontype('subjective');
+    } else {
+      setSelectedQuestiontype('objective,subjective');
+    }
   };
 
   const handleSourceClick = (sourceType) => {
@@ -1017,35 +1052,34 @@ useEffect(() => {
 
                       {/* 문제 형태 */}
 
-                      <div className='box'>
-                        <div className='title-wrap'>
-                          <span className='tit-text'>문제 형태</span>
-                        </div>
-                        <div className='btn-wrap multi'>
-                          <button
-                              type='button'
-                              className={`btn-line  ${
-                                  selectedQuestiontype === 'objective' ? 'active' : ''
-                              }`}
-                              data-step='objective'
-                              onClick={() => handleQuestionTypeClick('objective')}
-                          >
-                            객관식
-                          </button>
-                          <button
-                              type='button'
-                              className={`btn-line  ${
-                                  selectedQuestiontype === 'subjective'
-                                      ? 'active'
-                                      : ''
-                              }`}
-                              data-step='subjective'
-                              onClick={() => handleQuestionTypeClick('subjective')}
-                          >
-                            주관식
-                          </button>
-                        </div>
-                      </div>
+                                    <div className='box'>
+                    <div className='title-wrap'>
+                      <span className='tit-text'>문제 형태</span>
+                    </div>
+                    <div className='btn-wrap multi'>
+                      <button
+                        type='button'
+                        className={`btn-line ${
+                          selectedQuestiontype.includes('objective') ? 'active' : ''
+                        }`}
+                        data-step='objective'
+                        onClick={() => handleQuestionTypeClick('objective')}
+                      >
+                        객관식
+                      </button>
+                      <button
+                        type='button'
+                        className={`btn-line ${
+                          selectedQuestiontype.includes('subjective') ? 'active' : ''
+                        }`}
+                        data-step='subjective'
+                        onClick={() => handleQuestionTypeClick('subjective')}
+                      >
+                        주관식
+                      </button>
+                    </div>
+                  </div>
+
 
                       {/* 난이도 구성 */}
                       <DifficultyDisplay/>
