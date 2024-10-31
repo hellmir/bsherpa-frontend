@@ -5,15 +5,12 @@ import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 
-// Helper function to group chapters
-// Helper function to group chapters with unique entries at each level
 const groupChapters = (chapters) => {
     const grouped = [];
 
     chapters.forEach((chapter) => {
-        const { largeChapterName, mediumChapterName, smallChapterName, topicChapterName } = chapter;
+        const {largeChapterName, mediumChapterName, smallChapterName, topicChapterName} = chapter;
 
-        // Check if large chapter already exists
         let largeChapter = grouped.find(group => group.largeChapterName === largeChapterName);
         if (!largeChapter) {
             largeChapter = {
@@ -23,7 +20,6 @@ const groupChapters = (chapters) => {
             grouped.push(largeChapter);
         }
 
-        // Check if medium chapter already exists within the large chapter
         let mediumChapter = largeChapter.mediumChapters.find(
             group => group.mediumChapterName === mediumChapterName
         );
@@ -35,7 +31,6 @@ const groupChapters = (chapters) => {
             largeChapter.mediumChapters.push(mediumChapter);
         }
 
-        // Check if small chapter already exists within the medium chapter
         let smallChapter = mediumChapter.smallChapters.find(
             group => group.smallChapterName === smallChapterName
         );
@@ -47,7 +42,6 @@ const groupChapters = (chapters) => {
             mediumChapter.smallChapters.push(smallChapter);
         }
 
-        // Add unique topics only
         if (!smallChapter.topics.includes(topicChapterName)) {
             smallChapter.topics.push(topicChapterName);
         }
@@ -56,7 +50,7 @@ const groupChapters = (chapters) => {
     return grouped;
 };
 
-const ChapterScopeModalComponent = ({ open, onClose, chapters, subjectName, author, curriculumYear }) => {
+const ChapterScopeModalComponent = ({open, onClose, chapters, subjectName, author, curriculumYear}) => {
     const groupedChapters = groupChapters(chapters);
 
     return (
@@ -73,8 +67,8 @@ const ChapterScopeModalComponent = ({ open, onClose, chapters, subjectName, auth
                     left: "50%",
                     transform: "translate(-50%, -50%)",
                     width: 400,
-                    maxHeight: 500,  // 최대 높이 설정
-                    overflowY: "auto",  // 수직 스크롤 활성화
+                    maxHeight: 500,
+                    overflowY: "auto",
                     bgcolor: "background.paper",
                     boxShadow: 24,
                     borderRadius: 2,
@@ -85,7 +79,7 @@ const ChapterScopeModalComponent = ({ open, onClose, chapters, subjectName, auth
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        bgcolor: "#1976d2",  // 파란색 배경
+                        bgcolor: "#1976d2",
                         color: "white",
                         px: 2,
                         py: 1,
@@ -97,26 +91,26 @@ const ChapterScopeModalComponent = ({ open, onClose, chapters, subjectName, auth
                         {subjectName}{author}({curriculumYear})
                     </Typography>
                     <IconButton color="inherit" onClick={onClose}>
-                        <CloseIcon />
+                        <CloseIcon/>
                     </IconButton>
                 </Box>
-                <Box sx={{ p: 3 }}>
+                <Box sx={{p: 3}}>
                     <Typography id="chapter-scope-title" variant="h6" component="h2">
                         출제 범위
                     </Typography>
-                    <div id="chapter-scope-description" style={{ marginTop: "10px" }}>
+                    <div id="chapter-scope-description" style={{marginTop: "10px"}}>
                         {groupedChapters.map((largeChapter, largeIndex) => (
                             <div key={`large-${largeIndex}`}>
                                 <Typography variant="subtitle1" fontWeight="bold">
                                     {largeChapter.largeChapterName}
                                 </Typography>
                                 {largeChapter.mediumChapters.map((mediumChapter, mediumIndex) => (
-                                    <div key={`medium-${mediumIndex}`} style={{ marginLeft: "15px" }}>
+                                    <div key={`medium-${mediumIndex}`} style={{marginLeft: "15px"}}>
                                         <Typography variant="body2" fontWeight="bold">
                                             {mediumChapter.mediumChapterName}
                                         </Typography>
                                         {mediumChapter.smallChapters.map((smallChapter, smallIndex) => (
-                                            <div key={`small-${smallIndex}`} style={{ marginLeft: "30px" }}>
+                                            <div key={`small-${smallIndex}`} style={{marginLeft: "30px"}}>
                                                 <Typography variant="body2">
                                                     {smallChapter.smallChapterName}
                                                 </Typography>
@@ -124,7 +118,7 @@ const ChapterScopeModalComponent = ({ open, onClose, chapters, subjectName, auth
                                                     <Typography
                                                         key={`topic-${topicIndex}`}
                                                         variant="body2"
-                                                        style={{ marginLeft: "45px" }}
+                                                        style={{marginLeft: "45px"}}
                                                     >
                                                         {topic}
                                                     </Typography>
