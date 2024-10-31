@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 
-const DifficultyDisplay = ({ isStudent = false }) => {
+const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCounts,handleIsConfirm,  handleCloseDifficultyPopup  // 추가
+} ) => {
   const [selectedSteps, setSelectedSteps] = useState(['step2', 'step3', 'step4']);
   const [showRangePopup, setShowRangePopup] = useState(false);
   const [showAutoChangePopup, setShowAutoChangePopup] = useState(false);
   const [counts, setCounts] = useState({
-    step1: 1,
+    step1: 0,
     step2: 10,
     step3: 10,
     step4: 10,
-    step5: 1
+    step5: 0
   });
+  const handleSave = () => {
+    const total = Object.values(difficultyValues).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
+    
+    if (total !== 30) {
+      alert('난이도별 문항 수의 합이 30문제가 되어야 합니다.');
+      return;
+    }
 
+    handleDifficultyCounts(difficultyValues);
+    handleCloseDifficultyPopup();  // 팝업 닫기 추가
+  };
+
+  
   const difficulties = [
     { step: 'step1', text: '최하', color: 'color01', disabled: true },
     { step: 'step2', text: '하', color: 'color02', disabled: false },
@@ -19,6 +32,9 @@ const DifficultyDisplay = ({ isStudent = false }) => {
     { step: 'step4', text: '상', color: 'color04', disabled: false },
     { step: 'step5', text: '최상', color: 'color05', disabled: true }
   ];
+
+
+
 
   const handleStepClick = (step) => {
     // 비활성화된 버튼이나 학생용일 경우 클릭 무시
@@ -30,17 +46,19 @@ const DifficultyDisplay = ({ isStudent = false }) => {
     );
   };
 
-  const handleAutoChange = () => {
+  const handleAutoChange = (isConfirmOpen) => {
     setCounts({
-      step1: 1,
-      step2: 10,
-      step3: 10,
-      step4: 10,
-      step5: 1
+      step1: counts.step1,
+      step2: counts.step2,
+      step3: counts.step3,
+      step4: counts.step4,
+      step5: counts.step5
     });
     setShowAutoChangePopup(false);
     setShowRangePopup(false);
+    handleDifficultyCounts(counts)
   };
+
 
   return (
     <div className="difficulty-section">
@@ -93,60 +111,60 @@ const DifficultyDisplay = ({ isStudent = false }) => {
         </div>
       </div>
 
-      {/* 팝업 */}
-      {showRangePopup && !isStudent && (
-        <div className="popup-overlay">
-          <div className="popup-content">
-            <div className="pop-header">
-              <span>난이도별 문제 수 설정</span>
-              <button 
-                type="button" 
-                className="pop-close"
-                onClick={() => setShowRangePopup(false)}
-              ></button>
+     {/* 팝업 */}
+{showRangePopup && !isStudent && (
+  <div className="popup-overlay">
+    <div className="popup-content">
+      <div className="pop-header">
+        <span>난이도별 문제 수 설정</span>
+        <button
+          type="button"
+          className="pop-close"
+          onClick={() => setShowRangePopup(false)}
+        ></button>
+      </div>
+      <div className="pop-content">
+        <span className="txt">
+          문제 수를 입력하여<br />
+          난이도별 문제 수를 조정하세요.
+        </span>
+        <div className="range-wrap">
+          {difficulties.map(({ step, text, color, disabled }) => (
+            <div key={step} className={`range ${color}`}>
+              <span className={color}>{text}</span>
+              <input
+                type="number"
+                value={counts[step]}
+                onChange={(e) =>
+                  setCounts(prev => ({
+                    ...prev,
+                    [step]: parseInt(e.target.value) || 0
+                  }))
+                }
+                disabled={disabled}
+              />
             </div>
-            <div className="pop-content">
-              <span className="txt">
-                문제 수를 입력하여<br />
-                난이도별 문제 수를 조정하세요.
-              </span>
-              <div className="range-wrap">
-                {difficulties.map(({ step, text, color, disabled }) => (
-                  <div key={step} className={`range ${color}`}>
-                    <span className={color}>{text}</span>
-                    <input
-                      type="number"
-                      value={counts[step]}
-                      onChange={(e) => 
-                        setCounts(prev => ({
-                          ...prev,
-                          [step]: parseInt(e.target.value) || 0
-                        }))
-                      }
-                      disabled={disabled}
-                    />
-                  </div>
-                ))}
-                <div className="range total">
-                  <span>합계</span>
-                  <span className="num">
-                    {Object.values(counts).reduce((a, b) => a + b, 0)}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="pop-footer">
-              <button onClick={() => 
-                setCounts({
-                  step1: 1,
-                  step2: 10,
-                  step3: 10,
-                  step4: 10,
-                  step5: 1
-                })
-              }>
-                초기화
-              </button>
+          ))}
+          <div className="range total">
+            <span>합계</span>
+            <span className="num">
+              {Object.values(counts).reduce((a, b) => a + b, 0)}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="pop-footer">
+        <button onClick={() => {
+          setCounts({
+            step1: 0,
+            step2: 0,
+            step3: 0,
+            step4: 0,
+            step5: 0
+          });
+        }}>
+          초기화
+        </button>
               <button
                 className={
                   Object.values(counts).reduce((a, b) => a + b, 0) !== 20 
@@ -159,6 +177,9 @@ const DifficultyDisplay = ({ isStudent = false }) => {
                   } else {
                     setShowAutoChangePopup(true);
                   }
+                  handleAutoChange()
+                  handleIsConfirm(true)
+                  
                 }}
               >
                 저장
@@ -168,61 +189,7 @@ const DifficultyDisplay = ({ isStudent = false }) => {
         </div>
       )}
 
-      {showAutoChangePopup && !isStudent && (
-        <div className="popup-overlay">
-          <div className="popup-content">
-            <div className="pop-header">
-              <span>문항 구성 자동 변경</span>
-              <button 
-                type="button" 
-                className="pop-close"
-                onClick={() => setShowAutoChangePopup(false)}
-              ></button>
-            </div>
-            <div className="pop-content">
-              <span className="txt">
-                사용자가 원하는 문항 구성을 할 수 없어<br />
-                문항 구성이 자동으로 변경되었습니다.
-              </span>
-              <div className="range-wrap">
-                <div className="range">
-                  <span className="color01">최하</span>
-                  <span className="num">1</span>
-                </div>
-                <div className="range">
-                  <span className="color02">하</span>
-                  <span className="num">10</span>
-                </div>
-                <div className="range">
-                  <span className="color03">중</span>
-                  <span className="num">10</span>
-                </div>
-                <div className="range">
-                  <span className="color04">상</span>
-                  <span className="num">10</span>
-                </div>
-                <div className="range">
-                  <span className="color05">최상</span>
-                  <span className="num">1</span>
-                </div>
-                <div className="range total">
-                  <span>합계</span>
-                  <span className="num">30</span>
-                </div>
-              </div>
-              <span className="txt">해당 문제 구성으로 출제하시겠습니까?</span>
-            </div>
-            <div className="pop-footer">
-              <button onClick={() => setShowAutoChangePopup(false)}>
-                취소
-              </button>
-              <button onClick={handleAutoChange}>
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       <style jsx>{`
         .difficulty-section {
