@@ -1,4 +1,3 @@
-import Step4ComponentBeta from "../../components/step/Step4ComponentBeta.jsx";
 import Step4ComponentBeta2 from "../../components/step/Step4PComponentBeta2.jsx";
 
 
