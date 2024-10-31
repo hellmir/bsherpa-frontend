@@ -727,9 +727,7 @@ useEffect(() => {
         const mediumIds = [...new Set(chapterList.map(item => item.mediumChapterId))];
         const smallIds = [...new Set(chapterList.map(item => item.smallChapterId))];
  
-        console.log('수집된 largeIds:', largeIds);
-        console.log('수집된 mediumIds:', mediumIds);
-        console.log('수집된 smallIds:', smallIds);
+      
  
         // 상태 업데이트
         setLargeChapterId(largeIds);
@@ -760,16 +758,16 @@ useEffect(() => {
                   smallChapterId: String(small)
                 };
  
-                console.log('API 요청 데이터:', requestData);
+                // console.log('API 요청 데이터:', requestData);
  
                 try {
                   const countResponse = await axios.post(
                     'https://bsherpa.duckdns.org/questions/external/counts',requestData
                   );
-                  console.log('countResponse@@@@@@@@@@@  '+countResponse)
+                  // console.log('countResponse@@@@@@@@@@@  '+countResponse)
                   if (countResponse.data.listTopicItemCount) {
                     allCounts = [...allCounts, ...countResponse.data.listTopicItemCount];
-                    console.log(`${large}-${medium}-${small} 챕터의 응답:`, countResponse.data.listTopicItemCount);
+                   // console.log(`${large}-${medium}-${small} 챕터의 응답:`, countResponse.data.listTopicItemCount);
                   }
                 } catch (error) {
                   console.error('챕터 데이터 조회 오류:', requestData, error);
@@ -778,7 +776,7 @@ useEffect(() => {
             }
           }
  
-          console.log('수집된 모든 counts:', allCounts);
+         // console.log('수집된 모든 counts:', allCounts);
  
           // 매핑 및 중복 제거
           const mappedCounts = allCounts.reduce((acc, item, index) => {
