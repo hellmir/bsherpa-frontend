@@ -548,7 +548,7 @@ const DynamicAccordionItem = ({
       item => item?.topicChapterId?.toString() === actualId.toString()
     ) : null;
 
-  console.log('ID:', actualId, 'CountObj:', countObj, 'CountsData:', countsData); // 디버깅용
+//  console.log('ID:', actualId, 'CountObj:', countObj, 'CountsData:', countsData); // 디버깅용
 
   // itemCount가 undefined인 경우 0으로 표시
   const count = countObj?.itemCount || 0;
@@ -988,7 +988,7 @@ useEffect(() => {
           return acc;
         }, {});
 
-        console.log('Final mapped counts:', mappedCounts);
+       // console.log('Final mapped counts:', mappedCounts);
         setCountsData(mappedCounts);
       }
     } catch (error) {
@@ -1016,7 +1016,7 @@ useEffect(() => {
     );
   };
   useEffect(()=>{
-    console.log( countsData)
+    // console.log( countsData)
   
   })
 
@@ -1393,25 +1393,36 @@ const handleIsConfirm = (isConfirm) => {
     range={range}
     onCancel={() => setShowStep2Modal(false)}
     onConfirm={(adjustedCounts) => {
-      // pendingSubmitData가 있는 경우에만 이동
       if (pendingSubmitData) {
+        // 자동 구성된 난이도별 카운트를 difficultyCounts 형식으로 변환
+        const newDifficultyCounts = {
+          step1: 0, // 최하 난이도는 0으로 유지
+          step2: adjustedCounts.find(count => count.level === "하")?.adjustedCount || 0,
+          step3: adjustedCounts.find(count => count.level === "중")?.adjustedCount || 0,
+          step4: adjustedCounts.find(count => count.level === "상")?.adjustedCount || 0,
+          step5: 0  // 최상 난이도는 0으로 유지
+        };
+
+        // difficultyCounts 상태 업데이트
+        setDifficultyCounts(newDifficultyCounts);
+
         moveToStepWithData('step2', {
           ...pendingSubmitData,
           tempItemList: modalData.tempItemList,
           counts: modalData.counts,
           adjustedCounts: adjustedCounts,
-          selectedEvaluation,           // 평가영역 추가
-          selectedQuestiontype,         // 문제형태 추가
-          evaluationData: evaluation,   // 전체 평가영역 데이터 추가
-          questionForm: pendingSubmitData.questionForm,  // 문제형태 형식 추가
-          activityCategoryList: pendingSubmitData.activityCategoryList  // 평가영역 ID 리스트 추가
+          selectedEvaluation,
+          selectedQuestiontype,
+          evaluationData: evaluation,
+          questionForm: pendingSubmitData.questionForm,
+          activityCategoryList: pendingSubmitData.activityCategoryList,
+          difficultyCounts: newDifficultyCounts  // 업데이트된 difficultyCounts 전달
         });
       }
       setShowStep2Modal(false);
     }}
   />
 )}
-
 
 
       
