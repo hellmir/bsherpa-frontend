@@ -4,6 +4,371 @@ import useCustomMove from "../../../hooks/useCustomMove";
 import {useLocation} from "react-router-dom";
 import DifficultyDisplay from './DifficultyDisplay.jsx';
 
+
+// InfoModal.jsx - 정보 표시용 모달
+const InfoModal = ({ 
+  title, 
+  message, 
+  details,
+  onClose 
+}) => {
+  return (
+    <div className="pop-wrap range-type02" style={{ display: 'block' }}>
+      <div className="pop-content">
+        <div className="title-wrap">
+          <h3>{title}</h3>
+        </div>
+        <div className="content-wrap">
+          <p className="txt-desc">{message}</p>
+          
+          <div className="diff-box">
+            <p className="sub-title">설정된 난이도별 문항 수:</p>
+            <div className="diff-list">
+              {details?.map(({ level, count }) => count > 0 && (
+                <div key={level} className="diff-item">
+                  <span className="diff-label">{level}:</span>
+                  <span className="diff-count">{count}문제</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="btn-wrap">
+          <button type="button" className="btn-line blue" onClick={onClose}>
+            확인
+          </button>
+        </div>
+      </div>
+      
+      <style jsx="true">{`
+        /* 기존 스타일 유지 */
+      `}</style>
+    </div>
+  );
+};
+
+// Step2Modal.jsx - Step2 진행을 위한 모달
+const Step2Modal = ({ 
+  title, 
+  message, 
+  details,
+  tempDifficultyCounts,
+  range, // 사용자가 선택한 총 문제 수
+  onCancel, 
+  onConfirm 
+}) => {
+  const [adjustedCounts, setAdjustedCounts] = useState([]);
+  const totalQuestions = parseInt(range);
+
+  useEffect(() => {
+    if (tempDifficultyCounts) {
+      // 실제 문제가 있는 난이도만 필터링
+      const availableDifficulties = tempDifficultyCounts.filter(diff => diff.count > 0);
+      
+      if (availableDifficulties.length === 0) {
+        setAdjustedCounts([]);
+        return;
+      }
+
+      // 전체 가용 문제 수 계산
+      const totalAvailable = availableDifficulties.reduce((sum, diff) => sum + diff.count, 0);
+      
+      // 목표 문제 수와 가용 문제 수 중 작은 값 사용
+      const targetTotal = Math.min(totalQuestions, totalAvailable);
+      
+      // 난이도별 비율 계산 (있는 난이도끼리 균등 분배)
+      const baseRatio = 1 / availableDifficulties.length;
+      
+      // 초기 분배
+      const adjusted = tempDifficultyCounts.map(diff => {
+        if (diff.count === 0) {
+          return {
+            ...diff,
+            adjustedCount: 0,
+            ratio: 0
+          };
+        }
+
+        // 각 난이도별 목표 문제 수 계산
+        const targetCount = Math.round(targetTotal * baseRatio);
+        
+        return {
+          ...diff,
+          adjustedCount: Math.min(diff.count, targetCount),
+          ratio: baseRatio
+        };
+      });
+
+      // 실제 배분된 총 문제 수 계산
+      let actualTotal = adjusted.reduce((sum, diff) => sum + diff.adjustedCount, 0);
+      
+      // 남은 문제 수가 있다면 가용한 난이도에 추가 배분
+      while (actualTotal < targetTotal) {
+        const availableForMore = adjusted.filter(diff => 
+          diff.count > diff.adjustedCount
+        );
+
+        if (availableForMore.length === 0) break;
+
+        // 가장 적게 사용된 난이도부터 추가
+        availableForMore.sort((a, b) => 
+          (a.adjustedCount / a.count) - (b.adjustedCount / b.count)
+        );
+
+        const idx = adjusted.findIndex(diff => diff.level === availableForMore[0].level);
+        adjusted[idx].adjustedCount += 1;
+        actualTotal += 1;
+      }
+
+      // 최종 비율 계산
+      adjusted.forEach(diff => {
+        diff.ratio = actualTotal > 0 ? diff.adjustedCount / actualTotal : 0;
+      });
+
+      setAdjustedCounts(adjusted);
+    }
+  }, [tempDifficultyCounts, totalQuestions]);
+
+  return (
+    <div className="pop-wrap range-type02" style={{ display: 'block' }}>
+      <div className="pop-content">
+        <div className="title-wrap">
+          <h3>{title}</h3>
+        </div>
+        <div className="content-wrap">
+          <p className="txt-desc">
+            원하는 문항 구성을 할 수 없어 문항 구성이 자동으로 변경되었습니다.
+            <br />
+            <span className="total-questions">
+              요청하신 {totalQuestions}문제 중{' '}
+              {adjustedCounts.reduce((sum, item) => sum + item.adjustedCount, 0)}문제가
+              검색되어 자동 배분되었습니다.
+            </span>
+          </p>
+
+          <div className="diff-box">
+            <p className="sub-title">검색된 난이도별 문항 수:</p>
+            <div className="diff-list">
+              {adjustedCounts.map((diff) => (
+                <div key={diff.level} className="diff-item">
+                  <span className="diff-label">{diff.level}:</span>
+                  <div className="diff-count-wrap">
+                    <span className="diff-count">
+                      {diff.count}문제
+                      {diff.count > 0 && (
+                        <span className="diff-adjusted">
+                          {" "}→ {diff.adjustedCount}문제 사용
+                          <span className="distribution-ratio">
+                            {" "}({Math.round(diff.ratio * 100)}%)
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                    {diff.count === 0 && (
+                      <span className="diff-warning">문항 없음</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="btn-wrap">
+          <button type="button" className="btn-line" onClick={onCancel}>
+            취소
+          </button>
+          <button 
+            type="button" 
+            className="btn-line blue" 
+            onClick={() => onConfirm(adjustedCounts)}
+          >
+            확인
+          </button>
+        </div>
+      </div>
+      
+<style jsx="true">{`
+  .pop-wrap {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 400px;
+  }
+  
+  .pop-content {
+    padding: 24px;
+  }
+  
+  .title-wrap {
+    margin-bottom: 16px;
+  }
+  
+  .title-wrap h3 {
+    font-size: 18px;
+    font-weight: bold;
+  }
+  
+  .txt-desc {
+    margin-bottom: 16px;
+    color: #666;
+  }
+  
+  .diff-box {
+    margin-bottom: 20px;
+  }
+  
+  .sub-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  .diff-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .diff-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+  
+  .diff-label {
+    color: #666;
+  }
+
+  .diff-count-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .diff-count {
+    font-weight: 600;
+  }
+
+  .diff-count.warning {
+    color: #ff9800;
+  }
+
+  .diff-adjusted {
+    font-size: 0.9em;
+    color: #2196f3;
+    margin-left: 4px;
+  }
+
+  .distribution-ratio {
+    color: #666;
+    font-size: 0.9em;
+  }
+
+  .diff-warning {
+    font-size: 0.9em;
+    color: #f44336;
+  }
+  
+  .btn-wrap {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 24px;
+  }
+  
+  .btn-line {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .btn-line:hover {
+    background: #f5f5f5;
+  }
+  
+  .btn-line.blue {
+    background: #2196f3;
+    color: #fff;
+    border-color: #2196f3;
+  }
+  
+  .btn-line.blue:hover {
+    background: #1976d2;
+  }
+
+  .total-questions {
+    color: #2196f3;
+    font-weight: bold;
+    display: block;
+    margin-top: 8px;
+  }
+
+  /* 배경색 관련 스타일 추가 */
+  .pop-wrap::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+
+  .content-wrap {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .diff-box {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .diff-item {
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    border-radius: 6px;
+  }
+`}</style>
+    </div>
+  );
+};
+
+
+
+
+
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
 // 데이터 변환 함수
 const transformData = (data) => {
   const hierarchy = {};
@@ -115,12 +480,8 @@ const findNodeData = (nodeId, data) => {
 
   const search = (currentData) => {
     Object.values(currentData).forEach(node => {
-      if (node.id.toString() === id) {
-        foundNode = {
-          id: node.id,
-          name: node.name,
-          children: node.children
-        };
+      if (`${node.id}` === id) {
+        foundNode = node;
         return;
       }
       if (node.children) {
@@ -140,13 +501,12 @@ const extractCheckedNodesData = (checkedNodes, hierarchyData) => {
   checkedNodes.forEach(nodeId => {
     const nodeData = findNodeData(nodeId, hierarchyData);
     if (nodeData) {
-      const id = nodeData.id.toString();
       checkedData.push({
-        id: parseInt(id),
+        id: nodeData.id,
         name: nodeData.name,
-        level: id.length === 1 ? 'large' :
-               id.length === 2 ? 'medium' :
-               id.length === 3 ? 'small' : 'topic'
+        level: nodeId.split('-')[1].length === 1 ? 'large' :
+            nodeId.split('-')[1].length === 2 ? 'medium' :
+                nodeId.split('-')[1].length === 3 ? 'small' : 'topic'
       });
     }
   });
@@ -165,7 +525,7 @@ const DynamicAccordionItem = ({
   onCheckChange,
   children,
   depth = 0,
-  itemCount
+  countsData
 }) => {
   const checkboxRef = React.useRef();
 
@@ -175,13 +535,23 @@ const DynamicAccordionItem = ({
     }
   }, [isIndeterminate]);
 
-  // 소단원인지 확인 (id가 3자리 숫자인 경우)
-  const isSmallChapter = id.replace('node-', '').length === 3;
+  // node-id에서 실제 ID 추출
+  const actualId = id.replace('node-', '');
+  
+  // topic level 체크 (12자리 숫자인지 확인)
+  const isTopicLevel = actualId.length === 12;
 
-  const handleCheckboxChange = (e) => {
-    console.log('Checkbox changed:', id, e.target.checked);
-    onCheckChange(e);
-  };
+  // countsData에서 매칭되는 데이터 찾기
+  const countObj = isTopicLevel ? 
+    // Object.values로 배열로 변환하여 찾기
+    Object.values(countsData).find(
+      item => item?.topicChapterId?.toString() === actualId.toString()
+    ) : null;
+
+//  console.log('ID:', actualId, 'CountObj:', countObj, 'CountsData:', countsData); // 디버깅용
+
+  // itemCount가 undefined인 경우 0으로 표시
+  const count = countObj?.itemCount || 0;
 
   return (
     <div className={`check-group title ${isActive ? 'on' : ''}`}>
@@ -192,29 +562,62 @@ const DynamicAccordionItem = ({
         width: '100%',
         paddingLeft: `${depth * 20}px`
       }}>
-        <input
-          ref={checkboxRef}
-          type="checkbox"
-          id={id}
-          checked={isChecked}
-          onChange={handleCheckboxChange}
-          className="que-allCheck depth01"
-        />
-        <label htmlFor={id} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button
-            type="button"
-            className={`dep-btn ${isActive ? 'active' : ''}`}
-            onClick={onToggle}
-            style={{ textAlign: 'left' }}
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+          <input
+            ref={checkboxRef}
+            type="checkbox"
+            id={id}
+            checked={isChecked}
+            onChange={onCheckChange}
+            className="que-allCheck depth01"
+          />
+          <label 
+            htmlFor={id} 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              flex: 1,
+              marginRight: '10px'
+            }}
           >
-            {title}
-          </button>
-          {isSmallChapter && itemCount !== undefined && (
-            <span className="ml-2 px-2 py-1 bg-gray-100 rounded-full text-sm text-gray-600">
-              {itemCount}문제
-            </span>
-          )}
-        </label>
+            <button
+              type="button"
+              className={`dep-btn ${isActive ? 'active' : ''}`}
+              onClick={(e) => {
+                onToggle();
+                if (!isChecked) {
+                  onCheckChange({ target: { checked: true } });
+                }
+              }}
+              style={{ textAlign: 'left', flex: 1 }}
+            >
+              {title}
+              {isTopicLevel && ` (${count})`}
+            </button>
+            {isTopicLevel && (
+              <div className="count-display" style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginLeft: '10px',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                backgroundColor: '#f5f5f5',
+                fontSize: '0.9em',
+                color: '#666',
+                border: '1px solid #e0e0e0'
+              }}>
+                <span style={{ marginRight: '4px' }}>문항수</span>
+                <strong style={{ 
+                  color: '#2196f3',
+                  fontWeight: 'bold' 
+                }}>
+                  {count}
+                </strong>
+              </div>
+            )}
+          </label>
+        </div>
       </div>
       {children && (
         <div className="depth02" style={{
@@ -228,6 +631,15 @@ const DynamicAccordionItem = ({
   );
 };
 
+
+
+
+
+
+
+
+
+
 // RenderHierarchy 컴포넌트
 const RenderHierarchy = ({
   data,
@@ -237,12 +649,13 @@ const RenderHierarchy = ({
   onCheckChange,
   depth = 0,
   hierarchyData,
-  countsData = {}
+  countsData = []
 }) => {
   return Object.entries(data).map(([key, value]) => {
     const hasChildren = Object.keys(value.children || {}).length > 0;
     const nodeId = `node-${value.id}`;
     
+    // 소단원 체크 및 카운트 데이터 가져오기
     const isSmallChapter = value.id.toString().length === 3;
     const itemCount = isSmallChapter ? countsData[value.id] : undefined;
 
@@ -250,6 +663,27 @@ const RenderHierarchy = ({
     const checkedChildCount = childNodeIds.filter(id => checkedNodes.includes(id)).length;
     const isIndeterminate = hasChildren && checkedChildCount > 0 && checkedChildCount < childNodeIds.length;
     const isChecked = hasChildren ? checkedChildCount === childNodeIds.length : checkedNodes.includes(nodeId);
+
+    const updateParentNodes = (nodeId, newCheckedNodes) => {
+      let currentNodeId = nodeId;
+      while (true) {
+        const parentId = getParentNodeId(hierarchyData, currentNodeId);
+        if (!parentId) break;
+
+        const parentNode = Object.values(hierarchyData).find(node => `node-${node.id}` === parentId);
+        if (!parentNode) break;
+
+        const parentChildIds = getAllChildNodeIds(parentNode).filter(id => id !== parentId);
+        const anyChildChecked = parentChildIds.some(id => newCheckedNodes.includes(id));
+
+        if (!anyChildChecked) {
+          newCheckedNodes = newCheckedNodes.filter(id => id !== parentId);
+        }
+
+        currentNodeId = parentId;
+      }
+      return newCheckedNodes;
+    };
 
     return (
       <DynamicAccordionItem
@@ -265,11 +699,10 @@ const RenderHierarchy = ({
           let newCheckedNodes = [...checkedNodes];
 
           if (newChecked) {
-            if (!newCheckedNodes.includes(nodeId)) {
-              newCheckedNodes.push(nodeId);
-            }
+            newCheckedNodes.push(nodeId);
             if (hasChildren) {
-              childNodeIds.forEach(id => {
+              const childIds = getAllChildNodeIds(value);
+              childIds.forEach(id => {
                 if (!newCheckedNodes.includes(id)) {
                   newCheckedNodes.push(id);
                 }
@@ -278,32 +711,16 @@ const RenderHierarchy = ({
           } else {
             newCheckedNodes = newCheckedNodes.filter(id => id !== nodeId);
             if (hasChildren) {
-              newCheckedNodes = newCheckedNodes.filter(id => !childNodeIds.includes(id));
+              const childIds = getAllChildNodeIds(value);
+              newCheckedNodes = newCheckedNodes.filter(id => !childIds.includes(id));
             }
-          }
-
-          // Update parent nodes
-          let currentNodeId = nodeId;
-          while (true) {
-            const parentId = getParentNodeId(hierarchyData, currentNodeId);
-            if (!parentId) break;
-
-            const parentChildIds = getAllChildNodeIds(findNodeData(parentId, hierarchyData));
-            const allChildrenChecked = parentChildIds.every(id => newCheckedNodes.includes(id));
-            
-            if (allChildrenChecked && !newCheckedNodes.includes(parentId)) {
-              newCheckedNodes.push(parentId);
-            } else if (!allChildrenChecked) {
-              newCheckedNodes = newCheckedNodes.filter(id => id !== parentId);
-            }
-            
-            currentNodeId = parentId;
+            newCheckedNodes = updateParentNodes(nodeId, newCheckedNodes);
           }
 
           onCheckChange(newCheckedNodes);
         }}
         depth={depth}
-        itemCount={itemCount}
+        countsData={countsData}
       >
         {hasChildren && (
           <RenderHierarchy
@@ -322,6 +739,36 @@ const RenderHierarchy = ({
   });
 };
 
+
+// 로딩 스피너 컴포넌트
+const LoadingSpinner = () => (
+  <div className="loading-container" style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px'
+  }}>
+    <div className="loading-spinner" style={{
+      width: '20px',
+      height: '20px',
+      border: '2px solid #f3f3f3',
+      borderTop: '2px solid #3498db',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite',
+      marginRight: '8px'
+    }} />
+    <span>로딩중...</span>
+    <style jsx>{`
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
+
+
+
 const Step1Component = () => {
   const [hierarchyData, setHierarchyData] = useState({});
   const [activeNodes, setActiveNodes] = useState([]);
@@ -333,25 +780,41 @@ const Step1Component = () => {
   const [source, setSource] = useState('');
   const {moveToStepWithData} = useCustomMove();
   const bookId = useLocation().state.data;
-  const [evaluation, setEvaluation] = useState([]);
+  const [evaluation, setEvaluation] = useState({});
   const [curriculumCode, setCurriculumCode] = useState('');
   const [subjectId, setSubjectId] = useState('');
   const [largeChapterId, setLargeChapterId] = useState('');
   const [mediumChapterId, setMediumChapterId] = useState('');
   const [smallChapterId, setSmallChapterId] = useState('');
-  const [countsData, setCountsData] = useState({});
+  const [topicChapterId, setTopicChapterId] = useState('');
+  const  [smallCounts, setSmallCounts] = useState([]);
+  const [countsData, setCountsData] = useState([]);
+  const [itemList ,setItemList] = useState([]);
   const [chapterList, setChapterList] = useState([]);
+  const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
+  const [tempItemList, setTempItemList] = useState([]);
+  const [isLoadingChapters, setIsLoadingChapters] = useState(true);
+  const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(true);
+  
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showStep2Modal, setShowStep2Modal] = useState(false);
+  const [modalData, setModalData] = useState(null);
+  // 확인 모달 관련 상태
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  // 제출 대기 중인 데이터 상태
+  const [pendingSubmitData, setPendingSubmitData] = useState(null);
+
+  // 난이도 카운트 초기값 설정
   const [difficultyCounts, setDifficultyCounts] = useState({
-    step1: 1,
+    step1: 0,
     step2: 10,
     step3: 10,
     step4: 10,
-    step5: 1
+    step5: 0
   });
+  
 
-  const handleDifficultyCountsChange = (counts) => {
-    setDifficultyCounts(counts);
-  };
+  const location = useLocation();
 
   // CSS 스타일시트 로딩
   useEffect(() => {
@@ -377,89 +840,222 @@ const Step1Component = () => {
     };
   }, []);
 
-  // 평가 데이터 로드
-  useEffect(() => {
-    axios.get(`https://bsherpa.duckdns.org/books/external/evaluations?subjectId=${bookId}`)
-      .then((response) => {
-        console.log('Evaluation Response:', response.data);
-        if (response.data.evaluationList) {
-          setEvaluation(response.data.evaluationList);
-        }
-      })
-      .catch((error) => {
-        console.error('Error loading evaluation:', error);
-      });
-  }, [bookId]);
+    // 평가 영역 데이터 로드
+    useEffect(() => {
+      setIsLoadingEvaluation(true);
+      axios.get(`https://bsherpa.duckdns.org/books/external/evaluations?subjectId=${bookId}`)
+        .then((response) => {
+          if (response.data.evaluationList) {
+            setEvaluation(response.data.evaluationList);
+          }
+        })
+        .catch((error) => {
+          console.error('Error loading evaluation:', error);
+        })
+        .finally(() => {
+          setIsLoadingEvaluation(false);
+        });
+    }, [bookId]);
+  
 
-  // 챕터 데이터 로드
-  useEffect(() => {
+
+
+   // 챕터 데이터 로드
+   useEffect(() => {
+    setIsLoadingChapters(true); // 로딩 시작
     axios.post(`https://bsherpa.duckdns.org/step1/chapters/${bookId}`)
       .then((response) => {
         console.log('Chapter Response:', response.data);
-        if (response.data.chapterList) {
-          const transformed = transformData(response.data.chapterList);
-          setHierarchyData(transformed);
-          setChapterList(response.data.chapterList);
-
-          // 첫 번째 챕터의 데이터로 초기화
-          const firstChapter = response.data.chapterList[0];
-          if (firstChapter) {
-            setCurriculumCode(firstChapter.curriculumCode || '');
-            setSubjectId(firstChapter.subjectId || '');
-            setLargeChapterId(firstChapter.largeChapterId || '');
-            setMediumChapterId(firstChapter.mediumChapterId || '');
-            setSmallChapterId(firstChapter.smallChapterId || '');
-          }
+        const transformed = transformData(response.data.chapterList);
+        setHierarchyData(transformed);
+        setChapterList(response.data.chapterList);
+  
+        if (response.data.chapterList && response.data.chapterList.length > 0) {
+          const chapterList = response.data.chapterList;
+          console.log('전체 챕터 리스트:', chapterList);
+  
+          setCurriculumCode(chapterList[0].curriculumCode);
+          setSubjectId(chapterList[0].subjectId);
+          
+          const largeIds = [...new Set(chapterList.map(item => item.largeChapterId))];
+          const mediumIds = [...new Set(chapterList.map(item => item.mediumChapterId))];
+          const smallIds = [...new Set(chapterList.map(item => item.smallChapterId))];
+  
+          setLargeChapterId(largeIds);
+          setMediumChapterId(mediumIds);
+          setSmallChapterId(smallIds);
+  
+          const fetchCountsData = async () => {
+            let allCounts = [];
+            // ... (기존 fetchCountsData 로직)
+            
+            const mappedCounts = allCounts.reduce((acc, item, index) => {
+              acc[index + 1] = {
+                topicChapterId: item.topicChapterId,
+                itemCount: item.itemCount
+              };
+              return acc;
+            }, {});
+  
+            console.log('최종 매핑된 counts:', mappedCounts);
+            setCountsData(mappedCounts);
+          };
+  
+          fetchCountsData();
         }
       })
       .catch((error) => {
         console.error('Error loading chapters:', error);
+      })
+      .finally(() => {
+        setIsLoadingChapters(false); // 로딩 완료 - 성공하든 실패하든 로딩 상태 해제
       });
   }, [bookId]);
 
+
+
+// i 태그 클릭 핸들러
+const handleInfoClick = () => {
+  setShowInfoModal(true);
+};
+
+
+
+
+
+
   // 카운트 데이터 로드
-  useEffect(() => {
-    if (!curriculumCode || !subjectId || !largeChapterId || !mediumChapterId || !smallChapterId) {
-      console.log('Waiting for required fields...');
-      return;
-    }
+ // counts 데이터를 가져오는 useEffect 수정
+useEffect(() => {
+  if (!curriculumCode || !subjectId) {
+    console.log('Waiting for basic fields...');
+    return;
+  }
 
-    const requestData = {
-      curriculumCode: String(curriculumCode),
-      subjectId: String(subjectId),
-      largeChapterId: String(largeChapterId),
-      mediumChapterId: String(mediumChapterId),
-      smallChapterId: String(smallChapterId)
-    };
+  const fetchAllChapterData = async () => {
+    try {
+      if (chapterList && chapterList.length > 0) {
+        const uniqueLargeIds = [...new Set(chapterList.map(item => item.largeChapterId))];
+        const uniqueMediumIds = [...new Set(chapterList.map(item => item.mediumChapterId))];
+        const uniqueSmallIds = [...new Set(chapterList.map(item => item.smallChapterId))];
 
-    console.log('Sending counts request with data:', requestData);
-    axios.post('https://bsherpa.duckdns.org/questions/external/counts', requestData)
-      .then((response) => {
-        console.log('Counts Response:', response.data);
-        if (response.data.listTopicItemCount) {
-          const countsMap = {};
-          response.data.listTopicItemCount.forEach(item => {
-            countsMap[item.smallChapterId] = item.itemCount;
-          });
-          setCountsData(countsMap);
+        let allCounts = [];
+
+        for (const largeId of uniqueLargeIds) {
+          const relatedMediumIds = uniqueMediumIds.filter(mediumId => 
+            mediumId.toString().startsWith(largeId.toString())
+          );
+
+          for (const mediumId of relatedMediumIds) {
+            const relatedSmallIds = uniqueSmallIds.filter(smallId => 
+              smallId.toString().startsWith(mediumId.toString())
+            );
+
+            for (const smallId of relatedSmallIds) {
+              const requestData = {
+                curriculumCode: String(curriculumCode),
+                subjectId: String(subjectId),
+                largeChapterId: String(largeId),
+                mediumChapterId: String(mediumId),
+                smallChapterId: String(smallId)
+              };
+
+              try {
+                const response = await axios.post(
+                  'https://bsherpa.duckdns.org/questions/external/counts', 
+                  requestData
+                );
+
+                if (response.data.listTopicItemCount) {
+                  allCounts = [...allCounts, ...response.data.listTopicItemCount];
+                }
+              } catch (error) {
+                console.error(`Error fetching data for chapter combination:`, requestData, error);
+              }
+            }
+          }
         }
-      })
-      .catch((error) => {
-        console.error('Error loading counts:', error);
-      });
-  }, [curriculumCode, subjectId, largeChapterId, mediumChapterId, smallChapterId]);
+
+        // 중복 제거 및 매핑 - topicChapterId를 키로 사용
+        const mappedCounts = allCounts.reduce((acc, item) => {
+          const key = item.topicChapterId;
+          if (!acc[key] || acc[key].itemCount < item.itemCount) {
+            acc[key] = {
+              topicChapterId: item.topicChapterId,
+              itemCount: item.itemCount
+            };
+          }
+          return acc;
+        }, {});
+
+       // console.log('Final mapped counts:', mappedCounts);
+        setCountsData(mappedCounts);
+      }
+    } catch (error) {
+      console.error('Error in fetchAllChapterData:', error);
+    }
+  };
+
+  fetchAllChapterData();
+}, [curriculumCode, subjectId, chapterList]);
+
+
+
+
+
+
+
+
+  
 
   const handleToggle = (nodeId) => {
     setActiveNodes(prev =>
-      prev.includes(nodeId)
-        ? prev.filter(id => id !== nodeId)
-        : [...prev, nodeId]
+        prev.includes(nodeId)
+            ? prev.filter(id => id !== nodeId)
+            : [...prev, nodeId]
     );
   };
+  useEffect(()=>{
+    // console.log( countsData)
+  
+  })
+
+ // 난이도 레벨 매핑 함수 추가
+ const getDifficultyLabel = (level) => {
+  const levelMap = {
+    '2': '하',
+    '3': '중',
+    '4': '상'
+  };
+  return levelMap[level] || level;
+};
+
+const handleCloseDifficultyPopup = () => {
+  setIsConfirmOpen(false); // 모달 닫기
+};
+
+
 
   const handleCheckChange = (newCheckedNodes) => {
-    console.log('Updating checked nodes:', newCheckedNodes);
+    // 체크된 노드가 하나라도 있으면 기본값 설정
+    if (newCheckedNodes.length > 0) {
+      // 출처 설정 - 교사용으로 기본 설정
+      setSource('teacher');
+
+      // 평가영역 설정 - 모든 항목 선택
+      if (Array.isArray(evaluation) && evaluation.length > 0) {
+        const allDomainIds = evaluation.map(item => item.domainId);
+        setSelectedEvaluation(allDomainIds);
+      }
+
+      // 문제형태 설정 - 객관식과 주관식 모두 선택
+      setSelectedQuestiontype('objective,subjective');
+    }
+
+    // 기존의 체크노드 업데이트 로직
     setCheckedNodes(newCheckedNodes);
+    console.log('Updated checked nodes:', newCheckedNodes);
+    
   };
 
   const handleRangeButtonClick = (value) => {
@@ -472,270 +1068,437 @@ const Step1Component = () => {
 
   const handleStepButtonClick = (step) => {
     setSelectedSteps(prev =>
-      prev.includes(step)
-        ? prev.filter(item => item !== step)
-        : [...prev, step]
+        prev.includes(step)
+            ? prev.filter(item => item !== step)
+            : [...prev, step]
     );
   };
 
+
+  
   const handleEvaluationButtonClick = (evaluation) => {
     setSelectedEvaluation(prev =>
-      prev.includes(evaluation)
-        ? prev.filter(item => item !== evaluation)
-        : [...prev, evaluation]
+        prev.includes(evaluation)
+            ? prev.filter(item => item !== evaluation)
+            : [...prev, evaluation]
     );
   };
 
-  const handleQuestionTypeClick = (questiontype) => {
-    setSelectedQuestiontype(prev => prev === questiontype ? '' : questiontype);
+   // 문제 형태 클릭 핸들러 수정
+   const handleQuestionTypeClick = (questiontype) => {
+    if (questiontype === 'objective' && selectedQuestiontype.includes('subjective')) {
+      setSelectedQuestiontype('subjective');
+    } else if (questiontype === 'objective') {
+      setSelectedQuestiontype('objective');
+    } else if (questiontype === 'subjective' && selectedQuestiontype.includes('objective')) {
+      setSelectedQuestiontype('objective');
+    } else if (questiontype === 'subjective') {
+      setSelectedQuestiontype('subjective');
+    } else {
+      setSelectedQuestiontype('objective,subjective');
+    }
   };
 
   const handleSourceClick = (sourceType) => {
     setSource(prev => prev === sourceType ? '' : sourceType);
   };
+ // useEffect 부분도 수정
+useEffect(() => {
+  if (!curriculumCode || !subjectId || !largeChapterId || !mediumChapterId || !smallChapterId) {
+    console.log('Waiting for all required fields...');
+    return;
+  }
 
+  const requestData = {
+    curriculumCode: String(curriculumCode),
+    subjectId: String(subjectId),
+    largeChapterId: String(largeChapterId),
+    mediumChapterId: String(mediumChapterId),
+    smallChapterId: String(smallChapterId)
+  };
+
+  console.log('Sending counts request with data:', requestData);
+  axios.post('https://bsherpa.duckdns.org/questions/external/counts', requestData)
+    .then((response) => {
+      const itemCounts = response.data.listTopicItemCount;
+      console.log('Raw itemCounts:', itemCounts);
+      
+      const mappedCounts = itemCounts.reduce((acc, item, index) => {
+        acc[index + 1] = {
+          topicChapterId: item.topicChapterId,
+          itemCount: item.itemCount
+        };
+        return acc;
+      }, {});
+      
+      console.log('Mapped counts data:', mappedCounts);
+      setCountsData(mappedCounts);
+    })
+    .catch((error) => {
+      console.error('Error loading counts:', error);
+    });
+}, [curriculumCode, subjectId, largeChapterId, mediumChapterId, smallChapterId]);
+  
+
+  // STEP2 제출 함수 수정
   const submitToStep2 = () => {
-    console.log('Starting submitToStep2...');
+    const checkedNodesData = extractCheckedNodesData(checkedNodes, hierarchyData);
     
-    // 기본 유효성 검사
-    if (!checkedNodes.length) {
-      alert('단원을 선택해주세요.');
-      return;
-    }
-    if (selectedEvaluation.length === 0) {
-      alert('평가 영역을 선택해주세요.');
-      return;
-    }
-    if (!selectedQuestiontype) {
-      alert('문제 형태를 선택해주세요.');
-      return;
-    }
-  
-    // minorClassification 구성
-    const minorClassification = checkedNodes.map(nodeId => {
-      // node-115401 형태에서 ID만 추출
-      const id = nodeId.replace('node-', '');
-      
-      // 해당 ID를 가진 chapter 찾기
+    const minorClassification = checkedNodesData.map(node => {
       const chapterData = chapterList.find(chapter => {
-        return chapter.largeChapterId?.toString() === id ||
-               chapter.mediumChapterId?.toString() === id ||
-               chapter.smallChapterId?.toString() === id ||
-               chapter.topicChapterId?.toString() === id;
+        const nodeIdStr = node.id.toString();
+        return chapter.largeChapterId?.toString() === nodeIdStr ||
+               chapter.mediumChapterId?.toString() === nodeIdStr ||
+               chapter.smallChapterId?.toString() === nodeIdStr ||
+               chapter.topicChapterId?.toString() === nodeIdStr;
       });
-  
+      
       if (!chapterData) return null;
-  
-      // ID 길이에 따라 다른 객체 반환
-      const classification = {
+
+      return {
+        large: parseInt(chapterData.largeChapterId),
+        medium: parseInt(chapterData.mediumChapterId),
+        small: parseInt(chapterData.smallChapterId),
         subject: parseInt(chapterData.subjectId),
-        large: parseInt(chapterData.largeChapterId)
+        topic: parseInt(chapterData.topicChapterId)
       };
-  
-      // medium이 있는 경우에만 추가
-      if (chapterData.mediumChapterId) {
-        classification.medium = parseInt(chapterData.mediumChapterId);
-      }
-      
-      // small이 있는 경우에만 추가
-      if (chapterData.smallChapterId) {
-        classification.small = parseInt(chapterData.smallChapterId);
-      }
-      
-      // topic이 있는 경우에만 추가
-      if (chapterData.topicChapterId) {
-        classification.topic = parseInt(chapterData.topicChapterId);
-      }
-  
-      return classification;
     }).filter(item => item !== null);
-  
-    // questionForm 구성
+
+    const activityCategoryList = Array.isArray(selectedEvaluation) 
+      ? selectedEvaluation.map(item => 
+          typeof item === 'object' && item.domainId 
+            ? parseInt(item.domainId) 
+            : parseInt(item)
+        )
+      : [];
+
+    const levelCnt = [
+      parseInt(difficultyCounts.step1) || 0,
+      parseInt(difficultyCounts.step2) || 0,
+      parseInt(difficultyCounts.step3) || 0,
+      parseInt(difficultyCounts.step4) || 0,
+      parseInt(difficultyCounts.step5) || 0
+    ];
+
     let questionForm = '';
     if (selectedQuestiontype === 'objective') {
-      questionForm = 'multiple';
+      questionForm = 'multiple,';
     } else if (selectedQuestiontype === 'subjective') {
       questionForm = 'subjective';
     } else if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
       questionForm = 'multiple,subjective';
     }
-  
-    // API 요청 데이터 구성
+
+    // 필수 입력값 확인
+    if (activityCategoryList.length === 0) {
+      alert('평가 영역을 선택해주세요.');
+      return;
+    }
+
+    if (minorClassification.length === 0) {
+      alert('단원을 선택해주세요.');
+      return;
+    }
+
+    if (!questionForm) {
+      alert('문제 형태를 선택해주세요.');
+      return;
+    }
+
     const requestData = {
+      activityCategoryList,
+      levelCnt,
       minorClassification,
-      levelCnt: [
-        parseInt(difficultyCounts.step1),
-        parseInt(difficultyCounts.step2),
-        parseInt(difficultyCounts.step3),
-        parseInt(difficultyCounts.step4),
-        parseInt(difficultyCounts.step5)
-      ],
-      questionForm,
-      activityCategoryList: selectedEvaluation.map(item => 
-        typeof item === 'object' ? parseInt(item.domainId) : parseInt(item)
-      )
+      questionForm
     };
-  
-    console.log('Request data:', requestData);
-  
+
     // API 호출
     axios.post('https://bsherpa.duckdns.org/questions/external/chapters', requestData)
       .then((response) => {
-        console.log('API Response:', response.data);
-        const currentSubmitData = {
+        const newTempItemList = [...response.data.itemList];
+        
+        const counts = [
+          {level: "하", count: 0, targetCount: difficultyCounts.step2},
+          {level: "중", count: 0, targetCount: difficultyCounts.step3},
+          {level: "상", count: 0, targetCount: difficultyCounts.step4},
+        ];
+
+        newTempItemList.forEach(item => {
+          const difficulty = counts.find(d => d.level === item.difficultyName);
+          if (difficulty) difficulty.count += 1;
+        });
+
+        setModalData({
+          tempItemList: newTempItemList,
+          counts: counts,
+        });
+        setShowStep2Modal(true);
+
+        counts.forEach(difficulty => {
+          if (difficulty.count > 0) {
+            difficulty.adjustedCount = difficulty.count < difficulty.targetCount 
+              ? difficulty.count 
+              : difficulty.targetCount;
+          } else {
+            difficulty.adjustedCount = 0;
+          }
+        });
+
+        setTempItemList(newTempItemList);
+        setTempDifficultyCounts(counts);
+
+        // pendingSubmitData에 평가영역과 문제형태 추가
+        setPendingSubmitData({
           range,
           selectedSteps,
-          selectedEvaluation,
-          selectedQuestiontype,
+          selectedEvaluation,           // 평가영역 추가
+          selectedQuestiontype,         // 문제형태 추가
+          evaluationData: evaluation,   // 전체 평가영역 데이터 추가
           source,
           bookId,
           checkedNodes,
           difficultyCounts,
-          apiResponse: response.data
-        };
-        
-        moveToStepWithData('step2', currentSubmitData);
+          requestData,
+          apiResponse: response.data,
+          adjustedCounts: counts,
+          questionForm,                 // 문제형태 형식 추가
+          activityCategoryList         // 평가영역 ID 리스트 추가
+        });
+
+        setIsConfirmOpen(true);
       })
       .catch((error) => {
-        console.error('API Error:', error);
-        console.error('Error details:', error.response?.data);
+        console.error('API 오류:', error);
+        console.error('오류 상세:', error.response?.data);
         alert('요청 처리 중 오류가 발생했습니다.');
       });
   };
 
 
+  const submitToStep0 = () => {
+    moveToStepWithData(`step0`,{id:bookId,name:'국어1-1',author:'노미숙'})
+  };
+ 
+   
+  // 확인 모달 핸들러
+  const handleConfirm = () => {
+    if (!pendingSubmitData) return;
+    
+    moveToStepWithData('step2', pendingSubmitData);
+    setIsConfirmOpen(false);
+    setPendingSubmitData(null);
+  };
 
-  
+
+
+const handleDifficultyCounts = (newCounts) => {
+  setDifficultyCounts({
+      step1: newCounts.step1,
+      step2: newCounts.step2,
+      step3: newCounts.step3,
+      step4: newCounts.step4,
+      step5: newCounts.step5
+})
+}
+const handleIsConfirm = (isConfirm) => {
+  setIsConfirmOpen(isConfirm)
+}
+
+
+
   return (
-    <div id="wrap" className="full-pop-que">
-      <div className="full-pop-wrap">
-        {/* 팝업 헤더 */}
-        <div className="pop-header">
-          <ul className="title">
-            <li className="active">STEP 1 단원선택</li>
-            <li>STEP 2 문항 편집</li>
-            <li>STEP 3 시험지 저장</li>
-          </ul>
-          <button type="button" className="del-btn"></button>
-        </div>
+      <div id="wrap" className="full-pop-que">
+        <div className="full-pop-wrap">
+          {/* 팝업 헤더 */}
+          <div className="pop-header">
+            <ul className="title">
+              <li className="active">STEP 1 단원선택</li>
+              <li>STEP 2 문항 편집</li>
+              <li>STEP 3 시험지 저장</li>
+            </ul>
+            <button type="button" className="del-btn"></button>
+          </div>
 
-        <div className="pop-content">
-          <div className="view-box">
-            <div className="view-top">
-              <div className="paper-info">
-                <span>국어 1-1</span>
-                노미숙(2015)
+          <div className="pop-content">
+            <div className="view-box">
+              <div className="view-top">
+                <div className="paper-info">
+                  <span>국어 1-1</span>
+                  노미숙(2015)
+                </div>
               </div>
-            </div>
 
-            <div className="view-bottom">
-              <div className="view-box-wrap">
-                <div className="unit-box-wrap">
-                  <div className="unit-box">
-                    <div className="unit-cnt scroll-inner">
-                      <div className="title-top">
-                        <span>단원정보</span>
-                        <input
-                          type="checkbox"
-                          id="allCheck"
-                          onChange={(e) => {
-                            const allNodeIds = getAllNodeIds(hierarchyData);
-                            setCheckedNodes(e.target.checked ? allNodeIds : []);
-                          }}
-                          checked={checkedNodes.length > 0 && checkedNodes.length === getAllNodeIds(hierarchyData).length}
-                          className="allCheck"
-                        />
-                        <label htmlFor="allCheck">전체선택</label>
-                      </div>
-                      <ul style={{ width: '100%' }}>
-                        <li style={{ width: '100%' }}>
-                          <RenderHierarchy
-                            data={hierarchyData}
-                            activeNodes={activeNodes}
-                            checkedNodes={checkedNodes}
-                            onToggle={handleToggle}
-                            onCheckChange={handleCheckChange}
-                            hierarchyData={hierarchyData}
-                            countsData={countsData}
+              <div className="view-bottom">
+            <div className="view-box-wrap">
+              <div className="unit-box-wrap">
+                <div className="unit-box">
+                  <div className="unit-cnt scroll-inner">
+                    {isLoadingChapters ? (
+                      <LoadingSpinner />
+                    ) : (
+                      <>
+                        <div className="title-top">
+                          <span>단원정보</span>
+                          <input
+                            type="checkbox"
+                            id="allCheck"
+                            onChange={(e) => {
+                              const allNodeIds = getAllNodeIds(hierarchyData);
+                              setCheckedNodes(e.target.checked ? allNodeIds : []);
+                            }}
+                            className="allCheck"
                           />
-                        </li>
-                      </ul>
-                    </div>
+                          <label htmlFor="allCheck">전체선택</label>
+                        </div>
+                        <ul style={{ width: '100%' }}>
+                          <li style={{ width: '100%' }}>
+                            <RenderHierarchy
+                              data={hierarchyData}
+                              activeNodes={activeNodes}
+                              checkedNodes={checkedNodes}
+                              onToggle={handleToggle}
+                              onCheckChange={handleCheckChange}
+                              hierarchyData={hierarchyData}
+                              countsData={countsData}
+                            />
+                          </li>
+                        </ul>
+                      </>
+                    )}
                   </div>
                 </div>
+              </div>
 
-              {/* 옵션 선택 */}
-              <div className="type-box-wrap">
-                <div className="type-box scroll-inner">
-                  <div className="title-top">
-                    <span>출제옵션</span>
-                  </div>
 
-                  {/* 문제 수 */}
-                  <div className="box">
-                    <div className="title-wrap">
-                      <span className="tit-text">
-                        문제 수<em>최대 30문제</em>
-                      </span>
-                    </div>
-                    <div className="count-area">
-                      <div className="btn-wrap">
-                        {['10', '15', '20', '25', '30'].map(value => (
-                          <button
-                            key={value}
-                            type="button"
-                            className={`btn-line ${range === value ? 'active' : ''}`}
-                            onClick={() => handleRangeButtonClick(value)}
-                          >
-                            {value}
-                          </button>
-                        ))}
+
+                  {showInfoModal && (
+        <InfoModal
+          title="난이도별 문항 수 정보"
+          message="현재 설정된 난이도별 문항 수입니다."
+          details={Object.entries(difficultyCounts)
+            .map(([key, value]) => ({
+              level: getDifficultyLabel(key.replace('step', '')),
+              count: value
+            }))
+            .filter(item => item.count > 0 && ['하', '중', '상'].includes(item.level))}
+          onClose={() => setShowInfoModal(false)}
+        />
+      )}
+
+{showStep2Modal && modalData && (
+  <Step2Modal
+    title="문항 구성 자동 변경"
+    message="문항 구성이 자동으로 변경됩니다."
+    tempDifficultyCounts={tempDifficultyCounts}
+    range={range}
+    onCancel={() => setShowStep2Modal(false)}
+    onConfirm={(adjustedCounts) => {
+      if (pendingSubmitData) {
+        // 자동 구성된 난이도별 카운트를 difficultyCounts 형식으로 변환
+        const newDifficultyCounts = {
+          step1: 0, // 최하 난이도는 0으로 유지
+          step2: adjustedCounts.find(count => count.level === "하")?.adjustedCount || 0,
+          step3: adjustedCounts.find(count => count.level === "중")?.adjustedCount || 0,
+          step4: adjustedCounts.find(count => count.level === "상")?.adjustedCount || 0,
+          step5: 0  // 최상 난이도는 0으로 유지
+        };
+
+        // difficultyCounts 상태 업데이트
+        setDifficultyCounts(newDifficultyCounts);
+
+        moveToStepWithData('step2', {
+          ...pendingSubmitData,
+          tempItemList: modalData.tempItemList,
+          counts: modalData.counts,
+          adjustedCounts: adjustedCounts,
+          selectedEvaluation,
+          selectedQuestiontype,
+          evaluationData: evaluation,
+          questionForm: pendingSubmitData.questionForm,
+          activityCategoryList: pendingSubmitData.activityCategoryList,
+          difficultyCounts: newDifficultyCounts  // 업데이트된 difficultyCounts 전달
+        });
+      }
+      setShowStep2Modal(false);
+    }}
+  />
+)}
+
+
+      
+                  {/* 옵션 선택 */}
+                  <div className="type-box-wrap">
+                    <div className="type-box scroll-inner">
+                      <div className="title-top">
+                        <span>출제옵션</span>
                       </div>
-                      <div className="input-area">
-                        <span className="num">
-                          총 <input type="text" value={range} onChange={handleRangeInputChange} /> 문제
+
+                      {/* 문제 수 */}
+                      <div className="box">
+                        <div className="title-wrap">
+                        <span className="tit-text">
+                          문제 수<em>최대 30문제</em>
                         </span>
-                        <div className="txt">*5의 배수로 입력해주세요.</div>
+                        </div>
+                        <div className="count-area">
+                          <div className="btn-wrap">
+                            {['10', '15', '20', '25', '30'].map(value => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    className={`btn-line ${range === value ? 'active' : ''}`}
+                                    onClick={() => handleRangeButtonClick(value)}
+                                >
+                                  {value}
+                                </button>
+                            ))}
+                          </div>
+                          <div className="input-area">
+                          <span className="num">
+                            총 <input type="text" value={range} onChange={handleRangeInputChange} /> 문제
+                          </span>
+                            <div className="txt">*5의 배수로 입력해주세요.</div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* 출처 */}
-                  <div className="box">
-                    <div className="title-wrap">
-                      <span className="tit-text">출처</span>
-                    </div>
-                    <div className="btn-wrap multi">
-                      <button
-                        type="button"
-                        className={`btn-line ${source === 'teacher' ? 'active' : ''}`}
-                        onClick={() => handleSourceClick('teacher')}
-                      >
-                        교사용(교사용 DVD, 지도서, 신규 개발 등)
-                      </button>
-                      <button 
-                        type="button"
-                        className={`px-4 py-2 rounded-lg transition-colors
-                          ${source === 'student' 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          } 
-                          disabled:opacity-50 disabled:cursor-not-allowed`}
-                        onClick={() => handleSourceClick('student')}
-                        disabled={true}
-                      >
-                        학생용(자습서, 평가문제집 등)
-                      </button>
-                    </div>
-                  </div>
+                      {/* 출처 */}
+                      <div className="box">
+                        <div className="title-wrap">
+                          <span className="tit-text">출처</span>
+                        </div>
+                        <div className="btn-wrap multi">
+                          <button
+                              type="button"
+                              className={`btn-line ${source === 'teacher' ? 'active' : ''}`}
+                              onClick={() => handleSourceClick('teacher')}
+                          >
+                            교사용(교사용 DVD, 지도서, 신규 개발 등)
+                          </button>
+                          <button type="button"
+                            className={`px-4 py-2 rounded-lg transition-colors
+                              ${source === 'student' 
+                                ? 'bg-blue-600 text-white' 
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              } 
+                              disabled:opacity-50 disabled:cursor-not-allowed`}
+                            onClick={() => handleSourceClick('student')}
+                            disabled={true}
+                          >
+                            학생용(자습서, 평가문제집 등)
+                          </button>
+                        </div>
+                      </div>
 
-                  {/* 평가 영역 */}
+                        {/* 평가 영역 */}
                   <div className="box">
                     <div className="title-wrap">
                       <span className="tit-text">평가 영역</span>
                     </div>
                     <div className="btn-wrap multi">
-                      {Array.isArray(evaluation) && evaluation.length > 0 ? (
+                      {isLoadingEvaluation ? (
+                        <LoadingSpinner />
+                      ) : Array.isArray(evaluation) && evaluation.length > 0 ? (
                         evaluation.map(item => (
                           <button
                             key={item.domainId}
@@ -752,22 +1515,31 @@ const Step1Component = () => {
                     </div>
                   </div>
 
-                  {/* 문제 형태 */}
-                  <div className='box'>
+
+
+                      {/* 문제 형태 */}
+
+                                    <div className='box'>
                     <div className='title-wrap'>
                       <span className='tit-text'>문제 형태</span>
                     </div>
                     <div className='btn-wrap multi'>
                       <button
                         type='button'
-                        className={`btn-line ${selectedQuestiontype === 'objective' ? 'active' : ''}`}
+                        className={`btn-line ${
+                          selectedQuestiontype.includes('objective') ? 'active' : ''
+                        }`}
+                        data-step='objective'
                         onClick={() => handleQuestionTypeClick('objective')}
                       >
                         객관식
                       </button>
                       <button
                         type='button'
-                        className={`btn-line ${selectedQuestiontype === 'subjective' ? 'active' : ''}`}
+                        className={`btn-line ${
+                          selectedQuestiontype.includes('subjective') ? 'active' : ''
+                        }`}
+                        data-step='subjective'
                         onClick={() => handleQuestionTypeClick('subjective')}
                       >
                         주관식
@@ -775,40 +1547,54 @@ const Step1Component = () => {
                     </div>
                   </div>
 
-                  {/* 난이도 구성 */}
-                  <DifficultyDisplay
-                    difficultyCounts={difficultyCounts}
-                    onCountsChange={handleDifficultyCountsChange}
-                  />
 
-                </div>
-                <div className='bottom-box'>
-                  <p className='total-num'>
-                    총 <span>{range}</span>문제
-                  </p>
+                    <DifficultyDisplay 
+                      countsData={countsData}
+                      handleDifficultyCounts={handleDifficultyCounts}
+                      handleIsConfirm={handleIsConfirm}
+                      handleCloseDifficultyPopup={handleCloseDifficultyPopup}  // 추가
+                    />
+
+
+                      {/* 난이도별 문제수 */}
+
+                    </div>
+                    <div className='bottom-box'>
+                      <p className='total-num'>
+                        총 <span>{range}</span>문제
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-          {/* 하단 버튼 */}
-          <div className='step-btn-wrap'>
-            <button type='button' className='btn-step'>
-              출제 방법 선택
-            </button>
-            <button
-                type='button'
-                className='btn-step next pop-btn'
-                data-pop='que-pop'
-                onClick={submitToStep2}
-            >
-              STEP2 문항 편집
-            </button>
-          </div>
-        </div>
-        <div className='dim'></div>
+        {/* 수정된 확인 모달 */}
+    
+
+
+
+
+
+      {/* 하단 버튼 */}
+      <div className='step-btn-wrap'>
+        <button type='button' className='btn-step'
+        onClick={submitToStep0}>
+          출제 방법 선택
+        </button>
+        <button
+          type='button'
+          className='btn-step next pop-btn'
+          data-pop='que-pop'
+          onClick={submitToStep2}
+        >
+          STEP2 문항 편집
+        </button>
+      </div>
+      
+      <div className='dim'></div>
+    </div>
 
         {/* 난이도별 문제 수 설정 팝업 */}
         <div className='pop-wrap range-type' data-pop='que-range-pop'>

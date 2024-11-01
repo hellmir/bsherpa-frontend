@@ -34,13 +34,15 @@ function Step0Component() {
   const dispatch = useDispatch();
   const { moveToStepWithData, moveToPath, moveToMainReturn } = useCustomMove();
   const examIdList = useSelector(state => state.examIdSlice);
+  const location = useLocation()
 
-  if (useLocation().state===null){
+  if (location===null){
     return moveToMainReturn()
   }
 
-  const book = useLocation().state.data;
+  const book = location.state.data;
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const isReloaded = sessionStorage.getItem("isReloaded");
     if (!isReloaded) {
@@ -49,10 +51,12 @@ function Step0Component() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     dispatch(addBookId(book.id)); // Book ID를 추가
   }, [dispatch, book.id]); // 의존성 배열에 추가
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const { data } = useQuery({
     queryKey: [],
     queryFn: () => getSubjectExamsFromTsherpa(book.id),

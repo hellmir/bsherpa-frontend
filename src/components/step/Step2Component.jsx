@@ -21,6 +21,8 @@ import ModalComponent from "../common/ModalComponent.jsx";
 import DifficultyCountComponent from "../common/DifficultyCountComponent.jsx";
 import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
 import ErrorReportModal from "../common/ErrorReportModalComponent.jsx";
+import {useLocation} from "react-router-dom";
+import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent.jsx";
 
 export default function Step2Component() {
     const dispatch = useDispatch();
@@ -53,6 +55,12 @@ export default function Step2Component() {
     const [isNoSimilarItemsModalOpen, setIsNoSimilarItemsModalOpen] = useState(false);
     const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
     const [lastAddedItemId, setLastAddedItemId] = useState(null);
+    const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState(null);
+
+    const location = useLocation();
+    const step1Data = useLocation().state?.data || null;
+    console.log('Step1으로부터 전송된 데이터: ', step1Data);
 
     const fetchSimilarItems = (itemId, questionIndex) => {
         getSimilarItemsImagesFromTsherpa(itemId)
@@ -75,7 +83,10 @@ export default function Step2Component() {
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false)
     const handleCloseNoSimilarItemsModal = () => setIsNoSimilarItemsModalOpen(false);
-    const handleOpenErrorReport = () => setIsErrorReportOpen(true);
+    const handleOpenErrorReport = (itemId) => {
+        setSelectedItemId(itemId);
+        setIsErrorReportOpen(true);
+    };
     const handleCloseErrorReport = () => setIsErrorReportOpen(false);
 
     const bookId = useSelector((state) => state.bookIdSlice);
@@ -123,29 +134,39 @@ export default function Step2Component() {
 
     console.log(`평가 영역 목록: ${activityCategoryList}`)
 
-    // TODO: Step1으로부터 평가 영역 ID, 난이도 별 문제 수, 단원 코드 정보, 문제 유형을 받아서 연동
-    const itemsRequestForm = evaluationsData
+    const minorClassification = step1Data?.apiResponse?.itemList?.map(item => ({
+        large: item.largeChapterId,
+        medium: item.mediumChapterId,
+        small: item.smallChapterId,
+        subject: item.bookId,
+        topic: item.topicChapterId
+    })) || [];
+
+    const chapterNames = itemList.map(item => ({
+        largeChapterName: item.largeChapterName,
+        mediumChapterName: item.mediumChapterName,
+        smallChapterName: item.smallChapterName,
+        topicChapterName: item.topicChapterName
+    }));
+
+    const handleOpenScopeModal = () => setIsScopeModalOpen(true);
+    const handleCloseScopeModal = () => setIsScopeModalOpen(false);
+
+    const itemsRequestForm = step1Data && step1Data.difficultyCounts && evaluationsData
         ? {
-            activityCategoryList: activityCategoryList,
-            levelCnt: [3, 3, 3, 3, 3],
-            minorClassification: [
-                {
-                    large: 115401,
-                    medium: 11540101,
-                    small: 1154010101,
-                    subject: 1154
-                },
-                {
-                    large: 115402,
-                    medium: 11540202,
-                    small: 1154020202,
-                    subject: 1154
-                }
+            activityCategoryList: step1Data.selectedEvaluation,
+            levelCnt: [
+                step1Data.difficultyCounts.step1,
+                step1Data.difficultyCounts.step2,
+                step1Data.difficultyCounts.step3,
+                step1Data.difficultyCounts.step4,
+                step1Data.difficultyCounts.step5
             ],
-            questionForm: "multiple,subjective"
+            minorClassification: minorClassification,
+            questionForm: step1Data.selectedQuestiontype,
         }
         : null;
-    console.log(itemsRequestForm);
+    console.log('문제 요청 양식: ', itemsRequestForm);
 
     const {data: questionsData, isLoading, error} = useQuery({
         queryKey: ["getChapterItemsRequest", itemsRequestForm],
@@ -464,9 +485,8 @@ export default function Step2Component() {
 
         if (!destination) return;
 
-        const updatedGroups = JSON.parse(JSON.stringify(groupedItems));
-
         if (type === "PASSAGE_GROUP") {
+            const updatedGroups = Array.from(groupedItems);
             const [movedGroup] = updatedGroups.splice(source.index, 1);
             updatedGroups.splice(destination.index, 0, movedGroup);
 
@@ -485,7 +505,7 @@ export default function Step2Component() {
             const destinationPassageIdNumber = Number(destinationPassageId);
 
             console.log(`sourcePassageId: ${sourcePassageIdNumber}, destinationPassageId: ${destinationPassageIdNumber}`);
-            console.log('현재 groupedItems:', updatedGroups.map(group => group.passageId));
+            console.log('현재 groupedItems:', groupedItems.map(group => group.passageId));
 
             if (sourcePassageId !== destinationPassageId && sourcePassageId !== "noPassage" && destinationPassageId !== "noPassage") {
                 console.log('다른 지문으로 이동할 수 없습니다.');
@@ -504,6 +524,7 @@ export default function Step2Component() {
                 }
                 return false;
             });
+
             if (groupIndex === -1) {
                 console.error('해당 지문 그룹을 찾을 수 없습니다.');
                 return;
@@ -511,23 +532,8 @@ export default function Step2Component() {
 
             const group = updatedGroups[groupIndex];
 
-            const itemIndexInGroup = source.index - itemList.findIndex(item => item.passageId === sourcePassageIdNumber);
-
-            if (itemIndexInGroup < 0 || itemIndexInGroup >= group.items.length) {
-                console.error('item 인덱스가 존재하지 않습니다.');
-                return;
-            }
-
-            const [movedItem] = group.items.splice(itemIndexInGroup, 1);
-
-            if (!movedItem || !movedItem.itemId) {
-                console.error(`movedItem이 올바르지 않거나 itemId가 존재하지 않습니다: `, movedItem);
-                return;
-            }
-
-            const destinationIndexInGroup = destination.index - itemList.findIndex(item => item.passageId === destinationPassageIdNumber);
-
-            group.items.splice(destinationIndexInGroup, 0, movedItem);
+            const [movedItem] = group.items.splice(source.index, 1);
+            group.items.splice(destination.index, 0, movedItem);
 
             setGroupedItems(updatedGroups);
 
@@ -571,7 +577,7 @@ export default function Step2Component() {
                 handleClose={handleCloseNoSimilarItemsModal}
                 open={isNoSimilarItemsModalOpen}
             />
-            <ErrorReportModal isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
+            <ErrorReportModal itemId={selectedItemId} isOpen={isErrorReportOpen} onClose={handleCloseErrorReport}/>
             <div id="wrap" className="full-pop-que">
                 <div className="full-pop-wrap">
                     <div className="pop-header">
@@ -593,7 +599,17 @@ export default function Step2Component() {
                                         <i className="research"></i>재검색
                                     </button>
                                 )}
-                                <button className="btn-default pop-btn" data-pop="que-scope-pop">출제범위</button>
+                                <button className="btn-default pop-btn" onClick={handleOpenScopeModal}>
+                                    출제범위
+                                </button>
+                                <ChapterScopeModalComponent
+                                    open={isScopeModalOpen}
+                                    onClose={handleCloseScopeModal}
+                                    subjectName={subjectName}
+                                    author={author}
+                                    curriculumYear={curriculumYear}
+                                    chapters={chapterNames}
+                                />
                             </div>
                             <div className="view-bottom type01">
                                 <div className="cnt-box">
@@ -731,7 +747,8 @@ export default function Step2Component() {
                                                                 </div>
                                                                 <div className="btn-wrap">
                                                                     <button type="button" className="btn-error pop-btn"
-                                                                            onClick={handleOpenErrorReport}></button>
+                                                                            onClick={() => handleOpenErrorReport(item.itemId)}
+                                                                    ></button>
 
                                                                     <button type="button"
                                                                             className="btn-delete"
