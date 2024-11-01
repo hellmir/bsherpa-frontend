@@ -538,61 +538,63 @@ const DynamicAccordionItem = ({
   // node-id에서 실제 ID 추출
   const actualId = id.replace('node-', '');
   
-  // topic level 체크
+  // topic level 체크 (12자리 숫자인지 확인)
   const isTopicLevel = actualId.length === 12;
 
   // countsData에서 매칭되는 데이터 찾기
-  const countObj = isTopicLevel ? Object.values(countsData).find(
-    item => item?.topicChapterId?.toString() === actualId
-  ) : null;
-  
-  const count = countObj?.itemCount;
+  const countObj = isTopicLevel ? 
+    // Object.values로 배열로 변환하여 찾기
+    Object.values(countsData).find(
+      item => item?.topicChapterId?.toString() === actualId.toString()
+    ) : null;
 
-  
+  console.log('ID:', actualId, 'CountObj:', countObj, 'CountsData:', countsData); // 디버깅용
+
+  // itemCount가 undefined인 경우 0으로 표시
+  const count = countObj?.itemCount || 0;
 
   return (
     <div className={`check-group title ${isActive ? 'on' : ''}`}>
-    <div className="title-chk" style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      width: '100%',
-      paddingLeft: `${depth * 20}px`
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-        <input
-          ref={checkboxRef}
-          type="checkbox"
-          id={id}
-          checked={isChecked}
-          onChange={onCheckChange}
-          className="que-allCheck depth01"
-        />
-        <label 
-          htmlFor={id} 
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            flex: 1,
-            marginRight: '10px'
-          }}
-        >
-          <button
-            type="button"
-            className={`dep-btn ${isActive ? 'active' : ''}`}
-            onClick={(e) => {
-              onToggle();
-              // 체크박스도 토글
-              if (!isChecked) {
-                onCheckChange({ target: { checked: true } });
-              }
+      <div className="title-chk" style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        width: '100%',
+        paddingLeft: `${depth * 20}px`
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+          <input
+            ref={checkboxRef}
+            type="checkbox"
+            id={id}
+            checked={isChecked}
+            onChange={onCheckChange}
+            className="que-allCheck depth01"
+          />
+          <label 
+            htmlFor={id} 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              flex: 1,
+              marginRight: '10px'
             }}
-            style={{ textAlign: 'left', flex: 1 }}
           >
-            {title}
-            {isTopicLevel && ` (${countObj?.itemCount ?? 0})`}
-          </button>
+            <button
+              type="button"
+              className={`dep-btn ${isActive ? 'active' : ''}`}
+              onClick={(e) => {
+                onToggle();
+                if (!isChecked) {
+                  onCheckChange({ target: { checked: true } });
+                }
+              }}
+              style={{ textAlign: 'left', flex: 1 }}
+            >
+              {title}
+              {isTopicLevel && ` (${count})`}
+            </button>
             {isTopicLevel && (
               <div className="count-display" style={{
                 display: 'flex',
@@ -610,7 +612,7 @@ const DynamicAccordionItem = ({
                   color: '#2196f3',
                   fontWeight: 'bold' 
                 }}>
-                  {count ?? 0}
+                  {count}
                 </strong>
               </div>
             )}
@@ -628,6 +630,11 @@ const DynamicAccordionItem = ({
     </div>
   );
 };
+
+
+
+
+
 
 
 
@@ -918,99 +925,87 @@ const handleInfoClick = () => {
 
 
   // 카운트 데이터 로드
-  useEffect(() => {
-    if (!curriculumCode || !subjectId) {
-      console.log('Waiting for basic fields...');
-      return;
-    }
-  
-    const fetchAllChapterData = async () => {
-      try {
-        // response.data.chapterList의 첫 번째 항목만이 아닌 전체 데이터를 사용
-        if (response.data.chapterList) {
-          // 각 챕터별 고유한 ID 추출
-          const uniqueLargeIds = [...new Set(response.data.chapterList.map(item => item.largeChapterId))];
-          const uniqueMediumIds = [...new Set(response.data.chapterList.map(item => item.mediumChapterId))];
-          const uniqueSmallIds = [...new Set(response.data.chapterList.map(item => item.smallChapterId))];
-  
-          // state 업데이트
-          setLargeChapterId(uniqueLargeIds);
-          setMediumChapterId(uniqueMediumIds);
-          setSmallChapterId(uniqueSmallIds);
-  
-          let allCounts = [];
-  
-          // 모든 고유한 조합에 대해 API 호출
-          for (const largeId of uniqueLargeIds) {
-            const relatedMediumIds = uniqueMediumIds.filter(mediumId => 
-              mediumId.toString().startsWith(largeId.toString())
+ // counts 데이터를 가져오는 useEffect 수정
+useEffect(() => {
+  if (!curriculumCode || !subjectId) {
+    console.log('Waiting for basic fields...');
+    return;
+  }
+
+  const fetchAllChapterData = async () => {
+    try {
+      if (chapterList && chapterList.length > 0) {
+        const uniqueLargeIds = [...new Set(chapterList.map(item => item.largeChapterId))];
+        const uniqueMediumIds = [...new Set(chapterList.map(item => item.mediumChapterId))];
+        const uniqueSmallIds = [...new Set(chapterList.map(item => item.smallChapterId))];
+
+        let allCounts = [];
+
+        for (const largeId of uniqueLargeIds) {
+          const relatedMediumIds = uniqueMediumIds.filter(mediumId => 
+            mediumId.toString().startsWith(largeId.toString())
+          );
+
+          for (const mediumId of relatedMediumIds) {
+            const relatedSmallIds = uniqueSmallIds.filter(smallId => 
+              smallId.toString().startsWith(mediumId.toString())
             );
-  
-            for (const mediumId of relatedMediumIds) {
-              const relatedSmallIds = uniqueSmallIds.filter(smallId => 
-                smallId.toString().startsWith(mediumId.toString())
-              );
-  
-              for (const smallId of relatedSmallIds) {
-                const requestData = {
-                  curriculumCode: String(curriculumCode),
-                  subjectId: String(subjectId),
-                  largeChapterId: String(largeId),
-                  mediumChapterId: String(mediumId),
-                  smallChapterId: String(smallId)
-                };
-  
-                console.log('Requesting with data:', requestData);
-  
-                try {
-                  const response = await axios.post(
-                    'https://bsherpa.duckdns.org/questions/external/counts', 
-                    requestData
-                  );
-  
-                  if (response.data.listTopicItemCount) {
-                    allCounts = [...allCounts, ...response.data.listTopicItemCount];
-                  }
-                } catch (error) {
-                  console.error(`Error fetching data for chapter combination:`, requestData, error);
+
+            for (const smallId of relatedSmallIds) {
+              const requestData = {
+                curriculumCode: String(curriculumCode),
+                subjectId: String(subjectId),
+                largeChapterId: String(largeId),
+                mediumChapterId: String(mediumId),
+                smallChapterId: String(smallId)
+              };
+
+              try {
+                const response = await axios.post(
+                  'https://bsherpa.duckdns.org/questions/external/counts', 
+                  requestData
+                );
+
+                if (response.data.listTopicItemCount) {
+                  allCounts = [...allCounts, ...response.data.listTopicItemCount];
                 }
+              } catch (error) {
+                console.error(`Error fetching data for chapter combination:`, requestData, error);
               }
             }
           }
-  
-          // 결과 확인용 로그
-          console.log('All collected counts:', allCounts);
-  
-          // 중복 제거 및 매핑
-          const uniqueCounts = Object.values(
-            allCounts.reduce((acc, item) => {
-              const key = item.topicChapterId;
-              if (!acc[key] || acc[key].itemCount < item.itemCount) {
-                acc[key] = item;
-              }
-              return acc;
-            }, {})
-          );
-  
-          // 최종 매핑
-          const mappedCounts = uniqueCounts.reduce((acc, item, index) => {
-            acc[index + 1] = {
+        }
+
+        // 중복 제거 및 매핑 - topicChapterId를 키로 사용
+        const mappedCounts = allCounts.reduce((acc, item) => {
+          const key = item.topicChapterId;
+          if (!acc[key] || acc[key].itemCount < item.itemCount) {
+            acc[key] = {
               topicChapterId: item.topicChapterId,
               itemCount: item.itemCount
             };
-            return acc;
-          }, {});
-  
-          console.log('Final mapped counts:', mappedCounts);
-          setCountsData(mappedCounts);
-        }
-      } catch (error) {
-        console.error('Error in fetchAllChapterData:', error);
+          }
+          return acc;
+        }, {});
+
+        console.log('Final mapped counts:', mappedCounts);
+        setCountsData(mappedCounts);
       }
-    };
-  
-    fetchAllChapterData();
-  }, [curriculumCode, subjectId]);
+    } catch (error) {
+      console.error('Error in fetchAllChapterData:', error);
+    }
+  };
+
+  fetchAllChapterData();
+}, [curriculumCode, subjectId, chapterList]);
+
+
+
+
+
+
+
+
   
 
   const handleToggle = (nodeId) => {
@@ -1221,67 +1216,53 @@ useEffect(() => {
     axios.post('https://bsherpa.duckdns.org/questions/external/chapters', requestData)
       .then((response) => {
         const newTempItemList = [...response.data.itemList];
-        // itemList의 모든 아이템 출력
-        console.log('All Items in itemList:');
-        response.data.itemList.forEach((item, index) => {
-            console.log(`\n=== Item ${index + 1} ===`);
-            Object.entries(item).forEach(([key, value]) => {
-                console.log(`${key}: ${value}`);
-            });
-        });
-        // 기본 카운트 객체 초기화
+        
         const counts = [
           {level: "하", count: 0, targetCount: difficultyCounts.step2},
           {level: "중", count: 0, targetCount: difficultyCounts.step3},
           {level: "상", count: 0, targetCount: difficultyCounts.step4},
         ];
 
-        // 먼저 각 난이도별로 실제 문제 수를 계산
         newTempItemList.forEach(item => {
           const difficulty = counts.find(d => d.level === item.difficultyName);
           if (difficulty) difficulty.count += 1;
         });
+
         setModalData({
           tempItemList: newTempItemList,
           counts: counts,
-          // ... 기타 필요한 데이터
         });
         setShowStep2Modal(true);
-        // 각 난이도별로 목표 문제 수와 실제 문제 수를 비교하여 조정
+
         counts.forEach(difficulty => {
           if (difficulty.count > 0) {
-            // 실제 문제 수가 목표보다 적으면 실제 문제 수를 사용
-            if (difficulty.count < difficulty.targetCount) {
-              difficulty.adjustedCount = difficulty.count;
-            } else {
-              // 실제 문제 수가 목표보다 많으면 목표 수를 사용
-              difficulty.adjustedCount = difficulty.targetCount;
-            }
+            difficulty.adjustedCount = difficulty.count < difficulty.targetCount 
+              ? difficulty.count 
+              : difficulty.targetCount;
           } else {
-            // 해당 난이도의 문제가 없으면 0으로 설정
             difficulty.adjustedCount = 0;
           }
         });
 
-        console.log('원본 문제 목록:', newTempItemList);
-        console.log('난이도별 문제 수 현황:', counts);
-
         setTempItemList(newTempItemList);
         setTempDifficultyCounts(counts);
 
-        // 현재 제출 데이터 저장
+        // pendingSubmitData에 평가영역과 문제형태 추가
         setPendingSubmitData({
           range,
           selectedSteps,
-          selectedEvaluation,
-          selectedQuestiontype,
+          selectedEvaluation,           // 평가영역 추가
+          selectedQuestiontype,         // 문제형태 추가
+          evaluationData: evaluation,   // 전체 평가영역 데이터 추가
           source,
           bookId,
           checkedNodes,
           difficultyCounts,
           requestData,
           apiResponse: response.data,
-          adjustedCounts: counts
+          adjustedCounts: counts,
+          questionForm,                 // 문제형태 형식 추가
+          activityCategoryList         // 평가영역 ID 리스트 추가
         });
 
         setIsConfirmOpen(true);
@@ -1292,6 +1273,8 @@ useEffect(() => {
         alert('요청 처리 중 오류가 발생했습니다.');
       });
   };
+
+
   const submitToStep0 = () => {
     moveToStepWithData(`step0`,{id:bookId,name:'국어1-1',author:'노미숙'})
   };
@@ -1407,13 +1390,23 @@ const handleIsConfirm = (isConfirm) => {
     title="문항 구성 자동 변경"
     message="문항 구성이 자동으로 변경됩니다."
     tempDifficultyCounts={tempDifficultyCounts}
-    range={range}  // 사용자가 선택한 문제 수
+    range={range}
     onCancel={() => setShowStep2Modal(false)}
     onConfirm={(adjustedCounts) => {
-      moveToStepWithData('step2', {
-        ...modalData,
-        adjustedCounts
-      });
+      // pendingSubmitData가 있는 경우에만 이동
+      if (pendingSubmitData) {
+        moveToStepWithData('step2', {
+          ...pendingSubmitData,
+          tempItemList: modalData.tempItemList,
+          counts: modalData.counts,
+          adjustedCounts: adjustedCounts,
+          selectedEvaluation,           // 평가영역 추가
+          selectedQuestiontype,         // 문제형태 추가
+          evaluationData: evaluation,   // 전체 평가영역 데이터 추가
+          questionForm: pendingSubmitData.questionForm,  // 문제형태 형식 추가
+          activityCategoryList: pendingSubmitData.activityCategoryList  // 평가영역 ID 리스트 추가
+        });
+      }
       setShowStep2Modal(false);
     }}
   />
@@ -1608,3 +1601,4 @@ const handleIsConfirm = (isConfirm) => {
 
 
 export default Step1Component;
+
