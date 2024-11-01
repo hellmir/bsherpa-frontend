@@ -1213,7 +1213,7 @@ useEffect(() => {
     };
 
     // API 호출
-    axios.post('https://bsherpa.duckdns.org/questions/external/chapters', requestData)
+    axios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
       .then((response) => {
         const newTempItemList = [...response.data.itemList];
         
