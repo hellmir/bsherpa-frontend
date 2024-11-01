@@ -13,20 +13,25 @@ const Step4ComponentBeta2 = ({ response }) => {
             const canvas = await html2canvas(element, { useCORS: true });
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 95; // 이미지 캡처할 때 너비
-            const imgHeight = (canvas.height * imgWidth) / canvas.width; // html 전체 길이 비율 맞춰 뽑기
+            const canvasW = 95;
+            const canvasH = (canvas.height * canvasH) / canvas.width;
 
-            let heightLeft = imgHeight;
-            let position = 0;
+            const pdfH = 297; // A4 페이지 높이
+            let leftH = canvasH; // 남은 높이
+            let position = 0; // Y 위치
 
-            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-            heightLeft -= pdf.internal.pageSize.height;
+            // 첫 페이지에 이미지 추가
+            while (leftH > 0) {
+                const currentPdfH = Math.min(leftH, pdfH);
+                pdf.addImage(imgData, 'PNG', 10, position, canvasW, currentPdfH);
 
-            while (heightLeft >= 0) {
-                position = Math.max(heightLeft - imgHeight, 0); // 음수가 되지 않도록
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                heightLeft -= pdf.internal.pageSize.height;
+                leftH -= currentPdfH; // 남은 높이에서 현재 페이지 높이를 뺌
+
+                // 다음 페이지 추가
+                if (leftH > 0) {
+                    pdf.addPage();
+                    //position = 0; // 새 페이지의 경우 Y 위치 초기화
+                }
             }
 
             pdf.save('document.pdf');
@@ -34,7 +39,6 @@ const Step4ComponentBeta2 = ({ response }) => {
             console.error('PDF 생성 중 오류:', error);
         }
     };
-
 
     const renderContent = () => {
         const sections = [];
