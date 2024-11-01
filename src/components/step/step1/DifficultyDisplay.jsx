@@ -111,7 +111,15 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
         </div>
       </div>
 
-     {/* 팝업 */}
+
+
+
+
+
+
+
+
+{/* 팝업 */}
 {showRangePopup && !isStudent && (
   <div className="popup-overlay">
     <div className="popup-content">
@@ -132,17 +140,47 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
           {difficulties.map(({ step, text, color, disabled }) => (
             <div key={step} className={`range ${color}`}>
               <span className={color}>{text}</span>
-              <input
-                type="number"
-                value={counts[step]}
-                onChange={(e) =>
-                  setCounts(prev => ({
-                    ...prev,
-                    [step]: parseInt(e.target.value) || 0
-                  }))
-                }
-                disabled={disabled}
-              />
+              <div className="input-group" style={{ display: 'flex', alignItems: 'center' }}>
+                <button 
+                  className="decrease-btn"
+                  onClick={() => {
+                    if (!disabled) {
+                      setCounts(prev => ({
+                        ...prev,
+                        [step]: Math.max(0, (prev[step] || 0) - 1)
+                      }));
+                    }
+                  }}
+                  disabled={disabled || counts[step] <= 0}
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  value={counts[step]}
+                  onChange={(e) =>
+                    setCounts(prev => ({
+                      ...prev,
+                      [step]: parseInt(e.target.value) || 0
+                    }))
+                  }
+                  disabled={disabled}
+                />
+                <button 
+                  className="increase-btn"
+                  onClick={() => {
+                    if (!disabled) {
+                      setCounts(prev => ({
+                        ...prev,
+                        [step]: (prev[step] || 0) + 1
+                      }));
+                    }
+                  }}
+                  disabled={disabled}
+                >
+                  +
+                </button>
+              </div>
             </div>
           ))}
           <div className="range total">
@@ -165,29 +203,79 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
         }}>
           초기화
         </button>
-              <button
-                className={
-                  Object.values(counts).reduce((a, b) => a + b, 0) !== 20 
-                    ? 'disabled' 
-                    : ''
-                }
-                onClick={() => {
-                  if (Object.values(counts).reduce((a, b) => a + b, 0) === 20) {
-                    setShowRangePopup(false);
-                  } else {
-                    setShowAutoChangePopup(true);
-                  }
-                  handleAutoChange()
-                  handleIsConfirm(true)
-                  
-                }}
-              >
-                저장
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        <button
+          className={
+            Object.values(counts).reduce((a, b) => a + b, 0) !== 20 
+              ? 'disabled' 
+              : ''
+          }
+          onClick={() => {
+            if (Object.values(counts).reduce((a, b) => a + b, 0) === 20) {
+              setShowRangePopup(false);
+            } else {
+              setShowAutoChangePopup(true);
+            }
+            handleAutoChange()
+            handleIsConfirm(true)
+          }}
+        >
+          저장
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+<style jsx>{`
+  .input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .decrease-btn,
+  .increase-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .decrease-btn:hover,
+  .increase-btn:hover {
+    background: #f5f5f5;
+  }
+
+  .decrease-btn:disabled,
+  .increase-btn:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  input[type="number"] {
+    width: 60px;
+    text-align: center;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+`}</style>
 
       
 
