@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
 import {
@@ -26,7 +26,6 @@ import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent.jsx
 
 export default function Step2Component() {
     const dispatch = useDispatch();
-    const itemContainerRef = useRef(null);
 
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
@@ -58,9 +57,30 @@ export default function Step2Component() {
     const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
     const [selectedItemId, setSelectedItemId] = useState(null);
 
-    const location = useLocation();
+    const step0ExamIdList = useSelector((state) => state.examIdSlice);
+    console.log('Step0으로부터 전송된 시험지 ID 리스트: ', step0ExamIdList);
+
+    const questionQueries = useQueries({
+        queries: step0ExamIdList?.length
+            ? step0ExamIdList.map((examId) => ({
+                queryKey: ["questionData", examId],
+                queryFn: () => getExamItemImagesFromTsherpa(examId),
+                staleTime: 1000 * 3,
+            }))
+            : [],
+    });
+
+    const questionsDataFromExams = questionQueries
+        .filter((query) => query.isSuccess)
+        .map((query) => query.data.itemList);
+
     const step1Data = useLocation().state?.data || null;
     console.log('Step1으로부터 전송된 데이터: ', step1Data);
+
+    const questionsData = {
+        data: step1Data?.apiResponse || []
+    };
+    console.log("Step1으로부터 전송된 문제 목록: ", questionsData);
 
     const fetchSimilarItems = (itemId, questionIndex) => {
         getSimilarItemsImagesFromTsherpa(itemId)
@@ -105,21 +125,6 @@ export default function Step2Component() {
     const subjectName = bookData?.subjectInfoList?.[0]?.subjectName?.split('(')[0] || "과목명 없음";
     const author = bookData?.subjectInfoList?.[0]?.subjectName?.match(/\(([^)]+)\)/)?.[1] || "저자 정보 없음";
     const curriculumYear = bookData?.subjectInfoList?.[0]?.curriculumName || "년도 정보 없음";
-
-    const examIdList = useSelector((state) => state.examIdSlice);
-    const questionQueries = useQueries({
-        queries: examIdList?.length
-            ? examIdList.map((examId) => ({
-                queryKey: ["questionData", examId],
-                queryFn: () => getExamItemImagesFromTsherpa(examId),
-                staleTime: 1000 * 3,
-            }))
-            : [],
-    });
-
-    const questionsDataFromExams = questionQueries
-        .filter((query) => query.isSuccess)
-        .map((query) => query.data.itemList);
 
     const {data: evaluationsData} = useQuery({
         queryKey: ['evaluationsData', bookId],
@@ -168,13 +173,6 @@ export default function Step2Component() {
         : null;
     console.log('문제 요청 양식: ', itemsRequestForm);
 
-    const {data: questionsData, isLoading, error} = useQuery({
-        queryKey: ["getChapterItemsRequest", itemsRequestForm],
-        queryFn: () => getChapterItemImagesFromTsherpa(itemsRequestForm),
-        enabled: !examIdList?.length && !!itemsRequestForm,
-        staleTime: 1000 * 3,
-    });
-
     const fetchQuestions = useMutation({
         mutationFn: (form) => getChapterItemImagesFromTsherpa(form),
         onSuccess: (data) => {
@@ -212,17 +210,11 @@ export default function Step2Component() {
     }, [groupedItems]);
 
     useEffect(() => {
-        if (!isLoading && questionsData) {
-            console.log(questionsData);
-        }
-    }, [isLoading, questionsData]);
-
-    useEffect(() => {
         console.log("isProblemOptionsOpen changed:", isProblemOptionsOpen);
     }, [isProblemOptionsOpen]);
 
     useEffect(() => {
-        if (examIdList?.length && questionsDataFromExams.length > 0 && itemList.length === 0) {
+        if (step0ExamIdList?.length && questionsDataFromExams.length > 0 && itemList.length === 0) {
             const combinedData = {data: {itemList: questionsDataFromExams.flat()}};
             console.log("questionsData 전체 구조:", combinedData);
             console.log("questionsData.data.itemList 확인:", combinedData.data.itemList);
@@ -352,14 +344,6 @@ export default function Step2Component() {
         setIsConfirmOpen(false);
         organizeItems(tempItemList);
     };
-
-    if (isLoading) {
-        return <div>데이터 로드 중...</div>;
-    }
-
-    if (error) {
-        return <div>데이터 로드 중 오류가 발생했습니다: {error.message}</div>;
-    }
 
     const toggleProblemOptions = () => {
         setIsProblemOptionsOpen(!isProblemOptionsOpen);
@@ -594,7 +578,7 @@ export default function Step2Component() {
                                 <div className="paper-info">
                                     <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                {!examIdList.length && (
+                                {!step0ExamIdList.length && (
                                     <button className="btn-default btn-research" onClick={handleReSearchClick}>
                                         <i className="research"></i>재검색
                                     </button>
