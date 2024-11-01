@@ -53,9 +53,82 @@ const Step2Modal = ({
   message, 
   details,
   tempDifficultyCounts,
+  range, // 사용자가 선택한 총 문제 수
   onCancel, 
   onConfirm 
 }) => {
+  const [adjustedCounts, setAdjustedCounts] = useState([]);
+  const totalQuestions = parseInt(range);
+
+  useEffect(() => {
+    if (tempDifficultyCounts) {
+      // 실제 문제가 있는 난이도만 필터링
+      const availableDifficulties = tempDifficultyCounts.filter(diff => diff.count > 0);
+      
+      if (availableDifficulties.length === 0) {
+        setAdjustedCounts([]);
+        return;
+      }
+
+      // 전체 가용 문제 수 계산
+      const totalAvailable = availableDifficulties.reduce((sum, diff) => sum + diff.count, 0);
+      
+      // 목표 문제 수와 가용 문제 수 중 작은 값 사용
+      const targetTotal = Math.min(totalQuestions, totalAvailable);
+      
+      // 난이도별 비율 계산 (있는 난이도끼리 균등 분배)
+      const baseRatio = 1 / availableDifficulties.length;
+      
+      // 초기 분배
+      const adjusted = tempDifficultyCounts.map(diff => {
+        if (diff.count === 0) {
+          return {
+            ...diff,
+            adjustedCount: 0,
+            ratio: 0
+          };
+        }
+
+        // 각 난이도별 목표 문제 수 계산
+        const targetCount = Math.round(targetTotal * baseRatio);
+        
+        return {
+          ...diff,
+          adjustedCount: Math.min(diff.count, targetCount),
+          ratio: baseRatio
+        };
+      });
+
+      // 실제 배분된 총 문제 수 계산
+      let actualTotal = adjusted.reduce((sum, diff) => sum + diff.adjustedCount, 0);
+      
+      // 남은 문제 수가 있다면 가용한 난이도에 추가 배분
+      while (actualTotal < targetTotal) {
+        const availableForMore = adjusted.filter(diff => 
+          diff.count > diff.adjustedCount
+        );
+
+        if (availableForMore.length === 0) break;
+
+        // 가장 적게 사용된 난이도부터 추가
+        availableForMore.sort((a, b) => 
+          (a.adjustedCount / a.count) - (b.adjustedCount / b.count)
+        );
+
+        const idx = adjusted.findIndex(diff => diff.level === availableForMore[0].level);
+        adjusted[idx].adjustedCount += 1;
+        actualTotal += 1;
+      }
+
+      // 최종 비율 계산
+      adjusted.forEach(diff => {
+        diff.ratio = actualTotal > 0 ? diff.adjustedCount / actualTotal : 0;
+      });
+
+      setAdjustedCounts(adjusted);
+    }
+  }, [tempDifficultyCounts, totalQuestions]);
+
   return (
     <div className="pop-wrap range-type02" style={{ display: 'block' }}>
       <div className="pop-content">
@@ -63,174 +136,220 @@ const Step2Modal = ({
           <h3>{title}</h3>
         </div>
         <div className="content-wrap">
-          <p className="txt-desc">{message}</p>
-          
+          <p className="txt-desc">
+            원하는 문항 구성을 할 수 없어 문항 구성이 자동으로 변경되었습니다.
+            <br />
+            <span className="total-questions">
+              요청하신 {totalQuestions}문제 중{' '}
+              {adjustedCounts.reduce((sum, item) => sum + item.adjustedCount, 0)}문제가
+              검색되어 자동 배분되었습니다.
+            </span>
+          </p>
+
           <div className="diff-box">
-            <p className="sub-title">설정된 난이도별 문항 수:</p>
+            <p className="sub-title">검색된 난이도별 문항 수:</p>
             <div className="diff-list">
-              {details?.map(({ level, count }) => count > 0 && (
-                <div key={level} className="diff-item">
-                  <span className="diff-label">{level}:</span>
-                  <span className="diff-count">{count}문제</span>
+              {adjustedCounts.map((diff) => (
+                <div key={diff.level} className="diff-item">
+                  <span className="diff-label">{diff.level}:</span>
+                  <div className="diff-count-wrap">
+                    <span className="diff-count">
+                      {diff.count}문제
+                      {diff.count > 0 && (
+                        <span className="diff-adjusted">
+                          {" "}→ {diff.adjustedCount}문제 사용
+                          <span className="distribution-ratio">
+                            {" "}({Math.round(diff.ratio * 100)}%)
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                    {diff.count === 0 && (
+                      <span className="diff-warning">문항 없음</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-
-          {tempDifficultyCounts && tempDifficultyCounts.length > 0 && (
-            <div className="diff-box">
-              <p className="sub-title">검색된 난이도별 문항 수:</p>
-              <div className="diff-list">
-                {tempDifficultyCounts.map(({ level, count, targetCount, adjustedCount }) => (
-                  <div key={level} className="diff-item">
-                    <span className="diff-label">{level}:</span>
-                    <div className="diff-count-wrap">
-                      <span className={`diff-count ${count < targetCount ? 'warning' : ''}`}>
-                        {count}문제
-                        {count > 0 && targetCount > 0 && (
-                          <span className="diff-adjusted">
-                            {" "}→ {adjustedCount}문제 사용
-                          </span>
-                        )}
-                      </span>
-                      {count === 0 && targetCount > 0 && (
-                        <span className="diff-warning">문항 없음</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
         <div className="btn-wrap">
           <button type="button" className="btn-line" onClick={onCancel}>
             취소
           </button>
-          <button type="button" className="btn-line blue" onClick={onConfirm}>
+          <button 
+            type="button" 
+            className="btn-line blue" 
+            onClick={() => onConfirm(adjustedCounts)}
+          >
             확인
           </button>
         </div>
       </div>
       
-      <style jsx="true">{`
-       .pop-wrap {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background: #fff;
-          border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          z-index: 1000;
-          min-width: 400px;
-        }
-        
-        .pop-content {
-          padding: 24px;
-         
-        }
-        
-        .title-wrap {
-          margin-bottom: 16px;
-        }
-        
-        .title-wrap h3 {
-          font-size: 18px;
-          font-weight: bold;
-        }
-        
-        .txt-desc {
-          margin-bottom: 16px;
-          color: #666;
-        }
-        
-        .diff-box {
-          margin-bottom: 20px;
-        }
-        
-        .sub-title {
-          font-weight: 600;
-          margin-bottom: 8px;
-        }
-        
-        .diff-list {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 8px;
-        }
-        
-        .diff-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 8px;
-          background: #f5f5f5;
-          border-radius: 4px;
-        }
-        
-        .diff-label {
-          color: #666;
-        }
+<style jsx="true">{`
+  .pop-wrap {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 400px;
+  }
+  
+  .pop-content {
+    padding: 24px;
+  }
+  
+  .title-wrap {
+    margin-bottom: 16px;
+  }
+  
+  .title-wrap h3 {
+    font-size: 18px;
+    font-weight: bold;
+  }
+  
+  .txt-desc {
+    margin-bottom: 16px;
+    color: #666;
+  }
+  
+  .diff-box {
+    margin-bottom: 20px;
+  }
+  
+  .sub-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  .diff-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .diff-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+  
+  .diff-label {
+    color: #666;
+  }
 
-        .diff-count-wrap {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-        }
+  .diff-count-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
 
-        .diff-count {
-          font-weight: 600;
-        }
+  .diff-count {
+    font-weight: 600;
+  }
 
-        .diff-count.warning {
-          color: #ff9800;
-        }
+  .diff-count.warning {
+    color: #ff9800;
+  }
 
-        .diff-adjusted {
-          font-size: 0.9em;
-          color: #2196f3;
-          margin-left: 4px;
-        }
+  .diff-adjusted {
+    font-size: 0.9em;
+    color: #2196f3;
+    margin-left: 4px;
+  }
 
-        .diff-warning {
-          font-size: 0.9em;
-          color: #f44336;
-        }
-        
-        .btn-wrap {
-          display: flex;
-          justify-content: flex-end;
-          gap: 8px;
-          margin-top: 24px;
-        }
-        
-        .btn-line {
-          padding: 8px 16px;
-          border-radius: 4px;
-          border: 1px solid #ddd;
-          background: #fff;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        
-        .btn-line:hover {
-          background: #f5f5f5;
-        }
-        
-        .btn-line.blue {
-          background: #2196f3;
-          color: #fff;
-          border-color: #2196f3;
-        }
-        
-        .btn-line.blue:hover {
-          background: #1976d2;
-        }
-      `}</style>
+  .distribution-ratio {
+    color: #666;
+    font-size: 0.9em;
+  }
+
+  .diff-warning {
+    font-size: 0.9em;
+    color: #f44336;
+  }
+  
+  .btn-wrap {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 24px;
+  }
+  
+  .btn-line {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .btn-line:hover {
+    background: #f5f5f5;
+  }
+  
+  .btn-line.blue {
+    background: #2196f3;
+    color: #fff;
+    border-color: #2196f3;
+  }
+  
+  .btn-line.blue:hover {
+    background: #1976d2;
+  }
+
+  .total-questions {
+    color: #2196f3;
+    font-weight: bold;
+    display: block;
+    margin-top: 8px;
+  }
+
+  /* 배경색 관련 스타일 추가 */
+  .pop-wrap::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+
+  .content-wrap {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .diff-box {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .diff-item {
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    border-radius: 6px;
+  }
+`}</style>
     </div>
   );
 };
+
 
 
 
@@ -613,6 +732,36 @@ const RenderHierarchy = ({
   });
 };
 
+
+// 로딩 스피너 컴포넌트
+const LoadingSpinner = () => (
+  <div className="loading-container" style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px'
+  }}>
+    <div className="loading-spinner" style={{
+      width: '20px',
+      height: '20px',
+      border: '2px solid #f3f3f3',
+      borderTop: '2px solid #3498db',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite',
+      marginRight: '8px'
+    }} />
+    <span>로딩중...</span>
+    <style jsx>{`
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
+
+
+
 const Step1Component = () => {
   const [hierarchyData, setHierarchyData] = useState({});
   const [activeNodes, setActiveNodes] = useState([]);
@@ -637,7 +786,9 @@ const Step1Component = () => {
   const [chapterList, setChapterList] = useState([]);
   const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
   const [tempItemList, setTempItemList] = useState([]);
-
+  const [isLoadingChapters, setIsLoadingChapters] = useState(true);
+  const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(true);
+  
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showStep2Modal, setShowStep2Modal] = useState(false);
   const [modalData, setModalData] = useState(null);
@@ -682,123 +833,77 @@ const Step1Component = () => {
     };
   }, []);
 
-  // 평가 데이터 로드
-  useEffect(() => {
-    axios.get(`https://bsherpa.duckdns.org/books/external/evaluations?subjectId=${bookId}`)
+    // 평가 영역 데이터 로드
+    useEffect(() => {
+      setIsLoadingEvaluation(true);
+      axios.get(`https://bsherpa.duckdns.org/books/external/evaluations?subjectId=${bookId}`)
         .then((response) => {
-          console.log('Evaluation Response:', response.data);
           if (response.data.evaluationList) {
             setEvaluation(response.data.evaluationList);
           }
         })
         .catch((error) => {
           console.error('Error loading evaluation:', error);
+        })
+        .finally(() => {
+          setIsLoadingEvaluation(false);
         });
-  }, [bookId]);
-
-
-
-
+    }, [bookId]);
   
- // 챕터 데이터 로드
-useEffect(() => {
-  axios.post(`https://bsherpa.duckdns.org/step1/chapters/${bookId}`)
-    .then((response) => {
-      console.log('Chapter Response:', response.data);
-      const transformed = transformData(response.data.chapterList);
-      setHierarchyData(transformed);
-      setChapterList(response.data.chapterList);
- 
-      // 모든 챕터의 데이터를 저장
-      if (response.data.chapterList && response.data.chapterList.length > 0) {
-        // 여기서 0번째 인덱스만 사용하고 있었네요
-        // setCurriculumCode(response.data.chapterList[0].curriculumCode || '');
-        // setSubjectId(response.data.chapterList[0].subjectId || '');
-        
-        // 수정된 부분: 모든 챕터 데이터 처리
-        const chapterList = response.data.chapterList;
-        console.log('전체 챕터 리스트:', chapterList);
- 
-        setCurriculumCode(chapterList[0].curriculumCode); // curriculumCode는 동일하므로 첫번째 값 사용
-        setSubjectId(chapterList[0].subjectId); // subjectId도 동일하므로 첫번째 값 사용
-        
-        // 챕터별 ID 추출 - 모든 챕터의 데이터 수집
-        const largeIds = [...new Set(chapterList.map(item => item.largeChapterId))];
-        const mediumIds = [...new Set(chapterList.map(item => item.mediumChapterId))];
-        const smallIds = [...new Set(chapterList.map(item => item.smallChapterId))];
- 
-      
- 
-        // 상태 업데이트
-        setLargeChapterId(largeIds);
-        setMediumChapterId(mediumIds);
-        setSmallChapterId(smallIds);
- 
-        // counts API 호출을 위한 데이터 구성
-        const fetchCountsData = async () => {
-          let allCounts = [];
- 
-          // 모든 챕터 조합에 대해 API 호출
-          for (const large of largeIds) {
-            const filteredMediums = mediumIds.filter(medium => 
-              medium.toString().startsWith(large.toString())
-            );
- 
-            for (const medium of filteredMediums) {
-              const filteredSmalls = smallIds.filter(small => 
-                small.toString().startsWith(medium.toString())
-              );
- 
-              for (const small of filteredSmalls) {
-                const requestData = {
-                  curriculumCode: String(chapterList[0].curriculumCode),
-                  subjectId: String(chapterList[0].subjectId),
-                  largeChapterId: String(large),
-                  mediumChapterId: String(medium),
-                  smallChapterId: String(small)
-                };
- 
-                // console.log('API 요청 데이터:', requestData);
- 
-                try {
-                  const countResponse = await axios.post(
-                    'https://bsherpa.duckdns.org/questions/external/counts',requestData
-                  );
-                  // console.log('countResponse@@@@@@@@@@@  '+countResponse)
-                  if (countResponse.data.listTopicItemCount) {
-                    allCounts = [...allCounts, ...countResponse.data.listTopicItemCount];
-                   // console.log(`${large}-${medium}-${small} 챕터의 응답:`, countResponse.data.listTopicItemCount);
-                  }
-                } catch (error) {
-                  console.error('챕터 데이터 조회 오류:', requestData, error);
-                }
-              }
-            }
-          }
- 
-         // console.log('수집된 모든 counts:', allCounts);
- 
-          // 매핑 및 중복 제거
-          const mappedCounts = allCounts.reduce((acc, item, index) => {
-            acc[index + 1] = {
-              topicChapterId: item.topicChapterId,
-              itemCount: item.itemCount
-            };
-            return acc;
-          }, {});
- 
-          console.log('최종 매핑된 counts:', mappedCounts);
-          setCountsData(mappedCounts);
-        };
- 
-        // counts 데이터 가져오기 실행
-        fetchCountsData();
-      }
-    })
-    .catch((error) => {
-      console.error('Error loading chapters:', error);
-    });
- }, [bookId]);
+
+
+
+   // 챕터 데이터 로드
+   useEffect(() => {
+    setIsLoadingChapters(true); // 로딩 시작
+    axios.post(`https://bsherpa.duckdns.org/step1/chapters/${bookId}`)
+      .then((response) => {
+        console.log('Chapter Response:', response.data);
+        const transformed = transformData(response.data.chapterList);
+        setHierarchyData(transformed);
+        setChapterList(response.data.chapterList);
+  
+        if (response.data.chapterList && response.data.chapterList.length > 0) {
+          const chapterList = response.data.chapterList;
+          console.log('전체 챕터 리스트:', chapterList);
+  
+          setCurriculumCode(chapterList[0].curriculumCode);
+          setSubjectId(chapterList[0].subjectId);
+          
+          const largeIds = [...new Set(chapterList.map(item => item.largeChapterId))];
+          const mediumIds = [...new Set(chapterList.map(item => item.mediumChapterId))];
+          const smallIds = [...new Set(chapterList.map(item => item.smallChapterId))];
+  
+          setLargeChapterId(largeIds);
+          setMediumChapterId(mediumIds);
+          setSmallChapterId(smallIds);
+  
+          const fetchCountsData = async () => {
+            let allCounts = [];
+            // ... (기존 fetchCountsData 로직)
+            
+            const mappedCounts = allCounts.reduce((acc, item, index) => {
+              acc[index + 1] = {
+                topicChapterId: item.topicChapterId,
+                itemCount: item.itemCount
+              };
+              return acc;
+            }, {});
+  
+            console.log('최종 매핑된 counts:', mappedCounts);
+            setCountsData(mappedCounts);
+          };
+  
+          fetchCountsData();
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading chapters:', error);
+      })
+      .finally(() => {
+        setIsLoadingChapters(false); // 로딩 완료 - 성공하든 실패하든 로딩 상태 해제
+      });
+  }, [bookId]);
 
 
 
@@ -1116,8 +1221,14 @@ useEffect(() => {
     axios.post('https://bsherpa.duckdns.org/questions/external/chapters', requestData)
       .then((response) => {
         const newTempItemList = [...response.data.itemList];
-        console.log(response.data.itemList)
-        console.log(requestData)
+        // itemList의 모든 아이템 출력
+        console.log('All Items in itemList:');
+        response.data.itemList.forEach((item, index) => {
+            console.log(`\n=== Item ${index + 1} ===`);
+            Object.entries(item).forEach(([key, value]) => {
+                console.log(`${key}: ${value}`);
+            });
+        });
         // 기본 카운트 객체 초기화
         const counts = [
           {level: "하", count: 0, targetCount: difficultyCounts.step2},
@@ -1235,41 +1346,48 @@ const handleIsConfirm = (isConfirm) => {
               </div>
 
               <div className="view-bottom">
-                <div className="view-box-wrap">
-                  
-                  <div className="unit-box-wrap">
-                    <div className="unit-box">
-                      <div className="unit-cnt scroll-inner">
+            <div className="view-box-wrap">
+              <div className="unit-box-wrap">
+                <div className="unit-box">
+                  <div className="unit-cnt scroll-inner">
+                    {isLoadingChapters ? (
+                      <LoadingSpinner />
+                    ) : (
+                      <>
                         <div className="title-top">
                           <span>단원정보</span>
-                         
                           <input
-                              type="checkbox"
-                              id="allCheck"
-                              onChange={(e) => {
-                                const allNodeIds = getAllNodeIds(hierarchyData);
-                                setCheckedNodes(e.target.checked ? allNodeIds : []);
-                              }}
-                              className="allCheck"
+                            type="checkbox"
+                            id="allCheck"
+                            onChange={(e) => {
+                              const allNodeIds = getAllNodeIds(hierarchyData);
+                              setCheckedNodes(e.target.checked ? allNodeIds : []);
+                            }}
+                            className="allCheck"
                           />
                           <label htmlFor="allCheck">전체선택</label>
                         </div>
                         <ul style={{ width: '100%' }}>
                           <li style={{ width: '100%' }}>
                             <RenderHierarchy
-                                data={hierarchyData}
-                                activeNodes={activeNodes}
-                                checkedNodes={checkedNodes}
-                                onToggle={handleToggle}
-                                onCheckChange={handleCheckChange}
-                                hierarchyData={hierarchyData}
-                                countsData={countsData}
+                              data={hierarchyData}
+                              activeNodes={activeNodes}
+                              checkedNodes={checkedNodes}
+                              onToggle={handleToggle}
+                              onCheckChange={handleCheckChange}
+                              hierarchyData={hierarchyData}
+                              countsData={countsData}
                             />
                           </li>
                         </ul>
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </div>
+                </div>
+              </div>
+
+
+
                   {showInfoModal && (
         <InfoModal
           title="난이도별 문항 수 정보"
@@ -1284,24 +1402,26 @@ const handleIsConfirm = (isConfirm) => {
         />
       )}
 
-      {showStep2Modal && modalData && (
-        <Step2Modal
-          title="문항 구성 자동 변경"
-          message="문항 구성이 자동으로 변경됩니다."
-          details={Object.entries(difficultyCounts)
-            .map(([key, value]) => ({
-              level: getDifficultyLabel(key.replace('step', '')),
-              count: value
-            }))
-            .filter(item => item.count > 0 && ['하', '중', '상'].includes(item.level))}
-          tempDifficultyCounts={tempDifficultyCounts}
-          onCancel={() => setShowStep2Modal(false)}
-          onConfirm={() => {
-            moveToStepWithData('step2', modalData);
-            setShowStep2Modal(false);
-          }}
-        />
-      )}
+{showStep2Modal && modalData && (
+  <Step2Modal
+    title="문항 구성 자동 변경"
+    message="문항 구성이 자동으로 변경됩니다."
+    tempDifficultyCounts={tempDifficultyCounts}
+    range={range}  // 사용자가 선택한 문제 수
+    onCancel={() => setShowStep2Modal(false)}
+    onConfirm={(adjustedCounts) => {
+      moveToStepWithData('step2', {
+        ...modalData,
+        adjustedCounts
+      });
+      setShowStep2Modal(false);
+    }}
+  />
+)}
+
+
+
+      
                   {/* 옵션 선택 */}
                   <div className="type-box-wrap">
                     <div className="type-box scroll-inner">
@@ -1366,30 +1486,30 @@ const handleIsConfirm = (isConfirm) => {
                         </div>
                       </div>
 
-                      {/* 평가 영역 */}
-
-
-                      <div className="box">
-                        <div className="title-wrap">
-                          <span className="tit-text">평가 영역</span>
-                        </div>
-                        <div className="btn-wrap multi">
-                          {Array.isArray(evaluation) && evaluation.length > 0 ? (
-                              evaluation.map(item => (
-                                  <button
-                                      key={item.domainId}
-                                      type="button"
-                                      className={`btn-line ${selectedEvaluation.includes(item.domainId) ? 'active' : ''}`}
-                                      onClick={() => handleEvaluationButtonClick(item.domainId)}
-                                  >
-                                    {item.domainName}
-                                  </button>
-                              ))
-                          ) : (
-                              <div>데이터가 없습니다.</div>
-                          )}
-                        </div>
-                      </div>
+                        {/* 평가 영역 */}
+                  <div className="box">
+                    <div className="title-wrap">
+                      <span className="tit-text">평가 영역</span>
+                    </div>
+                    <div className="btn-wrap multi">
+                      {isLoadingEvaluation ? (
+                        <LoadingSpinner />
+                      ) : Array.isArray(evaluation) && evaluation.length > 0 ? (
+                        evaluation.map(item => (
+                          <button
+                            key={item.domainId}
+                            type="button"
+                            className={`btn-line ${selectedEvaluation.includes(item.domainId) ? 'active' : ''}`}
+                            onClick={() => handleEvaluationButtonClick(item.domainId)}
+                          >
+                            {item.domainName}
+                          </button>
+                        ))
+                      ) : (
+                        <div>데이터가 없습니다.</div>
+                      )}
+                    </div>
+                  </div>
 
 
 
