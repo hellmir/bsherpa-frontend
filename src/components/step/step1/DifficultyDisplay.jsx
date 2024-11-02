@@ -12,6 +12,19 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
     step4: 10,
     step5: 0
   });
+
+  // props로 difficultyCounts를 받아서 업데이트
+  useEffect(() => {
+    if (countsData) {
+      setCounts(countsData);
+    }
+  }, [countsData]);
+
+
+
+
+
+
   const handleSave = () => {
     const total = Object.values(difficultyValues).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
     
@@ -33,7 +46,24 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
     { step: 'step5', text: '최상', color: 'color05', disabled: true }
   ];
 
+ // handleInputChange 함수 수정
+ const handleInputChange = (step, value) => {
+  const newValue = parseInt(value) || 0;
+  
+  // 입력된 값이 음수인 경우 0으로 설정
+  if (newValue < 0) return;
 
+  // 새로운 counts 객체 생성
+  const newCounts = {
+    ...counts,
+    [step]: newValue
+  };
+
+  // 상태 업데이트
+  setCounts(newCounts);
+  // 부모 컴포넌트에 즉시 알림
+  handleDifficultyCounts(newCounts);
+};
 
 
   const handleStepClick = (step) => {
@@ -46,18 +76,13 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
     );
   };
 
-  const handleAutoChange = (isConfirmOpen) => {
-    setCounts({
-      step1: counts.step1,
-      step2: counts.step2,
-      step3: counts.step3,
-      step4: counts.step4,
-      step5: counts.step5
-    });
-    setShowAutoChangePopup(false);
-    setShowRangePopup(false);
-    handleDifficultyCounts(counts)
-  };
+// handleAutoChange 함수 수정
+const handleAutoChange = () => {
+  handleDifficultyCounts(counts);
+  setShowAutoChangePopup(false);
+  setShowRangePopup(false);
+  handleIsConfirm(true);
+};
 
 
   return (
