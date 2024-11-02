@@ -1058,6 +1058,8 @@ const handleCloseDifficultyPopup = () => {
     
   };
 
+  
+
   const handleRangeButtonClick = (value) => {
     setRange(value);
   };
@@ -1141,138 +1143,148 @@ useEffect(() => {
   
 
   // STEP2 제출 함수 수정
-  const submitToStep2 = () => {
-    const checkedNodesData = extractCheckedNodesData(checkedNodes, hierarchyData);
+  // submitToStep2 함수를 수정하여 range에 맞는 itemList만 전달하도록 변경
+const submitToStep2 = () => {
+  const checkedNodesData = extractCheckedNodesData(checkedNodes, hierarchyData);
+  
+  const minorClassification = checkedNodesData.map(node => {
+    const chapterData = chapterList.find(chapter => {
+      const nodeIdStr = node.id.toString();
+      return chapter.largeChapterId?.toString() === nodeIdStr ||
+             chapter.mediumChapterId?.toString() === nodeIdStr ||
+             chapter.smallChapterId?.toString() === nodeIdStr ||
+             chapter.topicChapterId?.toString() === nodeIdStr;
+    });
     
-    const minorClassification = checkedNodesData.map(node => {
-      const chapterData = chapterList.find(chapter => {
-        const nodeIdStr = node.id.toString();
-        return chapter.largeChapterId?.toString() === nodeIdStr ||
-               chapter.mediumChapterId?.toString() === nodeIdStr ||
-               chapter.smallChapterId?.toString() === nodeIdStr ||
-               chapter.topicChapterId?.toString() === nodeIdStr;
-      });
-      
-      if (!chapterData) return null;
+    if (!chapterData) return null;
 
-      return {
-        large: parseInt(chapterData.largeChapterId),
-        medium: parseInt(chapterData.mediumChapterId),
-        small: parseInt(chapterData.smallChapterId),
-        subject: parseInt(chapterData.subjectId),
-        topic: parseInt(chapterData.topicChapterId)
-      };
-    }).filter(item => item !== null);
-
-    const activityCategoryList = Array.isArray(selectedEvaluation) 
-      ? selectedEvaluation.map(item => 
-          typeof item === 'object' && item.domainId 
-            ? parseInt(item.domainId) 
-            : parseInt(item)
-        )
-      : [];
-
-    const levelCnt = [
-      parseInt(difficultyCounts.step1) || 0,
-      parseInt(difficultyCounts.step2) || 0,
-      parseInt(difficultyCounts.step3) || 0,
-      parseInt(difficultyCounts.step4) || 0,
-      parseInt(difficultyCounts.step5) || 0
-    ];
-
-    let questionForm = '';
-    if (selectedQuestiontype === 'objective') {
-      questionForm = 'multiple,';
-    } else if (selectedQuestiontype === 'subjective') {
-      questionForm = 'subjective';
-    } else if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
-      questionForm = 'multiple,subjective';
-    }
-
-    // 필수 입력값 확인
-    if (activityCategoryList.length === 0) {
-      alert('평가 영역을 선택해주세요.');
-      return;
-    }
-
-    if (minorClassification.length === 0) {
-      alert('단원을 선택해주세요.');
-      return;
-    }
-
-    if (!questionForm) {
-      alert('문제 형태를 선택해주세요.');
-      return;
-    }
-
-    const requestData = {
-      activityCategoryList,
-      levelCnt,
-      minorClassification,
-      questionForm
+    return {
+      large: parseInt(chapterData.largeChapterId),
+      medium: parseInt(chapterData.mediumChapterId),
+      small: parseInt(chapterData.smallChapterId),
+      subject: parseInt(chapterData.subjectId),
+      topic: parseInt(chapterData.topicChapterId)
     };
+  }).filter(item => item !== null);
 
-    // API 호출
-    axios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
-      .then((response) => {
-        const newTempItemList = [...response.data.itemList];
-        
-        const counts = [
-          {level: "하", count: 0, targetCount: difficultyCounts.step2},
-          {level: "중", count: 0, targetCount: difficultyCounts.step3},
-          {level: "상", count: 0, targetCount: difficultyCounts.step4},
-        ];
+  const activityCategoryList = Array.isArray(selectedEvaluation) 
+    ? selectedEvaluation.map(item => 
+        typeof item === 'object' && item.domainId 
+          ? parseInt(item.domainId) 
+          : parseInt(item)
+      )
+    : [];
 
-        newTempItemList.forEach(item => {
-          const difficulty = counts.find(d => d.level === item.difficultyName);
-          if (difficulty) difficulty.count += 1;
-        });
+  const levelCnt = [
+    parseInt(difficultyCounts.step1) || 0,
+    parseInt(difficultyCounts.step2) || 0,
+    parseInt(difficultyCounts.step3) || 0,
+    parseInt(difficultyCounts.step4) || 0,
+    parseInt(difficultyCounts.step5) || 0
+  ];
 
-        setModalData({
-          tempItemList: newTempItemList,
-          counts: counts,
-        });
-        setShowStep2Modal(true);
+  let questionForm = '';
+  if (selectedQuestiontype === 'objective') {
+    questionForm = 'multiple,';
+  } else if (selectedQuestiontype === 'subjective') {
+    questionForm = 'subjective';
+  } else if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
+    questionForm = 'multiple,subjective';
+  }
 
-        counts.forEach(difficulty => {
-          if (difficulty.count > 0) {
-            difficulty.adjustedCount = difficulty.count < difficulty.targetCount 
-              ? difficulty.count 
-              : difficulty.targetCount;
-          } else {
-            difficulty.adjustedCount = 0;
-          }
-        });
+  // 필수 입력값 확인
+  if (activityCategoryList.length === 0) {
+    alert('평가 영역을 선택해주세요.');
+    return;
+  }
 
-        setTempItemList(newTempItemList);
-        setTempDifficultyCounts(counts);
+  if (minorClassification.length === 0) {
+    alert('단원을 선택해주세요.');
+    return;
+  }
 
-        // pendingSubmitData에 평가영역과 문제형태 추가
-        setPendingSubmitData({
-          range,
-          selectedSteps,
-          selectedEvaluation,           // 평가영역 추가
-          selectedQuestiontype,         // 문제형태 추가
-          evaluationData: evaluation,   // 전체 평가영역 데이터 추가
-          source,
-          bookId,
-          checkedNodes,
-          difficultyCounts,
-          requestData,
-          apiResponse: response.data,
-          adjustedCounts: counts,
-          questionForm,                 // 문제형태 형식 추가
-          activityCategoryList         // 평가영역 ID 리스트 추가
-        });
+  if (!questionForm) {
+    alert('문제 형태를 선택해주세요.');
+    return;
+  }
 
-        setIsConfirmOpen(true);
-      })
-      .catch((error) => {
-        console.error('API 오류:', error);
-        console.error('오류 상세:', error.response?.data);
-        alert('요청 처리 중 오류가 발생했습니다.');
-      });
+  const requestData = {
+    activityCategoryList,
+    levelCnt,
+    minorClassification,
+    questionForm
   };
+
+  // API 호출
+  axios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
+    .then((response) => {
+      // range에 맞게 itemList 제한
+      const limitedItemList = response.data.itemList.slice(0, parseInt(range));
+      const newTempItemList = [...limitedItemList];
+      
+      const counts = [
+        {level: "하", count: 0, targetCount: difficultyCounts.step2},
+        {level: "중", count: 0, targetCount: difficultyCounts.step3},
+        {level: "상", count: 0, targetCount: difficultyCounts.step4},
+      ];
+
+      newTempItemList.forEach(item => {
+        const difficulty = counts.find(d => d.level === item.difficultyName);
+        if (difficulty) difficulty.count += 1;
+      });
+
+      setModalData({
+        tempItemList: newTempItemList,
+        counts: counts,
+      });
+      setShowStep2Modal(true);
+
+      counts.forEach(difficulty => {
+        if (difficulty.count > 0) {
+          difficulty.adjustedCount = difficulty.count < difficulty.targetCount 
+            ? difficulty.count 
+            : difficulty.targetCount;
+        } else {
+          difficulty.adjustedCount = 0;
+        }
+      });
+
+      setTempItemList(newTempItemList);
+      setTempDifficultyCounts(counts);
+
+      // pendingSubmitData에 제한된 itemList 포함
+      setPendingSubmitData({
+        range,
+        selectedSteps,
+        selectedEvaluation,
+        selectedQuestiontype,
+        evaluationData: evaluation,
+        source,
+        bookId,
+        checkedNodes,
+        difficultyCounts,
+        requestData,
+        apiResponse: { ...response.data, itemList: limitedItemList }, // 제한된 itemList로 교체
+        adjustedCounts: counts,
+        questionForm,
+        activityCategoryList
+      });
+
+      setIsConfirmOpen(true);
+    })
+    .catch((error) => {
+      console.error('API 오류:', error);
+      console.error('오류 상세:', error.response?.data);
+      alert('요청 처리 중 오류가 발생했습니다.');
+    });
+};
+
+  
+//submit to step2 끝
+
+
+
+
 
 
   const submitToStep0 = () => {
@@ -1337,19 +1349,55 @@ const handleIsConfirm = (isConfirm) => {
                       <LoadingSpinner />
                     ) : (
                       <>
-                        <div className="title-top">
-                          <span>단원정보</span>
-                          <input
-                            type="checkbox"
-                            id="allCheck"
-                            onChange={(e) => {
-                              const allNodeIds = getAllNodeIds(hierarchyData);
-                              setCheckedNodes(e.target.checked ? allNodeIds : []);
-                            }}
-                            className="allCheck"
-                          />
-                          <label htmlFor="allCheck">전체선택</label>
-                        </div>
+                     <div className="title-top">
+  <span>단원정보</span>
+  <input
+    type="checkbox"
+    id="allCheck"
+    onChange={(e) => {
+      const allNodeIds = getAllNodeIds(hierarchyData);
+      
+      if (e.target.checked) {
+        // 전체 선택시
+        // 1. 모든 노드 체크 및 아코디언 펼침
+        setCheckedNodes(allNodeIds);
+        setActiveNodes(allNodeIds);
+        
+        // 2. 출처 선택 (교사용으로 설정)
+        setSource('teacher');
+        
+        // 3. 평가영역 전체 선택
+        if (Array.isArray(evaluation)) {
+          const allEvaluationIds = evaluation.map(item => item.domainId);
+          setSelectedEvaluation(allEvaluationIds);
+        }
+        
+        // 4. 문제형태 모두 선택 (객관식, 주관식)
+        setSelectedQuestiontype('objective,subjective');
+        
+      } else {
+        // 전체 해제시
+        // 1. 모든 노드 체크 해제 및 아코디언 접기
+        setCheckedNodes([]);
+        setActiveNodes([]);
+        
+        // 2. 출처 선택 해제
+        setSource('');
+        
+        // 3. 평가영역 선택 해제
+        setSelectedEvaluation([]);
+        
+        // 4. 문제형태 선택 해제
+        setSelectedQuestiontype('');
+      }
+    }}
+    checked={checkedNodes.length > 0 && checkedNodes.length === getAllNodeIds(hierarchyData).length}
+    className="allCheck"
+  />
+  <label htmlFor="allCheck">전체선택</label>
+</div>
+
+
                         <ul style={{ width: '100%' }}>
                           <li style={{ width: '100%' }}>
                             <RenderHierarchy
