@@ -44,8 +44,8 @@ export default function Step2Component() {
     const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isSorted, setIsSorted] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
+    const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+    const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
     const [isSimilarPage, setIsSimilarPage] = useState(false);
     const [similarItems, setSimilarItems] = useState([]);
     const [questionIndex, setQuestionIndex] = useState(null);
@@ -100,8 +100,8 @@ export default function Step2Component() {
             });
     };
 
-    const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false)
+    const handleOpenModal = () => setIsShiftModalOpen(true);
+    const handleCloseShiftModal = () => setIsShiftModalOpen(false)
     const handleCloseNoSimilarItemsModal = () => setIsNoSimilarItemsModalOpen(false);
     const handleOpenErrorReport = (itemId) => {
         setSelectedItemId(itemId);
@@ -192,6 +192,17 @@ export default function Step2Component() {
             console.error("문항 재검색 실패: ", error);
         }
     });
+
+    useEffect(() => {
+        if (step0ExamIdList.length === 0 && !step1Data) {
+            setIsAccessModalOpen(true);
+        }
+    }, [step0ExamIdList, step1Data]);
+
+    const handleCloseAccessModal = () => {
+        setIsShiftModalOpen(false);
+        moveToPath('/');
+    };
 
     useEffect(() => {
         if (!isSorted && groupedItems.length > 0) {
@@ -541,10 +552,19 @@ export default function Step2Component() {
                 />
             )}
             <ModalComponent
+                title="비정상적인 접근"
+                content={
+                    <>비정상적인 접근이 감지되었습니다.<br/>
+                        메인 페이지로 이동합니다.</>
+                }
+                handleClose={handleCloseAccessModal}
+                open={isAccessModalOpen}
+            />
+            <ModalComponent
                 title="이동 불가"
                 content="다른 지문으로 이동할 수 없습니다."
-                handleClose={handleCloseModal}
-                open={isModalOpen}
+                handleClose={handleCloseShiftModal}
+                open={isShiftModalOpen}
             />
             <ModalComponent
                 title="검색 결과 없음"
