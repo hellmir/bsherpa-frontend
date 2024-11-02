@@ -154,13 +154,7 @@ export default function Step2Component() {
     const itemsRequestForm = step1Data && step1Data.activityCategoryList && step1Data.difficultyCounts && step1Data.selectedEvaluation && step1Data.minorClassification
         ? {
             activityCategoryList: step1Data.selectedEvaluation,
-            levelCnt: [
-                step1Data.difficultyCounts.step1,
-                step1Data.difficultyCounts.step2,
-                step1Data.difficultyCounts.step3,
-                step1Data.difficultyCounts.step4,
-                step1Data.difficultyCounts.step5
-            ],
+            levelCnt: step1Data.counts.map((count) => count.targetCount),
             minorClassification: minorClassification,
             questionForm: "multiple,subjective"
         }
