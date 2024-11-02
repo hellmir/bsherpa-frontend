@@ -90,7 +90,7 @@ const Step2Modal = ({
         }
 
         // 각 난이도별 목표 문제 수 계산
-        const targetCount = Math.round(targetTotal * baseRatio);
+        const targetCount = Math.floor(targetTotal * baseRatio);
         
         return {
           ...diff,
@@ -1079,35 +1079,44 @@ const handleCloseDifficultyPopup = () => {
 
   const handleRangeButtonClick = (value) => {
     setRange(value);
-    // 문제 수가 변경될 때마다 3:4:3 비율로 난이도별 문제 수 자동 업데이트
     const total = parseInt(value);
+    
+    // 각 난이도에 균등하게 배분
+    const equalCount = Math.floor(total / 3); // 기본 배분 수
+    const remainder = total % 3; // 나머지
+    
     const newCounts = {
       step1: 0,
-      step2: Math.round(total * 0.3), // 30%
-      step3: Math.round(total * 0.4), // 40%
-      step4: total - Math.round(total * 0.3) - Math.round(total * 0.4), // 나머지
+      step2: equalCount, // 하 - 기본 배분
+      step3: equalCount + remainder, // 중 - 기본 배분 + 나머지
+      step4: equalCount, // 상 - 기본 배분
       step5: 0
     };
+    
     setDifficultyCounts(newCounts);
   };
 
   const handleRangeInputChange = (event) => {
     const value = event.target.value;
     setRange(value);
-    // 입력값이 변경될 때도 3:4:3 비율로 난이도별 문제 수 자동 업데이트
     const total = parseInt(value);
+    
     if (!isNaN(total)) {
+      // 각 난이도에 균등하게 배분
+      const equalCount = Math.floor(total / 3); // 기본 배분 수
+      const remainder = total % 3; // 나머지
+      
       const newCounts = {
         step1: 0,
-        step2: Math.round(total * 0.3), // 30%
-        step3: Math.round(total * 0.4), // 40%
-        step4: total - Math.round(total * 0.3) - Math.round(total * 0.4), // 나머지
+        step2: equalCount, // 하 - 기본 배분
+        step3: equalCount + remainder, // 중 - 기본 배분 + 나머지
+        step4: equalCount, // 상 - 기본 배분
         step5: 0
       };
+      
       setDifficultyCounts(newCounts);
     }
   };
-
   const handleStepButtonClick = (step) => {
     setSelectedSteps(prev =>
         prev.includes(step)
