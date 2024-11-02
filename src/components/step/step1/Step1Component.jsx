@@ -1267,7 +1267,8 @@ const submitToStep2 = () => {
         apiResponse: { ...response.data, itemList: limitedItemList }, // 제한된 itemList로 교체
         adjustedCounts: counts,
         questionForm,
-        activityCategoryList
+        activityCategoryList,
+        minorClassification
       });
 
       setIsConfirmOpen(true);
