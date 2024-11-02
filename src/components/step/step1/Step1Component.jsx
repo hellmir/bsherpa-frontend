@@ -1223,9 +1223,11 @@ const submitToStep2 = () => {
       const newTempItemList = [...limitedItemList];
       
       const counts = [
+        {level: "최하", count: 0, targetCount: difficultyCounts.step1},
         {level: "하", count: 0, targetCount: difficultyCounts.step2},
         {level: "중", count: 0, targetCount: difficultyCounts.step3},
         {level: "상", count: 0, targetCount: difficultyCounts.step4},
+        {level: "최상", count: 0, targetCount: difficultyCounts.step5}
       ];
 
       newTempItemList.forEach(item => {
