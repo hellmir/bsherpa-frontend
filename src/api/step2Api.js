@@ -9,10 +9,10 @@ export const getEvaluationsFromTsherpa = async (bookId) => {
     return (await axios.get(`${BOOK}/${EXTERNAL}/evaluations`, {params: {subjectId: bookId}})).data;
 }
 
-export const getChapterItemImagesFromTsherpa = async (itemsRequestForm) => {
+export const getAdjustedChapterItemImagesFromTsherpa = async (itemsRequestForm) => {
     const header = {headers: {'Content-Type': 'application/json'}}
 
-    return await axios.post(`${QUESTION_IMAGE}/${EXTERNAL}/chapters`, itemsRequestForm, header);
+    return await axios.post(`${QUESTION_IMAGE}/${EXTERNAL}/chapters/adjust`, itemsRequestForm, header);
 }
 
 export const getExamItemImagesFromTsherpa = async (examId) => {

@@ -2,8 +2,8 @@ import React, {useEffect, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
 import {
+    getAdjustedChapterItemImagesFromTsherpa,
     getBookFromTsherpa,
-    getChapterItemImagesFromTsherpa,
     getEvaluationsFromTsherpa,
     getExamItemImagesFromTsherpa,
     getSimilarItemsImagesFromTsherpa
@@ -139,13 +139,7 @@ export default function Step2Component() {
 
     console.log(`평가 영역 목록: ${activityCategoryList}`)
 
-    const minorClassification = step1Data?.apiResponse?.itemList?.map(item => ({
-        large: item.largeChapterId,
-        medium: item.mediumChapterId,
-        small: item.smallChapterId,
-        subject: item.bookId,
-        topic: item.topicChapterId
-    })) || [];
+    const minorClassification = step1Data?.minorClassification || [];
 
     const chapterNames = itemList.map(item => ({
         largeChapterName: item.largeChapterName,
@@ -157,7 +151,7 @@ export default function Step2Component() {
     const handleOpenScopeModal = () => setIsScopeModalOpen(true);
     const handleCloseScopeModal = () => setIsScopeModalOpen(false);
 
-    const itemsRequestForm = step1Data && step1Data.difficultyCounts && evaluationsData
+    const itemsRequestForm = step1Data && step1Data.activityCategoryList && step1Data.difficultyCounts && step1Data.selectedEvaluation && step1Data.minorClassification
         ? {
             activityCategoryList: step1Data.selectedEvaluation,
             levelCnt: [
@@ -168,13 +162,16 @@ export default function Step2Component() {
                 step1Data.difficultyCounts.step5
             ],
             minorClassification: minorClassification,
-            questionForm: step1Data.selectedQuestiontype,
+            questionForm: "multiple,subjective"
         }
         : null;
     console.log('문제 요청 양식: ', itemsRequestForm);
 
     const fetchQuestions = useMutation({
-        mutationFn: (form) => getChapterItemImagesFromTsherpa(form),
+        mutationFn: (itemsRequestForm) => {
+            console.log("fetchQuestions mutationFn 호출됨 - form:", itemsRequestForm);
+            return getAdjustedChapterItemImagesFromTsherpa(itemsRequestForm)
+        },
         onSuccess: (data) => {
             const newTempItemList = [...data.data.itemList];
             const counts = [
