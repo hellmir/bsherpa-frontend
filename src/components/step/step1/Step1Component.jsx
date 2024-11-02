@@ -73,13 +73,23 @@ const Step2Modal = ({
       // 전체 가용 문제 수 계산
       const totalAvailable = availableDifficulties.reduce((sum, diff) => sum + diff.count, 0);
       
-      // 목표 문제 수와 가용 문제 수 중 작은 값 사용
-      const targetTotal = Math.min(totalQuestions, totalAvailable);
-      
-      // 난이도별 비율 계산 (있는 난이도끼리 균등 분배)
+      // 실제 문제 수가 요청한 문제 수보다 적은 경우
+      if (totalAvailable <= totalQuestions) {
+        // 실제 존재하는 문제 수만큼만 설정
+        const adjusted = tempDifficultyCounts.map(diff => {
+          return {
+            ...diff,
+            adjustedCount: diff.count,
+            ratio: totalAvailable > 0 ? diff.count / totalAvailable : 0
+          };
+        });
+        setAdjustedCounts(adjusted);
+        return;
+      }
+
+      // 충분한 문제가 있는 경우 균등 배분
       const baseRatio = 1 / availableDifficulties.length;
       
-      // 초기 분배
       const adjusted = tempDifficultyCounts.map(diff => {
         if (diff.count === 0) {
           return {
@@ -89,8 +99,7 @@ const Step2Modal = ({
           };
         }
 
-        // 각 난이도별 목표 문제 수 계산
-        const targetCount = Math.round(targetTotal * baseRatio);
+        const targetCount = Math.floor(totalQuestions * baseRatio);
         
         return {
           ...diff,
@@ -99,18 +108,16 @@ const Step2Modal = ({
         };
       });
 
-      // 실제 배분된 총 문제 수 계산
       let actualTotal = adjusted.reduce((sum, diff) => sum + diff.adjustedCount, 0);
       
       // 남은 문제 수가 있다면 가용한 난이도에 추가 배분
-      while (actualTotal < targetTotal) {
+      while (actualTotal < totalQuestions) {
         const availableForMore = adjusted.filter(diff => 
           diff.count > diff.adjustedCount
         );
 
         if (availableForMore.length === 0) break;
 
-        // 가장 적게 사용된 난이도부터 추가
         availableForMore.sort((a, b) => 
           (a.adjustedCount / a.count) - (b.adjustedCount / b.count)
         );
@@ -128,7 +135,6 @@ const Step2Modal = ({
       setAdjustedCounts(adjusted);
     }
   }, [tempDifficultyCounts, totalQuestions]);
-
   return (
     <div className="pop-wrap range-type02" style={{ display: 'block' }}>
       <div className="pop-content">
@@ -1079,35 +1085,44 @@ const handleCloseDifficultyPopup = () => {
 
   const handleRangeButtonClick = (value) => {
     setRange(value);
-    // 문제 수가 변경될 때마다 3:4:3 비율로 난이도별 문제 수 자동 업데이트
     const total = parseInt(value);
+    
+    // 각 난이도에 균등하게 배분
+    const equalCount = Math.floor(total / 3); // 기본 배분 수
+    const remainder = total % 3; // 나머지
+    
     const newCounts = {
       step1: 0,
-      step2: Math.round(total * 0.3), // 30%
-      step3: Math.round(total * 0.4), // 40%
-      step4: total - Math.round(total * 0.3) - Math.round(total * 0.4), // 나머지
+      step2: equalCount, // 하 - 기본 배분
+      step3: equalCount + remainder, // 중 - 기본 배분 + 나머지
+      step4: equalCount, // 상 - 기본 배분
       step5: 0
     };
+    
     setDifficultyCounts(newCounts);
   };
 
   const handleRangeInputChange = (event) => {
     const value = event.target.value;
     setRange(value);
-    // 입력값이 변경될 때도 3:4:3 비율로 난이도별 문제 수 자동 업데이트
     const total = parseInt(value);
+    
     if (!isNaN(total)) {
+      // 각 난이도에 균등하게 배분
+      const equalCount = Math.floor(total / 3); // 기본 배분 수
+      const remainder = total % 3; // 나머지
+      
       const newCounts = {
         step1: 0,
-        step2: Math.round(total * 0.3), // 30%
-        step3: Math.round(total * 0.4), // 40%
-        step4: total - Math.round(total * 0.3) - Math.round(total * 0.4), // 나머지
+        step2: equalCount, // 하 - 기본 배분
+        step3: equalCount + remainder, // 중 - 기본 배분 + 나머지
+        step4: equalCount, // 상 - 기본 배분
         step5: 0
       };
+      
       setDifficultyCounts(newCounts);
     }
   };
-
   const handleStepButtonClick = (step) => {
     setSelectedSteps(prev =>
         prev.includes(step)
@@ -1258,79 +1273,70 @@ const submitToStep2 = () => {
   // API 호출
   axios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
   .then((response) => {
+    const itemList = response.data.itemList;
+     if (!itemList || itemList.length === 0) {
+      alert('선택한 단원에 사용 가능한 문제가 없습니다.\n다른 단원을 선택해주세요.');
+      return;
+    }
     const totalQuestions = parseInt(range);
-    let itemList = response.data.itemList;
-    
-    // 난이도별로 문제 분류
-    const questionsByDifficulty = {
-      "하": itemList.filter(item => item.difficultyName === "하"),
-      "중": itemList.filter(item => item.difficultyName === "중"),
-      "상": itemList.filter(item => item.difficultyName === "상")
-    };
+    let selectedQuestions;
+    let counts;
 
-    // 3:4:3 비율로 목표 수 계산
-    const targetCounts = {
-      "하": Math.round(totalQuestions * 0.3), // 30%
-      "중": Math.round(totalQuestions * 0.4), // 40%
-      "상": totalQuestions - Math.round(totalQuestions * 0.3) - Math.round(totalQuestions * 0.4) // 나머지
-    };
+    if (itemList.length <= totalQuestions) {
+      // 실제 아이템 수가 요청한 문제 수보다 적거나 같은 경우
+      selectedQuestions = itemList;  // 전체 아이템 사용
+      
+      // 실제 존재하는 문제의 난이도별 카운트
+      counts = [
+        {level: "최하", count: 0, targetCount: 0, adjustedCount: 0},
+        {level: "하", count: itemList.filter(item => item.difficultyName === "하").length,
+         targetCount: itemList.filter(item => item.difficultyName === "하").length,
+         adjustedCount: itemList.filter(item => item.difficultyName === "하").length},
+        {level: "중", count: itemList.filter(item => item.difficultyName === "중").length,
+         targetCount: itemList.filter(item => item.difficultyName === "중").length,
+         adjustedCount: itemList.filter(item => item.difficultyName === "중").length},
+        {level: "상", count: itemList.filter(item => item.difficultyName === "상").length,
+         targetCount: itemList.filter(item => item.difficultyName === "상").length,
+         adjustedCount: itemList.filter(item => item.difficultyName === "상").length},
+        {level: "최상", count: 0, targetCount: 0, adjustedCount: 0}
+      ];
+    } else {
+      // 충분한 문제가 있는 경우 균등 배분
+      const equalCount = Math.floor(totalQuestions / 3);
+      const remainder = totalQuestions % 3;
 
-    // 각 난이도별로 필요한 만큼만 선택
-    let selectedQuestions = [];
-    Object.entries(questionsByDifficulty).forEach(([difficulty, questions]) => {
-      const targetCount = targetCounts[difficulty];
-      const availableQuestions = questions.slice(0, targetCount);
-      selectedQuestions = [...selectedQuestions, ...availableQuestions];
-    });
+      const questionsByDifficulty = {
+        "하": itemList.filter(item => item.difficultyName === "하"),
+        "중": itemList.filter(item => item.difficultyName === "중"),
+        "상": itemList.filter(item => item.difficultyName === "상")
+      };
 
-    // 문제 수가 부족한 경우를 위한 처리
-    const shortfall = totalQuestions - selectedQuestions.length;
-    if (shortfall > 0) {
-      // 남은 문제들 중에서 부족한 만큼 추가
-      const remainingQuestions = itemList.filter(q => !selectedQuestions.includes(q));
-      const additional = remainingQuestions.slice(0, shortfall);
-      selectedQuestions = [...selectedQuestions, ...additional];
+      // 각 난이도별로 필요한 수만큼 선택
+      selectedQuestions = [
+        ...questionsByDifficulty["하"].slice(0, equalCount),
+        ...questionsByDifficulty["중"].slice(0, equalCount + remainder),
+        ...questionsByDifficulty["상"].slice(0, equalCount)
+      ];
+
+      counts = [
+        {level: "최하", count: 0, targetCount: 0, adjustedCount: 0},
+        {level: "하", count: questionsByDifficulty["하"].length, targetCount: equalCount, adjustedCount: equalCount},
+        {level: "중", count: questionsByDifficulty["중"].length, targetCount: equalCount + remainder, adjustedCount: equalCount + remainder},
+        {level: "상", count: questionsByDifficulty["상"].length, targetCount: equalCount, adjustedCount: equalCount},
+        {level: "최상", count: 0, targetCount: 0, adjustedCount: 0}
+      ];
     }
 
-    const newTempItemList = selectedQuestions;
-
-    // 실제 counts 계산
-    const counts = [
-      {level: "최하", count: 0, targetCount: difficultyCounts.step1},
-      {level: "하", count: 0, targetCount: targetCounts["하"]},
-      {level: "중", count: 0, targetCount: targetCounts["중"]},
-      {level: "상", count: 0, targetCount: targetCounts["상"]},
-      {level: "최상", count: 0, targetCount: difficultyCounts.step5}
-    ];
-
-    // 실제 문제 수 계산
-    newTempItemList.forEach(item => {
-      const difficulty = counts.find(d => d.level === item.difficultyName);
-      if (difficulty) difficulty.count += 1;
-    });
-
-    // adjusted counts 계산
-    counts.forEach(difficulty => {
-      if (difficulty.count > 0) {
-        difficulty.adjustedCount = difficulty.count < difficulty.targetCount 
-          ? difficulty.count 
-          : difficulty.targetCount;
-      } else {
-        difficulty.adjustedCount = 0;
-      }
-    });
-
     setModalData({
-      tempItemList: newTempItemList,
+      tempItemList: selectedQuestions,
       counts: counts,
     });
     setShowStep2Modal(true);
-
-    setTempItemList(newTempItemList);
+    setTempItemList(selectedQuestions);
     setTempDifficultyCounts(counts);
 
     setPendingSubmitData({
-      range,
+      range: selectedQuestions.length.toString(),
       selectedSteps,
       selectedEvaluation,
       selectedQuestiontype,
@@ -1340,13 +1346,13 @@ const submitToStep2 = () => {
       checkedNodes,
       difficultyCounts: {
         step1: 0,
-        step2: targetCounts["하"],
-        step3: targetCounts["중"],
-        step4: targetCounts["상"],
+        step2: counts[1].adjustedCount,
+        step3: counts[2].adjustedCount,
+        step4: counts[3].adjustedCount,
         step5: 0
       },
       requestData,
-      apiResponse: { ...response.data, itemList: newTempItemList },
+      apiResponse: { ...response.data, itemList: selectedQuestions },
       adjustedCounts: counts,
       questionForm,
       activityCategoryList,
