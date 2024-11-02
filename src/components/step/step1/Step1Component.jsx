@@ -1003,7 +1003,24 @@ useEffect(() => {
 
 
 
+ const updateDifficultyDistribution = (totalQuestions) => {
+    // 3:4:3 비율로 문제 수 계산
+    const ratio = { low: 0.3, mid: 0.4, high: 0.3 };
+    
+    // 각 난이도별 문제 수 계산
+    const lowCount = Math.round(totalQuestions * ratio.low);
+    const midCount = Math.round(totalQuestions * ratio.mid);
+    // 합이 전체 문제 수와 일치하도록 상 레벨 조정
+    const highCount = totalQuestions - lowCount - midCount;
 
+    setDifficultyCounts({
+      step1: 0, // 최하
+      step2: lowCount,  // 하
+      step3: midCount,  // 중
+      step4: highCount, // 상
+      step5: 0  // 최상
+    });
+  };
 
 
   
@@ -1062,10 +1079,33 @@ const handleCloseDifficultyPopup = () => {
 
   const handleRangeButtonClick = (value) => {
     setRange(value);
+    // 문제 수가 변경될 때마다 3:4:3 비율로 난이도별 문제 수 자동 업데이트
+    const total = parseInt(value);
+    const newCounts = {
+      step1: 0,
+      step2: Math.round(total * 0.3), // 30%
+      step3: Math.round(total * 0.4), // 40%
+      step4: total - Math.round(total * 0.3) - Math.round(total * 0.4), // 나머지
+      step5: 0
+    };
+    setDifficultyCounts(newCounts);
   };
 
   const handleRangeInputChange = (event) => {
-    setRange(event.target.value);
+    const value = event.target.value;
+    setRange(value);
+    // 입력값이 변경될 때도 3:4:3 비율로 난이도별 문제 수 자동 업데이트
+    const total = parseInt(value);
+    if (!isNaN(total)) {
+      const newCounts = {
+        step1: 0,
+        step2: Math.round(total * 0.3), // 30%
+        step3: Math.round(total * 0.4), // 40%
+        step4: total - Math.round(total * 0.3) - Math.round(total * 0.4), // 나머지
+        step5: 0
+      };
+      setDifficultyCounts(newCounts);
+    }
   };
 
   const handleStepButtonClick = (step) => {
@@ -1217,69 +1257,109 @@ const submitToStep2 = () => {
 
   // API 호출
   axios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
-    .then((response) => {
-      // range에 맞게 itemList 제한
-      const limitedItemList = response.data.itemList.slice(0, parseInt(range));
-      const newTempItemList = [...limitedItemList];
-      
-      const counts = [
-        {level: "최하", count: 0, targetCount: difficultyCounts.step1},
-        {level: "하", count: 0, targetCount: difficultyCounts.step2},
-        {level: "중", count: 0, targetCount: difficultyCounts.step3},
-        {level: "상", count: 0, targetCount: difficultyCounts.step4},
-        {level: "최상", count: 0, targetCount: difficultyCounts.step5}
-      ];
+  .then((response) => {
+    const totalQuestions = parseInt(range);
+    let itemList = response.data.itemList;
+    
+    // 난이도별로 문제 분류
+    const questionsByDifficulty = {
+      "하": itemList.filter(item => item.difficultyName === "하"),
+      "중": itemList.filter(item => item.difficultyName === "중"),
+      "상": itemList.filter(item => item.difficultyName === "상")
+    };
 
-      newTempItemList.forEach(item => {
-        const difficulty = counts.find(d => d.level === item.difficultyName);
-        if (difficulty) difficulty.count += 1;
-      });
+    // 3:4:3 비율로 목표 수 계산
+    const targetCounts = {
+      "하": Math.round(totalQuestions * 0.3), // 30%
+      "중": Math.round(totalQuestions * 0.4), // 40%
+      "상": totalQuestions - Math.round(totalQuestions * 0.3) - Math.round(totalQuestions * 0.4) // 나머지
+    };
 
-      setModalData({
-        tempItemList: newTempItemList,
-        counts: counts,
-      });
-      setShowStep2Modal(true);
-
-      counts.forEach(difficulty => {
-        if (difficulty.count > 0) {
-          difficulty.adjustedCount = difficulty.count < difficulty.targetCount 
-            ? difficulty.count 
-            : difficulty.targetCount;
-        } else {
-          difficulty.adjustedCount = 0;
-        }
-      });
-
-      setTempItemList(newTempItemList);
-      setTempDifficultyCounts(counts);
-
-      // pendingSubmitData에 제한된 itemList 포함
-      setPendingSubmitData({
-        range,
-        selectedSteps,
-        selectedEvaluation,
-        selectedQuestiontype,
-        evaluationData: evaluation,
-        source,
-        bookId,
-        checkedNodes,
-        difficultyCounts,
-        requestData,
-        apiResponse: { ...response.data, itemList: limitedItemList }, // 제한된 itemList로 교체
-        adjustedCounts: counts,
-        questionForm,
-        activityCategoryList,
-        minorClassification
-      });
-
-      setIsConfirmOpen(true);
-    })
-    .catch((error) => {
-      console.error('API 오류:', error);
-      console.error('오류 상세:', error.response?.data);
-      alert('요청 처리 중 오류가 발생했습니다.');
+    // 각 난이도별로 필요한 만큼만 선택
+    let selectedQuestions = [];
+    Object.entries(questionsByDifficulty).forEach(([difficulty, questions]) => {
+      const targetCount = targetCounts[difficulty];
+      const availableQuestions = questions.slice(0, targetCount);
+      selectedQuestions = [...selectedQuestions, ...availableQuestions];
     });
+
+    // 문제 수가 부족한 경우를 위한 처리
+    const shortfall = totalQuestions - selectedQuestions.length;
+    if (shortfall > 0) {
+      // 남은 문제들 중에서 부족한 만큼 추가
+      const remainingQuestions = itemList.filter(q => !selectedQuestions.includes(q));
+      const additional = remainingQuestions.slice(0, shortfall);
+      selectedQuestions = [...selectedQuestions, ...additional];
+    }
+
+    const newTempItemList = selectedQuestions;
+
+    // 실제 counts 계산
+    const counts = [
+      {level: "최하", count: 0, targetCount: difficultyCounts.step1},
+      {level: "하", count: 0, targetCount: targetCounts["하"]},
+      {level: "중", count: 0, targetCount: targetCounts["중"]},
+      {level: "상", count: 0, targetCount: targetCounts["상"]},
+      {level: "최상", count: 0, targetCount: difficultyCounts.step5}
+    ];
+
+    // 실제 문제 수 계산
+    newTempItemList.forEach(item => {
+      const difficulty = counts.find(d => d.level === item.difficultyName);
+      if (difficulty) difficulty.count += 1;
+    });
+
+    // adjusted counts 계산
+    counts.forEach(difficulty => {
+      if (difficulty.count > 0) {
+        difficulty.adjustedCount = difficulty.count < difficulty.targetCount 
+          ? difficulty.count 
+          : difficulty.targetCount;
+      } else {
+        difficulty.adjustedCount = 0;
+      }
+    });
+
+    setModalData({
+      tempItemList: newTempItemList,
+      counts: counts,
+    });
+    setShowStep2Modal(true);
+
+    setTempItemList(newTempItemList);
+    setTempDifficultyCounts(counts);
+
+    setPendingSubmitData({
+      range,
+      selectedSteps,
+      selectedEvaluation,
+      selectedQuestiontype,
+      evaluationData: evaluation,
+      source,
+      bookId,
+      checkedNodes,
+      difficultyCounts: {
+        step1: 0,
+        step2: targetCounts["하"],
+        step3: targetCounts["중"],
+        step4: targetCounts["상"],
+        step5: 0
+      },
+      requestData,
+      apiResponse: { ...response.data, itemList: newTempItemList },
+      adjustedCounts: counts,
+      questionForm,
+      activityCategoryList,
+      minorClassification
+    });
+
+    setIsConfirmOpen(true);
+  })
+  .catch((error) => {
+    console.error('API 오류:', error);
+    console.error('오류 상세:', error.response?.data);
+    alert('요청 처리 중 오류가 발생했습니다.');
+  });
 };
 
   
@@ -1599,12 +1679,13 @@ const handleIsConfirm = (isConfirm) => {
                   </div>
 
 
-                    <DifficultyDisplay 
-                      countsData={countsData}
-                      handleDifficultyCounts={handleDifficultyCounts}
-                      handleIsConfirm={handleIsConfirm}
-                      handleCloseDifficultyPopup={handleCloseDifficultyPopup}  // 추가
-                    />
+                  <DifficultyDisplay 
+  isStudent={false}
+  countsData={difficultyCounts} // difficultyCounts 상태를 직접 전달
+  handleDifficultyCounts={handleDifficultyCounts}
+  handleIsConfirm={handleIsConfirm}
+  handleCloseDifficultyPopup={handleCloseDifficultyPopup}
+/>
 
 
                       {/* 난이도별 문제수 */}
