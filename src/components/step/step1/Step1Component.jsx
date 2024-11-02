@@ -1274,6 +1274,10 @@ const submitToStep2 = () => {
   axios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
   .then((response) => {
     const itemList = response.data.itemList;
+     if (!itemList || itemList.length === 0) {
+      alert('선택한 단원에 사용 가능한 문제가 없습니다.\n다른 단원을 선택해주세요.');
+      return;
+    }
     const totalQuestions = parseInt(range);
     let selectedQuestions;
     let counts;
