@@ -1,4 +1,4 @@
-import {useNavigate} from "react-router-dom";
+import {Navigate, useNavigate} from "react-router-dom";
 import {useState} from "react";
 
 const useCustomMove = () => {
@@ -20,6 +20,10 @@ const useCustomMove = () => {
     )
   }
 
+  const moveToMainReturn = () => {
+    return <Navigate replace to="/"/>
+  }
+
   const moveToPathWithData = (path,data) => {
     setRefresh(!refresh)
     navigate(
@@ -29,7 +33,7 @@ const useCustomMove = () => {
     )
   }
 
-  return {moveToPath,moveToPathWithData,moveToStepWithData,refresh}
+  return {moveToPath,moveToPathWithData,moveToStepWithData,refresh,moveToMainReturn}
 }
 
 

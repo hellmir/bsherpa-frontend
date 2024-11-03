@@ -6,8 +6,11 @@ import {getQuestionData, registerExam} from "../../api/step3Api.js";
 import {useQuery} from "@tanstack/react-query";
 export default function Step3Component() {
 
-    const { bookId, groupedItems } = useSelector((state) => state.examDataSlice);
     //const [itemList, setItemList] = useState([]);
+    const { bookId, totalQuestions, groupedItems } = useSelector((state) => state.examDataSlice);
+    console.log('Step2로부터 전송된 bookId:', bookId);
+    console.log('Step2로부터 전송된 문제 수:', totalQuestions);
+    console.log('Step2로부터 전송된 지문과 문제 데이터 목록: ', groupedItems);
 
     const loginState = useSelector(state => state.loginSlice)
     const email = loginState.email;

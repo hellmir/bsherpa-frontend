@@ -1,18 +1,18 @@
-import { useLocation } from "react-router-dom";
+import {useLocation} from "react-router-dom";
 import AccordionComponent from "../common/AccordionComponent.jsx";
 import Button from "@mui/material/Button";
-import { Box } from "@mui/material";
+import {Box} from "@mui/material";
 import BorderColorOutlinedIcon from '@mui/icons-material/BorderColorOutlined';
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
-import { useDispatch, useSelector } from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
-import { useQuery } from "@tanstack/react-query";
-import { getSubjectExamsFromTsherpa } from "../../api/step0Api.js";
+import {useQuery} from "@tanstack/react-query";
+import {getSubjectExamsFromTsherpa} from "../../api/step0Api.js";
 import Typography from "@mui/material/Typography";
 import HomeIcon from '@mui/icons-material/Home';
-import { addBookId } from "../../slices/bookIdSlice.jsx";
-import { resetExamId } from "../../slices/examIdSlice.jsx";
-import { useEffect } from "react";
+import {addBookId} from "../../slices/bookIdSlice.jsx";
+import {resetExamId} from "../../slices/examIdSlice.jsx";
+import {useEffect} from "react";
 
 const groupByLargeChapterId = (array) => {
   return array.reduce((acc, item) => {
@@ -30,11 +30,19 @@ const groupByLargeChapterId = (array) => {
 };
 
 function Step0Component() {
-  const book = useLocation().state.data;
-  const dispatch = useDispatch();
-  const { moveToStepWithData, moveToPath } = useCustomMove();
-  const examIdList = useSelector(state => state.examIdSlice);
 
+  const dispatch = useDispatch();
+  const { moveToStepWithData, moveToPath, moveToMainReturn } = useCustomMove();
+  const examIdList = useSelector(state => state.examIdSlice);
+  const location = useLocation()
+
+  if (location===null){
+    return moveToMainReturn()
+  }
+
+  const book = location.state.data;
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const isReloaded = sessionStorage.getItem("isReloaded");
     if (!isReloaded) {
@@ -43,10 +51,12 @@ function Step0Component() {
     }
   }, []);
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     dispatch(addBookId(book.id)); // Book ID를 추가
   }, [dispatch, book.id]); // 의존성 배열에 추가
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const { data } = useQuery({
     queryKey: [],
     queryFn: () => getSubjectExamsFromTsherpa(book.id),
@@ -55,9 +65,10 @@ function Step0Component() {
 
   const groupedData = data ? groupByLargeChapterId(data.examList) : [];
 
+
   const handleClickSelectedExamEdit = () => {
     console.log(`선택한 시험지 만들기 : ${examIdList}`);
-    moveToStepWithData('step1', examIdList);
+    moveToStepWithData('step2', examIdList);
   };
 
   const handleClickNewExamEdit = () => {
@@ -67,11 +78,14 @@ function Step0Component() {
 
   const handleClickHome = () => {
     dispatch(resetExamId());
+
     moveToPath('/');
   };
 
+
   return (
       <>
+
         <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2 }}>
           <Box>
             <Typography variant="h4" sx={{ color: 'primary.main', display: 'inline' }}>
