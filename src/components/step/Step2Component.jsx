@@ -617,7 +617,7 @@ export default function Step2Component() {
                                 <div className="paper-info">
                                     <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                {minorClassification && (
+                                {minorClassification.length > 0 && (
                                     <button className="btn-default btn-research" onClick={handleReSearchClick}>
                                         <i className="research"></i>재검색
                                     </button>
