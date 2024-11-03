@@ -1,7 +1,7 @@
 import {useRef} from "react";
 import html2canvas from "html2canvas";
 import Step4ComponentBeta2
-    from "../../components/step/Step4PComponentBeta2.jsx";
+    from "../../components/step/Step4ComponentBeta2.jsx";
 
 const response = {
     collection: [

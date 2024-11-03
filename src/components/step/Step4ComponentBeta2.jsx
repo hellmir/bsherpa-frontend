@@ -6,38 +6,38 @@ const Step4ComponentBeta2 = ({ response }) => {
   const pdfRef = useRef();
 
   const handlePrint = () => {
-    //print()
-      // 인쇄를 위한 스타일 정의
-      const printStyle = `
-      @media print {
-        body * {
-          visibility: hidden; /* 모든 요소 숨기기 */
-        }
-        #printableArea, #printableArea * {
-          visibility: visible; /* 인쇄할 영역만 보이게 하기 */
-        }
-        #printableArea {
-          position: absolute; /* 위치 설정 */
-          left: 0;
-          top: 0;
-        }
-      }
-    `;
+      // 인쇄할 내용을 위한 새로운 HTML 생성
+      const printContent = pdfRef.current.innerHTML;
 
       const printWindow = window.open('', '_blank');
+      const printStyle = `
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          background-color: white;
+          color: black;
+        }
+      </style>
+    `;
+
       printWindow.document.write(`
       <html>
         <head>
           <title>Print</title>
-          <style>${printStyle}</style>
+          ${printStyle}
         </head>
         <body>
-          <div id="printableArea">${pdfRef.current.innerHTML}</div>
+          <div>${printContent}</div>
         </body>
       </html>
     `);
       printWindow.document.close();
+
+      // 인쇄 대화상자 열기
       printWindow.print();
+
+      // 인쇄 후 창 닫기
       printWindow.close();
   };
 
