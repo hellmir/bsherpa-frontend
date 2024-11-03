@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
 import {
@@ -27,6 +27,8 @@ import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent.jsx
 export default function Step2Component() {
     const dispatch = useDispatch();
 
+    const [initialStep1Data, setInitialStep1Data] = useState(null);
+    const step1DataLoaded = useRef(false);
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
@@ -151,11 +153,11 @@ export default function Step2Component() {
     const handleOpenScopeModal = () => setIsScopeModalOpen(true);
     const handleCloseScopeModal = () => setIsScopeModalOpen(false);
 
-    const itemsRequestForm = step1Data && step1Data.activityCategoryList && step1Data.difficultyCounts && step1Data.selectedEvaluation && step1Data.minorClassification
+    const itemsRequestForm = initialStep1Data && initialStep1Data.activityCategoryList && initialStep1Data.difficultyCounts && initialStep1Data.selectedEvaluation && initialStep1Data.minorClassification
         ? {
-            activityCategoryList: step1Data.selectedEvaluation,
-            levelCnt: step1Data.counts.map((count) => count.targetCount),
-            minorClassification: minorClassification,
+            activityCategoryList: initialStep1Data.selectedEvaluation,
+            levelCnt: initialStep1Data.counts.map((count) => count.targetCount),
+            minorClassification: initialStep1Data.minorClassification,
             questionForm: "multiple,subjective"
         }
         : null;
@@ -203,6 +205,13 @@ export default function Step2Component() {
         setIsShiftModalOpen(false);
         moveToPath('/');
     };
+
+    useEffect(() => {
+        if (!step1DataLoaded.current && step1Data) {
+            setInitialStep1Data(step1Data);
+            step1DataLoaded.current = true;
+        }
+    }, [step1Data]);
 
     useEffect(() => {
         if (!isSorted && groupedItems.length > 0) {
@@ -608,12 +617,12 @@ export default function Step2Component() {
                                 <div className="paper-info">
                                     <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                {!step0ExamIdList.length && (
+                                {step1Data.minorClassification && (
                                     <button className="btn-default btn-research" onClick={handleReSearchClick}>
                                         <i className="research"></i>재검색
                                     </button>
                                 )}
-                                <button className="btn-default pop-btn" onClick={handleOpenScopeModal}>
+                                <button className="tn-default pop-btn" onClick={handleOpenScopeModal}>
                                     출제범위
                                 </button>
                                 <ChapterScopeModalComponent
