@@ -29,6 +29,7 @@ export default function Step2Component() {
 
     const [initialStep1Data, setInitialStep1Data] = useState(null);
     const step1DataLoaded = useRef(false);
+    const minorClassification = useRef([]);
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
@@ -141,8 +142,6 @@ export default function Step2Component() {
 
     console.log(`평가 영역 목록: ${activityCategoryList}`)
 
-    const minorClassification = step1Data?.minorClassification || [];
-
     const chapterNames = itemList.map(item => ({
         largeChapterName: item.largeChapterName,
         mediumChapterName: item.mediumChapterName,
@@ -158,7 +157,7 @@ export default function Step2Component() {
             activityCategoryList: initialStep1Data.selectedEvaluation,
             levelCnt: initialStep1Data.counts.map((count) => count.targetCount),
             minorClassification: initialStep1Data.minorClassification,
-            questionForm: "multiple,subjective"
+            questionForm: initialStep1Data.questionForm
         }
         : null;
     console.log('문제 요청 양식: ', itemsRequestForm);
@@ -210,6 +209,7 @@ export default function Step2Component() {
         if (!step1DataLoaded.current && step1Data) {
             setInitialStep1Data(step1Data);
             step1DataLoaded.current = true;
+            minorClassification.current = [...(step1Data.minorClassification || [])];
         }
     }, [step1Data]);
 
@@ -617,7 +617,7 @@ export default function Step2Component() {
                                 <div className="paper-info">
                                     <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                {minorClassification.length > 0 && (
+                                {minorClassification.current.length > 0 && (
                                     <button className="btn-default btn-research" onClick={handleReSearchClick}>
                                         <i className="research"></i>재검색
                                     </button>
