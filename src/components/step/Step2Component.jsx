@@ -194,10 +194,10 @@ export default function Step2Component() {
     });
 
     useEffect(() => {
-        if (step0ExamIdList.length === 0 && !step1Data) {
+        if (step0ExamIdList.length === 0 && (!step1Data || step1Data.length === 0)) {
             setIsAccessModalOpen(true);
         }
-    }, [step0ExamIdList, step1Data]);
+    }, []);
 
     const handleCloseAccessModal = () => {
         setIsShiftModalOpen(false);
