@@ -14,6 +14,7 @@ import TextField from "@mui/material/TextField";
 import HomeIcon from '@mui/icons-material/Home';
 import {Link} from "react-router-dom";
 import {getKakaoLink} from "../../api/kakaoApi.js";
+import {GridViewStreamIcon} from "@mui/x-data-grid";
 
 const drawerWidth = 240;
 const initState = {
@@ -66,6 +67,11 @@ const handleClickText = (e) => {
     moveToPath('/')
   }
 }
+
+  const handleClickLink = (link) => {
+    window.location.href = link;
+  }
+
   const handleClose = () => {
     if (result) {
       setResult(null)
@@ -185,6 +191,14 @@ const handleClickText = (e) => {
                                 onClick={handleClickText}
                   />
                 </ListItemButton>
+          },
+          {
+            <ListItemButton onClick={() => handleClickLink('https://exsherpa.duckdns.org')}>
+              <ListItemIcon>
+                <GridViewStreamIcon />
+              </ListItemIcon>
+              <ListItemText primary={'EX셀파로 이동'} />
+            </ListItemButton>
           }
         </List>
       </Drawer>
