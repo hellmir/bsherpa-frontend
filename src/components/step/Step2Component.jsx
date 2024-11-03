@@ -406,6 +406,7 @@ export default function Step2Component() {
             })).filter((group) => group.items.length > 0);
 
             setGroupedItems(updatedGroupedItems);
+            setSelectedSortOption("사용자 정렬");
         }
     };
 
@@ -426,6 +427,7 @@ export default function Step2Component() {
 
         const updatedGroupedItems = groupedItems.filter((group) => group.passageId !== passageId);
         setGroupedItems(updatedGroupedItems);
+        setSelectedSortOption("사용자 정렬");
     };
 
     const scrollToNewItem = (newItemId) => {
@@ -480,6 +482,7 @@ export default function Step2Component() {
 
             const newSortedItemList = updatedGroups.flatMap(group => group.items);
             setItemList(newSortedItemList);
+            setSelectedSortOption("사용자 정렬");
 
             console.log(`지문을 ${source.index}에서 ${destination.index}로 이동`);
         } else if (type === "ITEM") {
@@ -540,6 +543,7 @@ export default function Step2Component() {
 
             const newSortedItemList = updatedGroups.flatMap(group => group.items);
             setItemList(newSortedItemList);
+            setSelectedSortOption("사용자 정렬");
         }
     };
 
