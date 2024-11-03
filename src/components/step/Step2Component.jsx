@@ -471,8 +471,8 @@ export default function Step2Component() {
 
         if (!destination) return;
 
+        const updatedGroups = JSON.parse(JSON.stringify(groupedItems));
         if (type === "PASSAGE_GROUP") {
-            const updatedGroups = Array.from(groupedItems);
             const [movedGroup] = updatedGroups.splice(source.index, 1);
             updatedGroups.splice(destination.index, 0, movedGroup);
 
@@ -518,8 +518,23 @@ export default function Step2Component() {
 
             const group = updatedGroups[groupIndex];
 
-            const [movedItem] = group.items.splice(source.index, 1);
-            group.items.splice(destination.index, 0, movedItem);
+            const itemIndexInGroup = source.index - itemList.findIndex(item => item.passageId === sourcePassageIdNumber);
+
+            if (itemIndexInGroup < 0 || itemIndexInGroup >= group.items.length) {
+                console.error('item 인덱스가 존재하지 않습니다.');
+                return;
+            }
+
+            const [movedItem] = group.items.splice(itemIndexInGroup, 1);
+
+            if (!movedItem || !movedItem.itemId) {
+                console.error(`movedItem이 올바르지 않거나 itemId가 존재하지 않습니다: `, movedItem);
+                return;
+            }
+
+            const destinationIndexInGroup = destination.index - itemList.findIndex(item => item.passageId === destinationPassageIdNumber);
+
+            group.items.splice(destinationIndexInGroup, 0, movedItem);
 
             setGroupedItems(updatedGroups);
 
