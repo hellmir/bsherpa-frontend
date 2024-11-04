@@ -1159,16 +1159,16 @@ const Step1Component = () => {
 
   // 문제 형태 클릭 핸들러 수정
   const handleQuestionTypeClick = (type) => {
-    setSelectedQuestiontype(prev => {
-      if (prev.includes(type)) {
-        return prev.filter(item => item !== type);  // 이미 선택된 경우 제거
-      } else {
-        return [...prev, type];  // 선택되지 않은 경우 추가
-      }
-    });
+    let newTypes;
+    if (selectedQuestiontype.includes(type)) {
+      // 이미 선택된 타입을 클릭한 경우 해당 타입을 제거
+      newTypes = selectedQuestiontype.filter(item => item !== type);
+    } else {
+      // 새로운 타입을 추가
+      newTypes = [...selectedQuestiontype, type];
+    }
+    setSelectedQuestiontype(newTypes);
   };
-
-
   
   const handleSourceClick = (sourceType) => {
     setSource(prev => prev === sourceType ? '' : sourceType);
@@ -1678,24 +1678,21 @@ const Step1Component = () => {
                           <span className='tit-text'>문제 형태</span>
                         </div>
                         <div className='btn-wrap multi'>
-                          <button
-                              type='button'
-                              className={`btn-line ${
-                                  selectedQuestiontype.includes('objective') ? 'active' : ''
-                              }`}
-                              data-step='objective'
-                              onClick={() => handleQuestionTypeClick('objective')}
-                          >
+                        <button
+          type='button'
+          className={`btn-line ${selectedQuestiontype.includes('objective') ? 'active' : ''}`}
+
+          data-step='objective'
+          onClick={() => handleQuestionTypeClick('objective')}
+        >
                             객관식
                           </button>
                           <button
-                              type='button'
-                              className={`btn-line ${
-                                  selectedQuestiontype.includes('subjective') ? 'active' : ''
-                              }`}
-                              data-step='subjective'
-                              onClick={() => handleQuestionTypeClick('subjective')}
-                          >
+          type='button'
+          className={`btn-line ${selectedQuestiontype.includes('subjective') ? 'active' : ''}`}
+          data-step='subjective'
+          onClick={() => handleQuestionTypeClick('subjective')}
+        >
                             주관식
                           </button>
                         </div>
