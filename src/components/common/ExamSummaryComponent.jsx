@@ -45,7 +45,7 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                                     key={`passage-${passageId}`}
                                     draggableId={`passage-${passageId}`}
                                     index={groupIndex}
-                                    isDragDisabled={passageId === "noPassage"} // noPassage인 경우 드래그 비활성화
+                                    isDragDisabled={passageId === "noPassage"}
                                 >
                                     {(provided) => (
                                         <div
@@ -53,7 +53,6 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                                             {...provided.draggableProps}
                                             className={`depth-01 ${passageId !== "noPassage" ? "has-passage" : "no-passage"}`}
                                         >
-                                            {/* passageId가 "noPassage"가 아닐 때만 드래그 핸들 표시 */}
                                             {passageId !== "noPassage" && (
                                                 <div
                                                     className="dragHandle ui-sortable-handle ico-move-type02"

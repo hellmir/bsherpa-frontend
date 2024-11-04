@@ -8,4 +8,8 @@ export const BOOK = `${API_SERVER_HOST}/books`
 
 export const QUESTION_IMAGE = `${API_SERVER_HOST}/question-images`
 
+export const EXAM = `${API_SERVER_HOST}/exam`
+
+export const QUESTION_EXTERNAL = `${API_SERVER_HOST}/questions/${EXTERNAL}`
+
 export const ERROR_REPORT = `${API_SERVER_HOST}/error-reports`

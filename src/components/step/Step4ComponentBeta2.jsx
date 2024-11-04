@@ -2,7 +2,7 @@ import {useRef} from 'react';
 import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
 
-const Step4Component = ({ response }) => {
+const Step4ComponentBeta2 = ({ response }) => {
   const pdfRef = useRef();
 
   const handlePrint = () => {
@@ -18,17 +18,6 @@ const Step4Component = ({ response }) => {
           background-color: white;
           color: black;
         }
-        
-         @media print {
-        body {
-          display: block;
-        }
-      }
-      @media screen {
-        body {
-          display: none;
-        }
-      }
       </style>
     `;
 
@@ -125,11 +114,11 @@ const Step4Component = ({ response }) => {
       <>
         <CommonResource/>
         <Button onClick={handlePrint}>시험지 저장</Button>
-      <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}} >
+      <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue' }} >
           {renderContent()}
       </div>
       </>
   );
 };
 
-export default Step4Component;
+export default Step4ComponentBeta2;

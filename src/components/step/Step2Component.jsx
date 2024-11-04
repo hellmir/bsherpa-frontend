@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
 import {
@@ -27,6 +27,9 @@ import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent.jsx
 export default function Step2Component() {
     const dispatch = useDispatch();
 
+    const [initialStep1Data, setInitialStep1Data] = useState(null);
+    const step1DataLoaded = useRef(false);
+    const minorClassification = useRef([]);
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
@@ -44,8 +47,8 @@ export default function Step2Component() {
     const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isSorted, setIsSorted] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
+    const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+    const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
     const [isSimilarPage, setIsSimilarPage] = useState(false);
     const [similarItems, setSimilarItems] = useState([]);
     const [questionIndex, setQuestionIndex] = useState(null);
@@ -100,8 +103,8 @@ export default function Step2Component() {
             });
     };
 
-    const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false)
+    const handleOpenModal = () => setIsShiftModalOpen(true);
+    const handleCloseShiftModal = () => setIsShiftModalOpen(false)
     const handleCloseNoSimilarItemsModal = () => setIsNoSimilarItemsModalOpen(false);
     const handleOpenErrorReport = (itemId) => {
         setSelectedItemId(itemId);
@@ -139,8 +142,6 @@ export default function Step2Component() {
 
     console.log(`평가 영역 목록: ${activityCategoryList}`)
 
-    const minorClassification = step1Data?.minorClassification || [];
-
     const chapterNames = itemList.map(item => ({
         largeChapterName: item.largeChapterName,
         mediumChapterName: item.mediumChapterName,
@@ -151,12 +152,12 @@ export default function Step2Component() {
     const handleOpenScopeModal = () => setIsScopeModalOpen(true);
     const handleCloseScopeModal = () => setIsScopeModalOpen(false);
 
-    const itemsRequestForm = step1Data && step1Data.activityCategoryList && step1Data.difficultyCounts && step1Data.selectedEvaluation && step1Data.minorClassification
+    const itemsRequestForm = initialStep1Data && initialStep1Data.activityCategoryList && initialStep1Data.difficultyCounts && initialStep1Data.selectedEvaluation && initialStep1Data.minorClassification
         ? {
-            activityCategoryList: step1Data.selectedEvaluation,
-            levelCnt: step1Data.counts.map((count) => count.targetCount),
-            minorClassification: minorClassification,
-            questionForm: "multiple,subjective"
+            activityCategoryList: initialStep1Data.selectedEvaluation,
+            levelCnt: initialStep1Data.counts.map((count) => count.targetCount),
+            minorClassification: initialStep1Data.minorClassification,
+            questionForm: initialStep1Data.questionForm
         }
         : null;
     console.log('문제 요청 양식: ', itemsRequestForm);
@@ -192,6 +193,25 @@ export default function Step2Component() {
             console.error("문항 재검색 실패: ", error);
         }
     });
+
+    useEffect(() => {
+        if (step0ExamIdList.length === 0 && (!step1Data || step1Data.length === 0)) {
+            setIsAccessModalOpen(true);
+        }
+    }, []);
+
+    const handleCloseAccessModal = () => {
+        setIsShiftModalOpen(false);
+        moveToPath('/');
+    };
+
+    useEffect(() => {
+        if (!step1DataLoaded.current && step1Data) {
+            setInitialStep1Data(step1Data);
+            step1DataLoaded.current = true;
+            minorClassification.current = [...(step1Data.minorClassification || [])];
+        }
+    }, [step1Data]);
 
     useEffect(() => {
         if (!isSorted && groupedItems.length > 0) {
@@ -395,6 +415,7 @@ export default function Step2Component() {
             })).filter((group) => group.items.length > 0);
 
             setGroupedItems(updatedGroupedItems);
+            setSelectedSortOption("사용자 정렬");
         }
     };
 
@@ -415,6 +436,7 @@ export default function Step2Component() {
 
         const updatedGroupedItems = groupedItems.filter((group) => group.passageId !== passageId);
         setGroupedItems(updatedGroupedItems);
+        setSelectedSortOption("사용자 정렬");
     };
 
     const scrollToNewItem = (newItemId) => {
@@ -460,8 +482,8 @@ export default function Step2Component() {
 
         if (!destination) return;
 
+        const updatedGroups = JSON.parse(JSON.stringify(groupedItems));
         if (type === "PASSAGE_GROUP") {
-            const updatedGroups = Array.from(groupedItems);
             const [movedGroup] = updatedGroups.splice(source.index, 1);
             updatedGroups.splice(destination.index, 0, movedGroup);
 
@@ -469,6 +491,7 @@ export default function Step2Component() {
 
             const newSortedItemList = updatedGroups.flatMap(group => group.items);
             setItemList(newSortedItemList);
+            setSelectedSortOption("사용자 정렬");
 
             console.log(`지문을 ${source.index}에서 ${destination.index}로 이동`);
         } else if (type === "ITEM") {
@@ -507,13 +530,29 @@ export default function Step2Component() {
 
             const group = updatedGroups[groupIndex];
 
-            const [movedItem] = group.items.splice(source.index, 1);
-            group.items.splice(destination.index, 0, movedItem);
+            const itemIndexInGroup = source.index - itemList.findIndex(item => item.passageId === sourcePassageIdNumber);
+
+            if (itemIndexInGroup < 0 || itemIndexInGroup >= group.items.length) {
+                console.error('item 인덱스가 존재하지 않습니다.');
+                return;
+            }
+
+            const [movedItem] = group.items.splice(itemIndexInGroup, 1);
+
+            if (!movedItem || !movedItem.itemId) {
+                console.error(`movedItem이 올바르지 않거나 itemId가 존재하지 않습니다: `, movedItem);
+                return;
+            }
+
+            const destinationIndexInGroup = destination.index - itemList.findIndex(item => item.passageId === destinationPassageIdNumber);
+
+            group.items.splice(destinationIndexInGroup, 0, movedItem);
 
             setGroupedItems(updatedGroups);
 
             const newSortedItemList = updatedGroups.flatMap(group => group.items);
             setItemList(newSortedItemList);
+            setSelectedSortOption("사용자 정렬");
         }
     };
 
@@ -541,10 +580,19 @@ export default function Step2Component() {
                 />
             )}
             <ModalComponent
+                title="비정상적인 접근"
+                content={
+                    <>비정상적인 접근이 감지되었습니다.<br/>
+                        메인 페이지로 이동합니다.</>
+                }
+                handleClose={handleCloseAccessModal}
+                open={isAccessModalOpen}
+            />
+            <ModalComponent
                 title="이동 불가"
                 content="다른 지문으로 이동할 수 없습니다."
-                handleClose={handleCloseModal}
-                open={isModalOpen}
+                handleClose={handleCloseShiftModal}
+                open={isShiftModalOpen}
             />
             <ModalComponent
                 title="검색 결과 없음"
@@ -569,12 +617,12 @@ export default function Step2Component() {
                                 <div className="paper-info">
                                     <span>{subjectName}</span> {author}({curriculumYear})
                                 </div>
-                                {!step0ExamIdList.length && (
+                                {minorClassification.current.length > 0 && (
                                     <button className="btn-default btn-research" onClick={handleReSearchClick}>
                                         <i className="research"></i>재검색
                                     </button>
                                 )}
-                                <button className="btn-default pop-btn" onClick={handleOpenScopeModal}>
+                                <button className="tn-default pop-btn" onClick={handleOpenScopeModal}>
                                     출제범위
                                 </button>
                                 <ChapterScopeModalComponent

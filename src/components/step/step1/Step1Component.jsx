@@ -1291,6 +1291,7 @@ const submitToStep2 = () => {
     const itemList = response.data.itemList;
      // 문제 수가 0인 경우 체크 추가
     if (!itemList || itemList.length === 0) {
+     if (!itemList || itemList.length === 0) {
       alert('선택한 단원에 사용 가능한 문제가 없습니다.\n다른 단원을 선택해주세요.');
       return;
     }
