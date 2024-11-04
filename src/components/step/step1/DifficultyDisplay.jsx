@@ -1,7 +1,6 @@
-import React, { useState ,useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 
-const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCounts,handleIsConfirm,  handleCloseDifficultyPopup  // 추가
-} ) => {
+const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCounts, handleIsConfirm, handleCloseDifficultyPopup, range }) => {
   const [selectedSteps, setSelectedSteps] = useState(['step2', 'step3', 'step4']);
   const [showRangePopup, setShowRangePopup] = useState(false);
   const [showAutoChangePopup, setShowAutoChangePopup] = useState(false);
@@ -12,32 +11,18 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
     step4: 10,
     step5: 0
   });
-
-  // props로 difficultyCounts를 받아서 업데이트
+  const totalSum = parseInt(Object.values(counts).reduce((a, b) => a + b, 0));
+  const numericRange = parseInt(range);
+  console.log('dificul range::   '+ range)
+  console.log('difficul totalSum::   '+totalSum)
+  const isSameValue = Number(totalSum) === Number(range);
+  console.log('difficul isSameValue::   '+isSameValue)
   useEffect(() => {
     if (countsData) {
       setCounts(countsData);
     }
   }, [countsData]);
 
-
-
-
-
-
-  const handleSave = () => {
-    const total = Object.values(difficultyValues).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
-    
-    if (total !== 30) {
-      alert('난이도별 문항 수의 합이 30문제가 되어야 합니다.');
-      return;
-    }
-
-    handleDifficultyCounts(difficultyValues);
-    handleCloseDifficultyPopup();  // 팝업 닫기 추가
-  };
-
-  
   const difficulties = [
     { step: 'step1', text: '최하', color: 'color01', disabled: true },
     { step: 'step2', text: '하', color: 'color02', disabled: false },
@@ -46,28 +31,21 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
     { step: 'step5', text: '최상', color: 'color05', disabled: true }
   ];
 
- // handleInputChange 함수 수정
- const handleInputChange = (step, value) => {
-  const newValue = parseInt(value) || 0;
-  
-  // 입력된 값이 음수인 경우 0으로 설정
-  if (newValue < 0) return;
+  const handleInputChange = (step, value) => {
+    const newValue = parseInt(value) || 0;
+    
+    if (newValue < 0) return;
 
-  // 새로운 counts 객체 생성
-  const newCounts = {
-    ...counts,
-    [step]: newValue
+    const newCounts = {
+      ...counts,
+      [step]: newValue
+    };
+
+    setCounts(newCounts);
+    handleDifficultyCounts(newCounts);
   };
 
-  // 상태 업데이트
-  setCounts(newCounts);
-  // 부모 컴포넌트에 즉시 알림
-  handleDifficultyCounts(newCounts);
-};
-
-
   const handleStepClick = (step) => {
-    // 비활성화된 버튼이나 학생용일 경우 클릭 무시
     const difficulty = difficulties.find(d => d.step === step);
     if (difficulty.disabled || isStudent) return;
 
@@ -76,13 +54,12 @@ const DifficultyDisplay = ({ isStudent = false ,countsData, handleDifficultyCoun
     );
   };
 
-// handleAutoChange 함수 수정
-const handleAutoChange = () => {
-  handleDifficultyCounts(counts);
-  setShowAutoChangePopup(false);
-  setShowRangePopup(false);
-  handleIsConfirm(true);
-};
+  const handleAutoChange = () => {
+    handleDifficultyCounts(counts);
+    setShowAutoChangePopup(false);
+    setShowRangePopup(false);
+    handleIsConfirm(true);
+  };
 
 
   return (
@@ -136,173 +113,112 @@ const handleAutoChange = () => {
         </div>
       </div>
 
-
-
-
-
-
-
-
-
-{/* 팝업 */}
-{showRangePopup && !isStudent && (
-  <div className="popup-overlay">
-    <div className="popup-content">
-      <div className="pop-header">
-        <span>난이도별 문제 수 설정</span>
-        <button
-          type="button"
-          className="pop-close"
-          onClick={() => setShowRangePopup(false)}
-        ></button>
-      </div>
-      <div className="pop-content">
-        <span className="txt">
-          문제 수를 입력하여<br />
-          난이도별 문제 수를 조정하세요.
-        </span>
-        <div className="range-wrap">
-          {difficulties.map(({ step, text, color, disabled }) => (
-            <div key={step} className={`range ${color}`}>
-              <span className={color}>{text}</span>
-              <div className="input-group" style={{ display: 'flex', alignItems: 'center' }}>
-                <button 
-                  className="decrease-btn"
-                  onClick={() => {
-                    if (!disabled) {
-                      setCounts(prev => ({
-                        ...prev,
-                        [step]: Math.max(0, (prev[step] || 0) - 1)
-                      }));
-                    }
-                  }}
-                  disabled={disabled || counts[step] <= 0}
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  value={counts[step]}
-                  onChange={(e) =>
-                    setCounts(prev => ({
-                      ...prev,
-                      [step]: parseInt(e.target.value) || 0
-                    }))
-                  }
-                  disabled={disabled}
-                />
-                <button 
-                  className="increase-btn"
-                  onClick={() => {
-                    if (!disabled) {
-                      setCounts(prev => ({
-                        ...prev,
-                        [step]: (prev[step] || 0) + 1
-                      }));
-                    }
-                  }}
-                  disabled={disabled}
-                >
-                  +
-                </button>
+      {showRangePopup && !isStudent && (
+        <div className="popup-overlay">
+          <div className="popup-content">
+            <div className="pop-header">
+              <span>난이도별 문제 수 설정</span>
+              <button
+                type="button"
+                className="pop-close"
+                onClick={() => setShowRangePopup(false)}
+              ></button>
+            </div>
+            <div className="pop-content">
+              <span className="txt">
+                문제 수를 입력하여<br />
+                난이도별 문제 수를 조정하세요.
+              </span>
+<h1 style={{ 
+    fontWeight: "bold", 
+    color:isSameValue ? "#000000" : "#FF0000" 
+}}>
+    위에서 선택한 문제 수는 {range} 입니다.
+</h1>              <div className="range-wrap">
+                {difficulties.map(({ step, text, color, disabled }) => (
+                  <div key={step} className={`range ${color}`}>
+                    <span className={color}>{text}</span>
+                    <div className="input-group" style={{ display: 'flex', alignItems: 'center' }}>
+                      <button 
+                        className="decrease-btn"
+                        onClick={() => {
+                          if (!disabled) {
+                            setCounts(prev => ({
+                              ...prev,
+                              [step]: Math.max(0, (prev[step] || 0) - 1)
+                            }));
+                          }
+                        }}
+                        disabled={disabled || counts[step] <= 0}
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        value={counts[step]}
+                        onChange={(e) =>
+                          setCounts(prev => ({
+                            ...prev,
+                            [step]: parseInt(e.target.value) || 0
+                          }))
+                        }
+                        disabled={disabled}
+                      />
+                      <button 
+                        className="increase-btn"
+                        onClick={() => {
+                          if (!disabled) {
+                            setCounts(prev => ({
+                              ...prev,
+                              [step]: (prev[step] || 0) + 1
+                            }));
+                          }
+                        }}
+                        disabled={disabled}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div className="range total">
+                  <span>합계</span>
+                  <span className="num">
+                    {totalSum}
+                  </span>
+                </div>
               </div>
             </div>
-          ))}
-          <div className="range total">
-            <span>합계</span>
-            <span className="num">
-              {Object.values(counts).reduce((a, b) => a + b, 0)}
-            </span>
+            <div className="pop-footer">
+              <button 
+                onClick={() => {
+                  setCounts({
+                    step1: 0,
+                    step2: 0,
+                    step3: 0,
+                    step4: 0,
+                    step5: 0
+                  });
+                }}
+                className="reset-btn"
+              >
+                초기화
+              </button>
+              <button
+  className={`save-btn ${isSameValue ? '' : 'disabled'}`}
+  onClick={() => {
+    if (isSameValue) {
+      handleAutoChange();
+    }
+  }}
+  disabled={!isSameValue}
+>
+  저장
+</button>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="pop-footer">
-        <button onClick={() => {
-          setCounts({
-            step1: 0,
-            step2: 0,
-            step3: 0,
-            step4: 0,
-            step5: 0
-          });
-        }}>
-          초기화
-        </button>
-        <button
-          className={
-            Object.values(counts).reduce((a, b) => a + b, 0) !== 20 
-              ? 'disabled' 
-              : ''
-          }
-          onClick={() => {
-            if (Object.values(counts).reduce((a, b) => a + b, 0) === 20) {
-              setShowRangePopup(false);
-            } else {
-              setShowAutoChangePopup(true);
-            }
-            handleAutoChange()
-            handleIsConfirm(true)
-          }}
-        >
-          저장
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-<style jsx>{`
-  .input-group {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .decrease-btn,
-  .increase-btn {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #ddd;
-    background: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .decrease-btn:hover,
-  .increase-btn:hover {
-    background: #f5f5f5;
-  }
-
-  .decrease-btn:disabled,
-  .increase-btn:disabled {
-    background: #f5f5f5;
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-
-  input[type="number"] {
-    width: 60px;
-    text-align: center;
-    padding: 4px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-  }
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  input[type="number"] {
-    -moz-appearance: textfield;
-  }
-`}</style>
-
-      
+      )}
 
       <style jsx>{`
         .difficulty-section {
@@ -358,21 +274,18 @@ const handleAutoChange = () => {
           font-size: 16px;
         }
         
-        /* Color styles - only applied when active */
         .color01.active { background: #FF7170; color: white; border-color: #FF7170; }
         .color02.active { background: #FF9C52; color: white; border-color: #FF9C52; }
         .color03.active { background: #FFCD51; color: white; border-color: #FFCD51; }
         .color04.active { background: #9BE15D; color: white; border-color: #9BE15D; }
         .color05.active { background: #52C5FF; color: white; border-color: #52C5FF; }
 
-        /* Popup color styles */
         .range .color01 { color: #FF7170; }
         .range .color02 { color: #FF9C52; }
         .range .color03 { color: #FFCD51; }
         .range .color04 { color: #9BE15D; }
         .range .color05 { color: #52C5FF; }
 
-        /* Popup styles */
         .popup-overlay {
           position: fixed;
           top: 0;
@@ -431,6 +344,81 @@ const handleAutoChange = () => {
         .range input:disabled {
           background-color: #f5f5f5;
           cursor: not-allowed;
+        }
+
+        .input-group {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .decrease-btn,
+        .increase-btn {
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #ddd;
+          background: #fff;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .decrease-btn:hover,
+        .increase-btn:hover {
+          background: #f5f5f5;
+        }
+
+        .decrease-btn:disabled,
+        .increase-btn:disabled {
+          background: #f5f5f5;
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        input[type="number"] {
+          width: 60px;
+          text-align: center;
+          padding: 4px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        input[type="number"] {
+          -moz-appearance: textfield;
+        }
+
+        .save-btn {
+          padding: 8px 16px;
+          border-radius: 4px;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          cursor: pointer;
+        }
+
+        .save-btn.disabled {
+          background-color: #cccccc;
+          cursor: not-allowed;
+        }
+
+        .reset-btn {
+          padding: 8px 16px;
+          border-radius: 4px;
+          background-color: #f8f9fa;
+          border: 1px solid #dee2e6;
+          cursor: pointer;
+        }
+
+        .reset-btn:hover {
+          background-color: #e9ecef;
         }
       `}</style>
     </div>
