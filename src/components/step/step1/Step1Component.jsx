@@ -782,7 +782,7 @@ const Step1Component = () => {
   const [range, setRange] = useState('30');
   const [selectedSteps, setSelectedSteps] = useState([]);
   const [selectedEvaluation, setSelectedEvaluation] = useState([]);
-  const [selectedQuestiontype, setSelectedQuestiontype] = useState('');
+  const [selectedQuestiontype, setSelectedQuestiontype] = useState([]);
   const [source, setSource] = useState('');
   const {moveToStepWithData} = useCustomMove();
   const bookId = useLocation().state.data;
@@ -1159,15 +1159,13 @@ const Step1Component = () => {
 
   // 문제 형태 클릭 핸들러 수정
   const handleQuestionTypeClick = (type) => {
-    let newTypes;
-    if (selectedQuestiontype.includes(type)) {
-      // 이미 선택된 타입을 클릭한 경우 해당 타입을 제거
-      newTypes = selectedQuestiontype.filter(item => item !== type);
-    } else {
-      // 새로운 타입을 추가
-      newTypes = [...selectedQuestiontype, type];
-    }
-    setSelectedQuestiontype(newTypes);
+    setSelectedQuestiontype(prev => {
+      if (prev.includes(type)) {
+        return prev.filter(item => item !== type);
+      } else {
+        return [...prev, type];
+      }
+    });
   };
   
   const handleSourceClick = (sourceType) => {
@@ -1253,14 +1251,13 @@ const Step1Component = () => {
     ];
 
     let questionForm = '';
-    if (selectedQuestiontype === 'objective') {
-      questionForm = 'multiple,';
-    } else if (selectedQuestiontype === 'subjective') {
-      questionForm = 'subjective';
-    } else if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
+    if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
       questionForm = 'multiple,subjective';
+    } else if (selectedQuestiontype.includes('objective')) {
+      questionForm = 'multiple,';
+    } else if (selectedQuestiontype.includes('subjective')) {
+      questionForm = 'subjective';
     }
-
     // 필수 입력값 확인
     if (activityCategoryList.length === 0) {
       alert('평가 영역을 선택해주세요.');
@@ -1479,7 +1476,7 @@ const Step1Component = () => {
                                         }
 
                                         // 4. 문제형태 모두 선택 (객관식, 주관식)
-                                        setSelectedQuestiontype('objective,subjective');
+                                        setSelectedQuestiontype(['objective', 'subjective']);
 
                                       } else {
                                         // 전체 해제시
@@ -1494,7 +1491,7 @@ const Step1Component = () => {
                                         setSelectedEvaluation([]);
 
                                         // 4. 문제형태 선택 해제
-                                        setSelectedQuestiontype('');
+                                        setSelectedQuestiontype([]);
                                       }
                                     }}
                                     checked={checkedNodes.length > 0 && checkedNodes.length === getAllNodeIds(hierarchyData).length}
