@@ -806,6 +806,7 @@ const Step1Component = () => {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showStep2Modal, setShowStep2Modal] = useState(false);
   const [modalData, setModalData] = useState(null);
+  const arrRange = ['10', '15', '20', '25', '30'];
   // 확인 모달 관련 상태
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   // 제출 대기 중인 데이터 상태
@@ -1054,7 +1055,7 @@ useEffect(() => {
     );
   };
   useEffect(()=>{
-    // console.log( countsData)
+    console.log('range::        '+ range)
   
   })
 
@@ -1291,9 +1292,11 @@ const submitToStep2 = () => {
     const itemList = response.data.itemList;
      // 문제 수가 0인 경우 체크 추가
     if (!itemList || itemList.length === 0) {
+     if (!itemList || itemList.length === 0) {
       alert('선택한 단원에 사용 가능한 문제가 없습니다.\n다른 단원을 선택해주세요.');
       return;
     }
+  }
     const totalQuestions = parseInt(range);
     let selectedQuestions;
     let counts;
@@ -1595,7 +1598,7 @@ const handleIsConfirm = (isConfirm) => {
                         </div>
                         <div className="count-area">
                           <div className="btn-wrap">
-                            {['10', '15', '20', '25', '30'].map(value => (
+                            {arrRange.map(value => (
                                 <button
                                     key={value}
                                     type="button"
@@ -1702,12 +1705,13 @@ const handleIsConfirm = (isConfirm) => {
 
 
                   <DifficultyDisplay 
-  isStudent={false}
-  countsData={difficultyCounts} // difficultyCounts 상태를 직접 전달
-  handleDifficultyCounts={handleDifficultyCounts}
-  handleIsConfirm={handleIsConfirm}
-  handleCloseDifficultyPopup={handleCloseDifficultyPopup}
-/>
+                  isStudent={false}
+                  countsData={difficultyCounts} // difficultyCounts 상태를 직접 전달
+                  handleDifficultyCounts={handleDifficultyCounts}
+                  handleIsConfirm={handleIsConfirm}
+                  handleCloseDifficultyPopup={handleCloseDifficultyPopup}
+                  range={range}
+                />
 
 
                       {/* 난이도별 문제수 */}
@@ -1766,4 +1770,3 @@ const handleIsConfirm = (isConfirm) => {
 
 
 export default Step1Component;
-
