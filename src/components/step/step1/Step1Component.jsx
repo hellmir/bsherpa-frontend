@@ -801,7 +801,8 @@ const Step1Component = () => {
   const [tempItemList, setTempItemList] = useState([]);
   const [isLoadingChapters, setIsLoadingChapters] = useState(true);
   const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(true);
-  
+  const [name ,setName] = useState('')
+  const [author ,setAuthor] = useState('')
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showStep2Modal, setShowStep2Modal] = useState(false);
   const [modalData, setModalData] = useState(null);
@@ -873,6 +874,20 @@ const Step1Component = () => {
       .then((response) => {
         console.log('Chapter Response:', response.data);
         const transformed = transformData(response.data.chapterList);
+        console.log(response.data.chapterList[0].subjectName);
+        let subjectName = response.data.chapterList[0].subjectName;
+
+        // 방법 2: 더 간단한 문자열 처리
+        const openBracketIndex = subjectName.indexOf('(');
+        const closeBracketIndex = subjectName.indexOf(')');
+
+        const subject2 = subjectName.slice(0, openBracketIndex);
+        const teacher2 = subjectName.slice(openBracketIndex + 1, closeBracketIndex);
+        setName(subject2)
+        setAuthor(teacher2)
+        console.log('subject2'+subject2);  // "수학1"
+        console.log('teacher2'+teacher2);  // "류희찬"
+
         setHierarchyData(transformed);
         setChapterList(response.data.chapterList);
   
@@ -1274,6 +1289,11 @@ const submitToStep2 = () => {
   axios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
   .then((response) => {
     const itemList = response.data.itemList;
+     // 문제 수가 0인 경우 체크 추가
+    if (!itemList || itemList.length === 0) {
+      alert('선택한 단원에 사용 가능한 문제가 없습니다.\n다른 단원을 선택해주세요.');
+      return;
+    }
     const totalQuestions = parseInt(range);
     let selectedQuestions;
     let counts;
@@ -1373,7 +1393,7 @@ const submitToStep2 = () => {
 
 
   const submitToStep0 = () => {
-    moveToStepWithData(`step0`,{id:bookId,name:'국어1-1',author:'노미숙'})
+    moveToStepWithData(`step0`,{id:bookId,name:name ,author:author})
   };
  
    
@@ -1420,8 +1440,8 @@ const handleIsConfirm = (isConfirm) => {
             <div className="view-box">
               <div className="view-top">
                 <div className="paper-info">
-                  <span>국어 1-1</span>
-                  노미숙(2015)
+                  <span>{name}</span>
+                  {author}(2015)
                 </div>
               </div>
 
