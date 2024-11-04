@@ -36,7 +36,7 @@ function Step0Component() {
   const examIdList = useSelector(state => state.examIdSlice);
   const location = useLocation()
 
-  if (location===null){
+  if (location.state===null){
     return moveToMainReturn()
   }
 
@@ -67,12 +67,10 @@ function Step0Component() {
 
 
   const handleClickSelectedExamEdit = () => {
-    console.log(`선택한 시험지 만들기 : ${examIdList}`);
     moveToStepWithData('step2', examIdList);
   };
 
   const handleClickNewExamEdit = () => {
-    console.log(`새로운 시험지 만들기 : ${book.id}`);
     moveToStepWithData('step1', book.id);
   };
 
