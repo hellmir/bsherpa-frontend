@@ -63,7 +63,7 @@ const handleClickText = (e) => {
   if (value==='회원가입'){
     moveToPath('/users/join')
   }
-  if (value==='홈'){
+  if (value==='Home'){
     moveToPath('/')
   }
 }
