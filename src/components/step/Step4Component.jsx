@@ -88,18 +88,6 @@ const Step4Component = ({response}) => {
         printWindow.close();
     };
 
-    const calculateHeight = (html) => {
-        const div = document.createElement('div');
-        div.innerHTML = html;
-        document.body.appendChild(div);
-        const heightInPixels = div.offsetHeight; // 픽셀 단위 높이
-        document.body.removeChild(div);
-
-        // 픽셀을 mm로 변환
-        const heightInMM = heightInPixels / 3.779; // 1mm ≈ 3.779px
-        return heightInMM;
-    };
-
     const indicators = ['①', '②', '③', '④', '⑤'];
 
     const renderContent = () => {
