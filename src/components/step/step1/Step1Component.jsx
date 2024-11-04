@@ -1294,6 +1294,7 @@ const submitToStep2 = () => {
      if (!itemList || itemList.length === 0) {
       alert('선택한 단원에 사용 가능한 문제가 없습니다.\n다른 단원을 선택해주세요.');
       return;
+      }
     }
     const totalQuestions = parseInt(range);
     let selectedQuestions;
