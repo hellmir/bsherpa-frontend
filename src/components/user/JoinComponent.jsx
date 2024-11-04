@@ -23,7 +23,7 @@ const initState = {
   username: '',
   password: '',
   role: 'CREATOR',
-  class:'',
+  clazz:'',
   grade: ''
 };
 
@@ -56,11 +56,11 @@ function JoinComponent() {
       return;
     }
     if(user.role === 'STUDENT'){
-    user.class = studentType
+    user.clazz = studentType
     user.grade = grade
     }
     if (user.role !== 'STUDENT'){
-      user.class = ''
+      user.clazz = ''
       user.grade = ''
     }
     postJoin(user)
