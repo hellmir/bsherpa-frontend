@@ -206,7 +206,7 @@ const handleClickText = (e) => {
                 </ListItemButton>
           },
           {
-            <ListItemButton onClick={() => handleClickLink('https://exsherpa.duckdns.org')}>
+            <ListItemButton onClick={() => handleClickLink('https://exsherpa.com')}>
               <ListItemIcon>
                 <GridViewStreamIcon />
               </ListItemIcon>
