@@ -145,20 +145,15 @@ const handleClickText = (e) => {
               <>
                       <ListItemButton>
                         <ListItemIcon>
-                          <Link to={getKakaoLink()}>
                           <LoginIcon
-                              // onClick={handleClickLogin}
+                              onClick={handleClickLogin}
                           />
-                          </Link>
                         </ListItemIcon>
-                        <Link
-                            style={{textDecoration:'none',color:'inherit'}}
-                            to={getKakaoLink()}>
+
                         <ListItemText
-                            primary={'로그인 및 회원가입'}
-                            // onClick={handleClickLogin}
+                            primary={'로그인'}
+                            onClick={handleClickLogin}
                         />
-                        </Link>
                       </ListItemButton>
                 <TextFieldComponent
                     id={'email'}
@@ -183,6 +178,24 @@ const handleClickText = (e) => {
         <Divider />
         <List>
           {
+            <ListItemButton>
+              <ListItemIcon>
+                <Link to={getKakaoLink()}>
+                  <LoginIcon
+                      // onClick={handleClickLogin}
+                  />
+                </Link>
+              </ListItemIcon>
+              <Link
+                  style={{textDecoration:'none',color:'inherit'}}
+                  to={getKakaoLink()}>
+                <ListItemText
+                    primary={'회원가입'}
+                    // onClick={handleClickLogin}
+                />
+              </Link>
+            </ListItemButton>
+          },{
                 <ListItemButton>
                   <ListItemIcon>
                      <HomeIcon />
