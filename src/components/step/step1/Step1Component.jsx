@@ -1158,20 +1158,18 @@ const Step1Component = () => {
   };
 
   // 문제 형태 클릭 핸들러 수정
-  const handleQuestionTypeClick = (questiontype) => {
-    if (questiontype === 'objective' && selectedQuestiontype.includes('subjective')) {
-      setSelectedQuestiontype('subjective');
-    } else if (questiontype === 'objective') {
-      setSelectedQuestiontype('objective');
-    } else if (questiontype === 'subjective' && selectedQuestiontype.includes('objective')) {
-      setSelectedQuestiontype('objective');
-    } else if (questiontype === 'subjective') {
-      setSelectedQuestiontype('subjective');
-    } else {
-      setSelectedQuestiontype('objective,subjective');
-    }
+  const handleQuestionTypeClick = (type) => {
+    setSelectedQuestiontype(prev => {
+      if (prev.includes(type)) {
+        return prev.filter(item => item !== type);  // 이미 선택된 경우 제거
+      } else {
+        return [...prev, type];  // 선택되지 않은 경우 추가
+      }
+    });
   };
 
+
+  
   const handleSourceClick = (sourceType) => {
     setSource(prev => prev === sourceType ? '' : sourceType);
   };
