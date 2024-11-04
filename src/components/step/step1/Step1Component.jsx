@@ -1267,7 +1267,6 @@ const Step1Component = () => {
     if (activityCategoryList.length === 0) {
       alert('평가 영역을 선택해주세요.');
       return;
-      }
     }
 
     if (minorClassification.length === 0) {
