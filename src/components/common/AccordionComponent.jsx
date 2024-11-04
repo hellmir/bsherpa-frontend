@@ -15,21 +15,13 @@ export default function AccordionComponent({largeChapter, exams}) {
           >
             {largeChapter}
           </AccordionSummary>
-
-          {/* eslint-disable-next-line react/prop-types */}
-          {/*{exams.map((item, index) => (*/}
               <>
 
                 <AccordionDetails>
                   <TableComponent
                       data={exams}
                   />
-                  {/*{item.examName}*/}
                 </AccordionDetails>
-                {/*<AccordionActions>
-                  <Button>보기</Button>
-                  <Button>만들기</Button>
-                </AccordionActions>*/}
               </>
 
 

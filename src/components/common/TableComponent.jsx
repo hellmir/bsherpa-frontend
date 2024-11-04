@@ -55,7 +55,12 @@ export default function TableComponent({ data }) {
   const examIdList = useSelector(state => state.examIdSlice);
 
   const rows = data.map((item, index) => (
-      { id: index + 1, examName: item.examName, examCount: item.itemCnt, examId: item.examId }
+      {
+        id: index + 1,
+        examName: item.examName,
+        examCount: item.itemCnt,
+        examId: item.examId
+      }
   ));
 
   const handleRowSelection = (selectionModel) => {
