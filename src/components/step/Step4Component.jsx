@@ -1,80 +1,135 @@
-import React from 'react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import {useRef} from 'react';
 import Button from "@mui/material/Button";
+import CommonResource from "../../util/CommonResource.jsx";
 
 const Step4Component = ({ response }) => {
-    const handleDownload = async () => {
-        const element = document.createElement('div');
-        element.style.position = 'absolute';
-        //element.style.left = '-9999px'; // 화면에서 보이지 않도록 위치 조정
+  const pdfRef = useRef();
 
-        // 시험지 내용을 element에 추가
-        let content = `<h1 style="text-align: center;">시험지</h1>
-                                <div style="display: flex; flex-wrap: wrap;">`;
-        response.itemList.forEach(item => {
-            content += `
-                <div style="width: 50%; padding: 10px; box-sizing: border-box;">
-                    <div style="margin-bottom: 20px; padding: 10px;">
-                        ${item.passageId ? item.passageHtml : ''}
-                    </div>
-                    <div style="padding: 10px; margin-bottom: 20px;">
-                        <span style="font-weight: bold;">${item.itemNo}.</span>
-                        <span>${item.questionHtml}</span>
-                        <span> ① ${item.choice1Html}</span>
-                        <span> ② ${item.choice2Html}</span>
-                        <span> ③ ${item.choice3Html}</span>
-                        <span> ④ ${item.choice4Html}</span>
-                        <span> ⑤ ${item.choice5Html}</span>
-                        <span><strong>설명:</strong> ${item.explainHtml}</span>
-                    </div>
-                </div>
-            `;
-        });
+  const handlePrint = () => {
+      // 인쇄할 내용을 위한 새로운 HTML 생성
+      const printContent = pdfRef.current.innerHTML;
 
-        content += `</div>`; // flex 컨테이너 닫기
-        element.innerHTML = content;
-        document.body.appendChild(element);
-
-        try {
-            const canvas = await html2canvas(element, { useCORS: true });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-
-            const imgWidth = 210; // A4 width in mm
-            const pageHeight = pdf.internal.pageSize.height; // A4 height in mm
-            const imgHeight = (canvas.height * imgWidth) / canvas.width; // 이미지 비율에 맞게 높이 계산
-
-            let heightLeft = imgHeight;
-            let position = 0;
-
-            // 첫 페이지에 이미지 추가
-            while (heightLeft > 0) {
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, Math.min(imgHeight, pageHeight));
-                heightLeft -= pageHeight; // 다음 페이지로 넘어갈 때 남은 높이에서 페이지 높이 감소
-
-                if (heightLeft > 0) {
-                    pdf.addPage(); // 페이지 추가
-                }
-                position = 0; // 다음 페이지에서 항상 위에서 시작
-            }
-
-            //pdf.save('exam.pdf');
-        } catch (error) {
-            console.error('PDF 생성 중 오류 발생:', error);
-        } finally {
-            // 생성한 element를 제거
-            //document.body.removeChild(element);
+      const printWindow = window.open('', '_blank');
+      const printStyle = `
+      <style>
+        body {
+          margin: 0;
+          padding: 20px;
+          background-color: white;
+          color: black;
         }
-    };
+        
+         @media print {
+        body {
+          display: block;
+        }
+      }
+      @media screen {
+        body {
+          display: none;
+        }
+      }
+      </style>
+    `;
 
-    return (
-        <div>
-            <Button variant="contained" color="primary" onClick={handleDownload}>
-                시험지 다운로드
-            </Button>
-        </div>
-    );
+      printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print</title>
+          ${printStyle}
+        </head>
+        <body>
+          <div>${printContent}</div>
+        </body>
+      </html>
+    `);
+      printWindow.document.close();
+
+      // 인쇄 대화상자 열기
+      printWindow.print();
+
+      // 인쇄 후 창 닫기
+      printWindow.close();
+  };
+
+  const calculateHeight = (html) => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    document.body.appendChild(div);
+    const heightInPixels = div.offsetHeight; // 픽셀 단위 높이
+    document.body.removeChild(div);
+
+    // 픽셀을 mm로 변환
+    const heightInMM = heightInPixels / 3.779; // 1mm ≈ 3.779px
+    return heightInMM;
+  };
+
+  const renderContent = () => {
+    const sections = [];
+    let currentHeight = 0;
+    // eslint-disable-next-line react/prop-types
+    response.collection.map((item, index) => {
+      const passageHeight = calculateHeight(item.passage.passageHtml);
+      console.log("지문 길이 (mm)", passageHeight);
+
+      // 지문이 추가 가능한지 체크
+      // if (currentHeight + passageHeight > 270) {
+      //   sections.push(<div key={`section-${index}`} style={{ marginBottom: '100mm' }} />);
+      //   currentHeight = 0; // 높이 초기화
+      // }
+
+      // 지문 추가
+      sections.push(
+          <div key={`passage-${index}`} style={{ marginBottom: '20px' }}>
+            <div dangerouslySetInnerHTML={{ __html: item.passage.passageHtml }} />
+          </div>
+      );
+      currentHeight += passageHeight; // 현재 높이에 지문 추가
+
+      // 각 질문에 대해 처리
+      item.questions.forEach((question, qIndex) => {
+        const questionHeight = calculateHeight(question.questionHtml); // + 40; // 질문 높이 + 간격
+
+        // 질문이 추가 가능한지 체크
+        if (currentHeight + questionHeight > 270) {
+          sections.push(<div key={`section-${index}-${qIndex}`} style={{ marginBottom: '0px' }} />);
+          currentHeight = 0; // 높이 초기화
+        }
+
+        // 질문을 현재 섹션에 추가
+        sections.push(
+            <div key={`question-${index}-${qIndex}`} style={{ marginBottom: '0px' }}>
+              <div style={{ fontSize: 20 }}>{qIndex + 1}.</div>
+              <div style={{marginBottom: '25px'}} dangerouslySetInnerHTML={{ __html: question.questionHtml }} />
+              {question.questionType === '객관식' ? (
+                  question.options.map((option, optIndex) => (
+                      <div key={`option-${index}-${qIndex}-${optIndex}`} dangerouslySetInnerHTML={{ __html: option[`choice${optIndex + 1}Html`] }} style={{marginBottom: '5px'}}/>
+                  ))
+              ) : (
+                  <div>
+                    <span>정답: </span>
+                    <input type="text" />
+                  </div>
+              )}
+              <div></div>
+            </div>
+        );
+        currentHeight += questionHeight; // 현재 높이에 질문 추가
+      });
+    });
+
+    return sections;
+  };
+
+  return (
+      <>
+        <CommonResource/>
+        <Button onClick={handlePrint}>시험지 저장</Button>
+      <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}} >
+          {renderContent()}
+      </div>
+      </>
+  );
 };
 
 export default Step4Component;

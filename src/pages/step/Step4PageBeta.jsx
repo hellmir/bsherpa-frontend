@@ -1,7 +1,7 @@
 import {useRef} from "react";
 import html2canvas from "html2canvas";
-import Step4ComponentBeta2
-    from "../../components/step/Step4ComponentBeta2.jsx";
+import Step4Component
+    from "../../components/step/Step4Component.jsx";
 
 const response = {
     collection: [
@@ -175,7 +175,7 @@ const Step4PageBeta =  () => {
     return (
         <div>
             <h1>시험지 보관함</h1>
-            <Step4ComponentBeta2 response={response}/>
+            <Step4Component response={response}/>
         </div>
     )
 }
