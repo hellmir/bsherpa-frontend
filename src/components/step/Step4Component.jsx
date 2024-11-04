@@ -34,7 +34,7 @@ const Step4Component = ({response}) => {
         display: flex;
         border: solid 3px lightgray;
         border-radius: 20px;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
       }
       
       .examSubject{
@@ -82,7 +82,7 @@ const Step4Component = ({response}) => {
         printWindow.document.close();
 
         // 인쇄 대화상자 열기
-        printWindow.print();
+        printWindow.print("", {filename:"내가 만든 시험지"});
 
         // 인쇄 후 창 닫기
         printWindow.close();
@@ -97,7 +97,7 @@ const Step4Component = ({response}) => {
             // 지문 추가
             sections.push(
                 <div key={`passage-${index}`} style={{marginBottom: '50px'}}>
-                    <div style={{fontWeight:"bold", marginLeft:"15px"}}>[ 1 ~ 3 ]</div>
+                    <div style={{fontWeight:"bold", marginLeft:"15px"}}>[ 1 ~ 3 ] 다음 지문을 읽고 질문에 답하시오. (5점)</div>
                     <div dangerouslySetInnerHTML={{__html: item.passage.passageHtml}}/>
                 </div>
             );
@@ -129,7 +129,7 @@ const Step4Component = ({response}) => {
                                 </div>
                             ))
                         ) : (
-                            <div style={{border: "solid 1px black", width: "100%", height: "50px"}}>
+                            <div style={{border: "solid 1px lightgrey", width: "60%", height: "150px", padding: "10px"}}>
                                 <span> 정답 : </span>
                             </div>
                         )}
