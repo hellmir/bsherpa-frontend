@@ -1,4 +1,4 @@
-import {createBrowserRouter, Navigate} from "react-router-dom";
+import {createBrowserRouter} from "react-router-dom";
 import {lazy, Suspense} from "react";
 import {Box, CircularProgress} from "@mui/material";
 import stepRouter from "./stepRouter.jsx";
