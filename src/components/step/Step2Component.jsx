@@ -563,7 +563,7 @@ export default function Step2Component() {
 
     const handleClickMoveToStepThree = () => {
         console.log(`STEP 3 시험지 저장 : ${bookId, totalQuestions, itemList}`);
-        dispatch(setExamData({bookId, totalQuestions, groupedItems}));
+        dispatch(setExamData({bookId, totalQuestions, groupedItems, step1Data}));
         moveToStepWithData('step3', {bookId, groupedItems});
     };
 
