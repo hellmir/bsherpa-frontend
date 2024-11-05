@@ -11,15 +11,20 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
     step4: 10,
     step5: 0
   });
+  // 초기 previousCounts를 counts와 동일하게 설정
+const [previousCounts, setPreviousCounts] = useState(() => ({
+  ...counts  // counts의 초기값을 그대로 복사
+}));
+ 
+
   const totalSum = parseInt(Object.values(counts).reduce((a, b) => a + b, 0));
   const numericRange = parseInt(range);
-  console.log('dificul range::   '+ range)
-  console.log('difficul totalSum::   '+totalSum)
   const isSameValue = Number(totalSum) === Number(range);
-  console.log('difficul isSameValue::   '+isSameValue)
+
   useEffect(() => {
     if (countsData) {
       setCounts(countsData);
+      setPreviousCounts(countsData); // countsData가 변경될 때마다 previousCounts도 업데이트
     }
   }, [countsData]);
 
@@ -42,17 +47,74 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
     };
 
     setCounts(newCounts);
+    setPreviousCounts(prev => ({
+      ...prev,
+      [step]: newValue
+    }));
     handleDifficultyCounts(newCounts);
   };
 
   const handleStepClick = (step) => {
     const difficulty = difficulties.find(d => d.step === step);
     if (difficulty.disabled || isStudent) return;
-
-    setSelectedSteps(prev => 
-      prev.includes(step) ? prev.filter(s => s !== step) : [...prev, step]
-    );
+  
+    const isCurrentlySelected = selectedSteps.includes(step);
+    let newCounts;
+  
+    if (isCurrentlySelected) {
+      // 비활성화할 때
+      newCounts = {
+        ...counts,
+        [step]: 0
+      };
+      setSelectedSteps(prev => prev.filter(s => s !== step));
+    } else {
+      // 활성화할 때
+      const totalRange = Number(range);
+      const newSelectedSteps = [...selectedSteps, step];
+      
+      // 활성화된 모든 난이도에 대해 재분배
+      const activeSteps = newSelectedSteps.filter(s => !difficulties.find(d => d.step === s).disabled);
+      const stepCount = activeSteps.length;
+      
+      if (stepCount > 0) {
+        // 기본 균등 분배
+        const baseCount = Math.floor(totalRange / stepCount);
+        const remainder = totalRange % stepCount;
+        
+        // 초기화
+        newCounts = {
+          step1: 0,
+          step2: 0,
+          step3: 0,
+          step4: 0,
+          step5: 0
+        };
+        
+        // 3:4:3 비율로 분배 (나누기 어려운 경우)
+        if (stepCount === 3 && remainder !== 0) {
+          const totalParts = 10; // 3 + 4 + 3
+          activeSteps.forEach((activeStep, index) => {
+            if (index === 0) newCounts[activeStep] = Math.floor(totalRange * 0.3); // 30%
+            else if (index === 1) newCounts[activeStep] = Math.floor(totalRange * 0.4); // 40%
+            else if (index === 2) newCounts[activeStep] = totalRange - newCounts[activeSteps[0]] - newCounts[activeSteps[1]]; // 나머지
+          });
+        } else {
+          // 균등 분배 + 나머지 처리
+          activeSteps.forEach((activeStep, index) => {
+            newCounts[activeStep] = baseCount + (index < remainder ? 1 : 0);
+          });
+        }
+      }
+      
+      setSelectedSteps(newSelectedSteps);
+    }
+  
+    setCounts(newCounts);
+    handleDifficultyCounts(newCounts);
   };
+
+
 
   const handleAutoChange = () => {
     handleDifficultyCounts(counts);
@@ -61,7 +123,18 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
     handleIsConfirm(true);
   };
 
-
+  const handleReset = () => {
+    const resetCounts = {
+      step1: 0,
+      step2: 0,
+      step3: 0,
+      step4: 0,
+      step5: 0
+    };
+    setCounts(resetCounts);
+    setPreviousCounts(resetCounts);
+    handleDifficultyCounts(resetCounts);
+  };
   return (
     <div className="difficulty-section">
       <div className="box">
@@ -134,60 +207,81 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
     color:isSameValue ? "#000000" : "#FF0000" 
 }}>
     위에서 선택한 문제 수는 {range} 입니다.
-</h1>              <div className="range-wrap">
-                {difficulties.map(({ step, text, color, disabled }) => (
-                  <div key={step} className={`range ${color}`}>
-                    <span className={color}>{text}</span>
-                    <div className="input-group" style={{ display: 'flex', alignItems: 'center' }}>
-                      <button 
-                        className="decrease-btn"
-                        onClick={() => {
-                          if (!disabled) {
-                            setCounts(prev => ({
-                              ...prev,
-                              [step]: Math.max(0, (prev[step] || 0) - 1)
-                            }));
-                          }
-                        }}
-                        disabled={disabled || counts[step] <= 0}
-                      >
-                        -
-                      </button>
-                      <input
-                        type="number"
-                        value={counts[step]}
-                        onChange={(e) =>
-                          setCounts(prev => ({
-                            ...prev,
-                            [step]: parseInt(e.target.value) || 0
-                          }))
-                        }
-                        disabled={disabled}
-                      />
-                      <button 
-                        className="increase-btn"
-                        onClick={() => {
-                          if (!disabled) {
-                            setCounts(prev => ({
-                              ...prev,
-                              [step]: (prev[step] || 0) + 1
-                            }));
-                          }
-                        }}
-                        disabled={disabled}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                <div className="range total">
-                  <span>합계</span>
-                  <span className="num">
-                    {totalSum}
-                  </span>
-                </div>
-              </div>
+</h1>             
+
+<div className="range-wrap">
+  {difficulties.map(({ step, text, color, disabled }) => (
+    <div key={step} className={`range ${color}`}>
+      <span className={color}>{text}</span>
+      <div className="input-group" style={{ display: 'flex', alignItems: 'center' }}>
+        <button 
+          className="decrease-btn"
+          onClick={() => {
+            if (!disabled) {
+              const newValue = Math.max(0, (counts[step] || 0) - 1);
+              const newCounts = {
+                ...counts,
+                [step]: newValue
+              };
+              setCounts(newCounts);
+              setPreviousCounts(prev => ({
+                ...prev,
+                [step]: newValue
+              }));
+              handleDifficultyCounts(newCounts);
+            }
+          }}
+          disabled={disabled || counts[step] <= 0}
+        >
+          -
+        </button>
+        <input
+          type="number"
+          value={counts[step]}
+          onChange={(e) => {
+            const newValue = parseInt(e.target.value) || 0;
+            const newCounts = {
+              ...counts,
+              [step]: newValue
+            };
+            setCounts(newCounts);
+            setPreviousCounts(prev => ({
+              ...prev,
+              [step]: newValue
+            }));
+            handleDifficultyCounts(newCounts);
+          }}
+          disabled={disabled}
+        />
+        <button 
+          className="increase-btn"
+          onClick={() => {
+            if (!disabled) {
+              const newValue = (counts[step] || 0) + 1;
+              const newCounts = {
+                ...counts,
+                [step]: newValue
+              };
+              setCounts(newCounts);
+              setPreviousCounts(prev => ({
+                ...prev,
+                [step]: newValue
+              }));
+              handleDifficultyCounts(newCounts);
+            }
+          }}
+          disabled={disabled}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  ))}
+  <div className="range total">
+    <span>합계</span>
+    <span className="num">{totalSum}</span>
+  </div>
+</div>
             </div>
             <div className="pop-footer">
               <button 
