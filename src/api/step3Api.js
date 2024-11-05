@@ -1,10 +1,13 @@
-import {EXAM, QUESTION_EXTERNAL} from "./config.js";
+import {BOOK, EXAM, QUESTION_EXTERNAL} from "./config.js";
 import jwtAxios from "../util/jwtUtil.jsx";
-import axios from "axios";
 
 export const getQuestionData = async (itemIds) => {
     const params = {itemIds : itemIds.join(',')};
-    return (await axios.get(`${QUESTION_EXTERNAL}`, {params: params})).data;
+    return (await jwtAxios.get(`${QUESTION_EXTERNAL}`, {params: params})).data;
+}
+export const getBookData = async (bookId) => {
+    const params = {subjectId : bookId};
+    return (await jwtAxios.get(`${BOOK}/external`, {params: params})).data;
 }
 
 export const registerExam = async (exam) => {
