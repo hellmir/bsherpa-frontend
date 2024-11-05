@@ -1212,212 +1212,236 @@ const Step1Component = () => {
   // STEP2 제출 함수 수정
   // submitToStep2 함수를 수정하여 range에 맞는 itemList만 전달하도록 변경
   const submitToStep2 = () => {
-    const checkedNodesData = extractCheckedNodesData(checkedNodes, hierarchyData);
-  
-    const minorClassification = checkedNodesData.map(node => {
-      const chapterData = chapterList.find(chapter => {
-        const nodeIdStr = node.id.toString();
-        return chapter.largeChapterId?.toString() === nodeIdStr ||
-            chapter.mediumChapterId?.toString() === nodeIdStr ||
-            chapter.smallChapterId?.toString() === nodeIdStr ||
-            chapter.topicChapterId?.toString() === nodeIdStr;
-      });
-  
-      if (!chapterData) return null;
-  
-      return {
-        large: parseInt(chapterData.largeChapterId),
-        medium: parseInt(chapterData.mediumChapterId),
-        small: parseInt(chapterData.smallChapterId),
-        subject: parseInt(chapterData.subjectId),
-        topic: parseInt(chapterData.topicChapterId)
-      };
-    }).filter(item => item !== null);
-  
-    const activityCategoryList = Array.isArray(selectedEvaluation)
-        ? selectedEvaluation.map(item =>
-            typeof item === 'object' && item.domainId
-                ? parseInt(item.domainId)
-                : parseInt(item)
-        )
-        : [];
-  
-    const levelCnt = [
-      parseInt(difficultyCounts.step1) || 0,
-      parseInt(difficultyCounts.step2) || 0,
-      parseInt(difficultyCounts.step3) || 0,
-      parseInt(difficultyCounts.step4) || 0,
-      parseInt(difficultyCounts.step5) || 0
-    ];
-  
-    let questionForm = '';
-    if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
-      questionForm = 'multiple,subjective';
-    } else if (selectedQuestiontype.includes('objective')) {
-      questionForm = 'multiple,';
-    } else if (selectedQuestiontype.includes('subjective')) {
-      questionForm = 'subjective';
-    }
-    
-    // 필수 입력값 확인
-    if (activityCategoryList.length === 0) {
-      alert('평가 영역을 선택해주세요.');
-      return;
-    }
-  
-    if (minorClassification.length === 0) {
-      alert('단원을 선택해주세요.');
-      return;
-    }
-  
-    if (!questionForm) {
-      alert('문제 형태를 선택해주세요.');
-      return;
-    }
-  
-    const requestData = {
-      activityCategoryList,
-      levelCnt,
-      minorClassification,
-      questionForm
+
+ // 먼저 난이도별 문제 수 합계 확인
+ const totalRequestedQuestions = Object.values(difficultyCounts)
+ .reduce((sum, count) => sum + parseInt(count) || 0, 0);
+
+// 총 문제 수와 요청한 문제 수(range)가 일치하는지 확인
+if (totalRequestedQuestions !== parseInt(range)) {
+ alert('난이도별 문제 수의 합이 선택한 총 문제 수와 일치하지 않습니다.');
+ return;
+}
+
+// 활성화된 난이도 확인
+const activeSteps = Object.entries(difficultyCounts)
+ .filter(([_, count]) => parseInt(count) > 0)
+ .map(([step]) => step);
+
+// 난이도가 선택되어 있는지 확인
+if (activeSteps.length === 0) {
+ alert('최소 하나 이상의 난이도를 선택해주세요.');
+ return;
+}
+
+
+
+  const checkedNodesData = extractCheckedNodesData(checkedNodes, hierarchyData);
+
+  const minorClassification = checkedNodesData.map(node => {
+    const chapterData = chapterList.find(chapter => {
+      const nodeIdStr = node.id.toString();
+      return chapter.largeChapterId?.toString() === nodeIdStr ||
+          chapter.mediumChapterId?.toString() === nodeIdStr ||
+          chapter.smallChapterId?.toString() === nodeIdStr ||
+          chapter.topicChapterId?.toString() === nodeIdStr;
+    });
+
+    if (!chapterData) return null;
+
+    return {
+      large: parseInt(chapterData.largeChapterId),
+      medium: parseInt(chapterData.mediumChapterId),
+      small: parseInt(chapterData.smallChapterId),
+      subject: parseInt(chapterData.subjectId),
+      topic: parseInt(chapterData.topicChapterId)
     };
+  }).filter(item => item !== null);
+
+  const activityCategoryList = Array.isArray(selectedEvaluation)
+      ? selectedEvaluation.map(item =>
+          typeof item === 'object' && item.domainId
+              ? parseInt(item.domainId)
+              : parseInt(item)
+      )
+      : [];
+
+  const levelCnt = [
+    parseInt(difficultyCounts.step1) || 0,
+    parseInt(difficultyCounts.step2) || 0,
+    parseInt(difficultyCounts.step3) || 0,
+    parseInt(difficultyCounts.step4) || 0,
+    parseInt(difficultyCounts.step5) || 0
+  ];
+
+  let questionForm = '';
+  if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
+    questionForm = 'multiple,subjective';
+  } else if (selectedQuestiontype.includes('objective')) {
+    questionForm = 'multiple,';
+  } else if (selectedQuestiontype.includes('subjective')) {
+    questionForm = 'subjective';
+  }
   
-    // API 호출
-    jwtAxios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
-      .then((response) => {
-        const itemList = response.data.itemList;
-        
-        if (!itemList || itemList.length === 0) {
-          alert('선택한 단원에 사용 가능한 문제가 없습니다.\n다른 단원을 선택해주세요.');
-          return;
-        }
-  
-        const totalQuestions = parseInt(range);
-        let selectedQuestions;
-        let counts;
-  
-        // 각 난이도별 문제 수 계산
-        const questionsByDifficulty = {
-          "하": itemList.filter(item => item.difficultyName === "하"),
-          "중": itemList.filter(item => item.difficultyName === "중"),
-          "상": itemList.filter(item => item.difficultyName === "상")
-        };
-  
-        // 각 난이도별 필요한 문제 수
-        const requiredCounts = {
-          "하": difficultyCounts.step2,
-          "중": difficultyCounts.step3,
-          "상": difficultyCounts.step4
-        };
-  
-        // 모든 난이도에서 충분한 문제가 있는지 확인
-        const hasEnoughQuestions = Object.keys(requiredCounts).every(difficulty => 
-          questionsByDifficulty[difficulty].length >= requiredCounts[difficulty]
-        );
-  
-        if (hasEnoughQuestions) {
-          // 충분한 문제가 있는 경우 - 모달 없이 바로 이동
-          const counts = [
-            { level: "최하", count: 0, targetCount: 0, adjustedCount: 0 },
-            { level: "하", count: questionsByDifficulty["하"].length, targetCount: requiredCounts["하"], adjustedCount: requiredCounts["하"] },
-            { level: "중", count: questionsByDifficulty["중"].length, targetCount: requiredCounts["중"], adjustedCount: requiredCounts["중"] },
-            { level: "상", count: questionsByDifficulty["상"].length, targetCount: requiredCounts["상"], adjustedCount: requiredCounts["상"] },
-            { level: "최상", count: 0, targetCount: 0, adjustedCount: 0 }
-          ];
-  
-          const selectedQuestions = [
-            ...questionsByDifficulty["하"].slice(0, requiredCounts["하"]),
-            ...questionsByDifficulty["중"].slice(0, requiredCounts["중"]),
-            ...questionsByDifficulty["상"].slice(0, requiredCounts["상"])
-          ];
-  
-          moveToStepWithData('step2', {
-            range: totalQuestions.toString(),
-            selectedSteps,
-            selectedEvaluation,
-            selectedQuestiontype,
-            evaluationData: evaluation,
-            source,
-            bookId,
-            checkedNodes,
-            difficultyCounts,
-            requestData,
-            apiResponse: { ...response.data, itemList: selectedQuestions },
-            tempItemList: selectedQuestions,
-            counts: counts,
-            adjustedCounts: counts,
-            questionForm,
-            activityCategoryList,
-            minorClassification
-          });
-        } else {
-          // 문제가 부족한 경우 - 기존 모달 로직 유지
-          if (itemList.length <= totalQuestions) {
-            selectedQuestions = itemList;
-            counts = [
-              {level: "최하", count: 0, targetCount: 0, adjustedCount: 0},
-              {level: "하", count: itemList.filter(item => item.difficultyName === "하").length,
-                targetCount: itemList.filter(item => item.difficultyName === "하").length,
-                adjustedCount: itemList.filter(item => item.difficultyName === "하").length},
-              {level: "중", count: itemList.filter(item => item.difficultyName === "중").length,
-                targetCount: itemList.filter(item => item.difficultyName === "중").length,
-                adjustedCount: itemList.filter(item => item.difficultyName === "중").length},
-              {level: "상", count: itemList.filter(item => item.difficultyName === "상").length,
-                targetCount: itemList.filter(item => item.difficultyName === "상").length,
-                adjustedCount: itemList.filter(item => item.difficultyName === "상").length},
-              {level: "최상", count: 0, targetCount: 0, adjustedCount: 0}
-            ];
-          } else {
-            const equalCount = Math.floor(totalQuestions / 3);
-            const remainder = totalQuestions % 3;
-  
-            selectedQuestions = [
-              ...questionsByDifficulty["하"].slice(0, equalCount),
-              ...questionsByDifficulty["중"].slice(0, equalCount + remainder),
-              ...questionsByDifficulty["상"].slice(0, equalCount)
-            ];
-  
-            counts = [
-              {level: "최하", count: 0, targetCount: 0, adjustedCount: 0},
-              {level: "하", count: questionsByDifficulty["하"].length, targetCount: equalCount, adjustedCount: equalCount},
-              {level: "중", count: questionsByDifficulty["중"].length, targetCount: equalCount + remainder, adjustedCount: equalCount + remainder},
-              {level: "상", count: questionsByDifficulty["상"].length, targetCount: equalCount, adjustedCount: equalCount},
-              {level: "최상", count: 0, targetCount: 0, adjustedCount: 0}
-            ];
-          }
-  
-          setModalData({
-            tempItemList: selectedQuestions,
-            counts: counts,
-          });
-          setShowStep2Modal(true);
-          setTempItemList(selectedQuestions);
-          setTempDifficultyCounts(counts);
-          setPendingSubmitData({
-            range: selectedQuestions.length.toString(),
-            selectedSteps,
-            selectedEvaluation,
-            selectedQuestiontype,
-            evaluationData: evaluation,
-            source,
-            bookId,
-            checkedNodes,
-            difficultyCounts,
-            requestData,
-            apiResponse: { ...response.data, itemList: selectedQuestions },
-            adjustedCounts: counts,
-            questionForm,
-            activityCategoryList,
-            minorClassification
-          });
-        }
-      })
-      .catch((error) => {
-        console.error('API 오류:', error);
-        console.error('오류 상세:', error.response?.data);
-        alert('요청 처리 중 오류가 발생했습니다.');
-      });
+  // 필수 입력값 확인
+  if (activityCategoryList.length === 0) {
+    alert('평가 영역을 선택해주세요.');
+    return;
+  }
+
+  if (minorClassification.length === 0) {
+    alert('단원을 선택해주세요.');
+    return;
+  }
+
+  if (!questionForm) {
+    alert('문제 형태를 선택해주세요.');
+    return;
+  }
+
+  const requestData = {
+    activityCategoryList,
+    levelCnt,
+    minorClassification,
+    questionForm
   };
+
+  // API 호출
+  jwtAxios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
+    .then((response) => {
+      const itemList = response.data.itemList;
+      
+      if (!itemList || itemList.length === 0) {
+        alert('선택한 단원에 사용 가능한 문제가 없습니다.\n다른 단원을 선택해주세요.');
+        return;
+      }
+
+      const totalQuestions = parseInt(range);
+      let selectedQuestions;
+      let counts;
+
+      // 각 난이도별 문제 수 계산
+      const questionsByDifficulty = {
+        "하": itemList.filter(item => item.difficultyName === "하"),
+        "중": itemList.filter(item => item.difficultyName === "중"),
+        "상": itemList.filter(item => item.difficultyName === "상")
+      };
+
+      // 각 난이도별 필요한 문제 수
+      const requiredCounts = {
+        "하": difficultyCounts.step2,
+        "중": difficultyCounts.step3,
+        "상": difficultyCounts.step4
+      };
+
+      // 모든 난이도에서 충분한 문제가 있는지 확인
+      const hasEnoughQuestions = Object.keys(requiredCounts).every(difficulty => 
+        questionsByDifficulty[difficulty].length >= requiredCounts[difficulty]
+      );
+
+      if (hasEnoughQuestions) {
+        // 충분한 문제가 있는 경우 - 모달 없이 바로 이동
+        const counts = [
+          { level: "최하", count: 0, targetCount: 0, adjustedCount: 0 },
+          { level: "하", count: questionsByDifficulty["하"].length, targetCount: requiredCounts["하"], adjustedCount: requiredCounts["하"] },
+          { level: "중", count: questionsByDifficulty["중"].length, targetCount: requiredCounts["중"], adjustedCount: requiredCounts["중"] },
+          { level: "상", count: questionsByDifficulty["상"].length, targetCount: requiredCounts["상"], adjustedCount: requiredCounts["상"] },
+          { level: "최상", count: 0, targetCount: 0, adjustedCount: 0 }
+        ];
+
+        const selectedQuestions = [
+          ...questionsByDifficulty["하"].slice(0, requiredCounts["하"]),
+          ...questionsByDifficulty["중"].slice(0, requiredCounts["중"]),
+          ...questionsByDifficulty["상"].slice(0, requiredCounts["상"])
+        ];
+
+        moveToStepWithData('step2', {
+          range: totalQuestions.toString(),
+          selectedSteps,
+          selectedEvaluation,
+          selectedQuestiontype,
+          evaluationData: evaluation,
+          source,
+          bookId,
+          checkedNodes,
+          difficultyCounts,
+          requestData,
+          apiResponse: { ...response.data, itemList: selectedQuestions },
+          tempItemList: selectedQuestions,
+          counts: counts,
+          adjustedCounts: counts,
+          questionForm,
+          activityCategoryList,
+          minorClassification
+        });
+      } else {
+        // 문제가 부족한 경우 - 기존 모달 로직 유지
+        if (itemList.length <= totalQuestions) {
+          selectedQuestions = itemList;
+          counts = [
+            {level: "최하", count: 0, targetCount: 0, adjustedCount: 0},
+            {level: "하", count: itemList.filter(item => item.difficultyName === "하").length,
+              targetCount: itemList.filter(item => item.difficultyName === "하").length,
+              adjustedCount: itemList.filter(item => item.difficultyName === "하").length},
+            {level: "중", count: itemList.filter(item => item.difficultyName === "중").length,
+              targetCount: itemList.filter(item => item.difficultyName === "중").length,
+              adjustedCount: itemList.filter(item => item.difficultyName === "중").length},
+            {level: "상", count: itemList.filter(item => item.difficultyName === "상").length,
+              targetCount: itemList.filter(item => item.difficultyName === "상").length,
+              adjustedCount: itemList.filter(item => item.difficultyName === "상").length},
+            {level: "최상", count: 0, targetCount: 0, adjustedCount: 0}
+          ];
+        } else {
+          const equalCount = Math.floor(totalQuestions / 3);
+          const remainder = totalQuestions % 3;
+
+          selectedQuestions = [
+            ...questionsByDifficulty["하"].slice(0, equalCount),
+            ...questionsByDifficulty["중"].slice(0, equalCount + remainder),
+            ...questionsByDifficulty["상"].slice(0, equalCount)
+          ];
+
+          counts = [
+            {level: "최하", count: 0, targetCount: 0, adjustedCount: 0},
+            {level: "하", count: questionsByDifficulty["하"].length, targetCount: equalCount, adjustedCount: equalCount},
+            {level: "중", count: questionsByDifficulty["중"].length, targetCount: equalCount + remainder, adjustedCount: equalCount + remainder},
+            {level: "상", count: questionsByDifficulty["상"].length, targetCount: equalCount, adjustedCount: equalCount},
+            {level: "최상", count: 0, targetCount: 0, adjustedCount: 0}
+          ];
+        }
+
+        setModalData({
+          tempItemList: selectedQuestions,
+          counts: counts,
+        });
+        setShowStep2Modal(true);
+        setTempItemList(selectedQuestions);
+        setTempDifficultyCounts(counts);
+        setPendingSubmitData({
+          range: selectedQuestions.length.toString(),
+          selectedSteps,
+          selectedEvaluation,
+          selectedQuestiontype,
+          evaluationData: evaluation,
+          source,
+          bookId,
+          checkedNodes,
+          difficultyCounts,
+          requestData,
+          apiResponse: { ...response.data, itemList: selectedQuestions },
+          adjustedCounts: counts,
+          questionForm,
+          activityCategoryList,
+          minorClassification
+        });
+      }
+    })
+    .catch((error) => {
+      console.error('API 오류:', error);
+      console.error('오류 상세:', error.response?.data);
+      alert('요청 처리 중 오류가 발생했습니다.');
+    });
+};
 
 
 //submit to step2 끝
