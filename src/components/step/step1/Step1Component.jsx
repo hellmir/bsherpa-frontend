@@ -3,7 +3,7 @@ import axios from 'axios';
 import useCustomMove from "../../../hooks/useCustomMove";
 import {useLocation} from "react-router-dom";
 import DifficultyDisplay from './DifficultyDisplay.jsx';
-
+import jwtAxios from "../../../util/jwtUtil.jsx";
 
 // InfoModal.jsx - 정보 표시용 모달
 const InfoModal = ({
@@ -851,7 +851,7 @@ const Step1Component = () => {
   // 평가 영역 데이터 로드
   useEffect(() => {
     setIsLoadingEvaluation(true);
-    axios.get(`https://bsherpa.duckdns.org/books/external/evaluations?subjectId=${bookId}`)
+    jwtAxios.get(`https://bsherpa.duckdns.org/books/external/evaluations?subjectId=${bookId}`)
         .then((response) => {
           if (response.data.evaluationList) {
             setEvaluation(response.data.evaluationList);
@@ -871,7 +871,7 @@ const Step1Component = () => {
   // 챕터 데이터 로드
   useEffect(() => {
     setIsLoadingChapters(true); // 로딩 시작
-    axios.post(`https://bsherpa.duckdns.org/step1/chapters/${bookId}`)
+    jwtAxios.post(`https://bsherpa.duckdns.org/step1/chapters/${bookId}`)
         .then((response) => {
           console.log('Chapter Response:', response.data);
           const transformed = transformData(response.data.chapterList);
@@ -983,7 +983,7 @@ const Step1Component = () => {
                 };
 
                 try {
-                  const response = await axios.post(
+                  const response = await jwtAxios.post(
                       'https://bsherpa.duckdns.org/questions/external/counts',
                       requestData
                   );
@@ -1187,7 +1187,7 @@ const Step1Component = () => {
     };
 
     console.log('Sending counts request with data:', requestData);
-    axios.post('https://bsherpa.duckdns.org/questions/external/counts', requestData)
+    jwtAxios.post('https://bsherpa.duckdns.org/questions/external/counts', requestData)
         .then((response) => {
           const itemCounts = response.data.listTopicItemCount;
           console.log('Raw itemCounts:', itemCounts);
@@ -1282,7 +1282,7 @@ const Step1Component = () => {
     };
 
     // API 호출
-    axios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
+    jwtAxios.post('https://bsherpa.duckdns.org/question-images/external/chapters', requestData)
         .then((response) => {
           const itemList = response.data.itemList;
           // 문제 수가 0인 경우 체크 추가
