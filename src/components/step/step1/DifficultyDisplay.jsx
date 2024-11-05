@@ -11,6 +11,7 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
     step4: 10,
     step5: 0
   });
+  
   const [previousCounts, setPreviousCounts] = useState(() => ({
     ...counts
   }));
@@ -20,6 +21,7 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
   const isSameValue = Number(totalSum) === Number(range);
 
   useEffect(() => {
+    console.log('range;:::'+ range)
     if (countsData) {
       setCounts(countsData);
       setPreviousCounts(countsData);
@@ -34,6 +36,9 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
     { step: 'step5', text: '최상', color: 'color05', disabled: true }
   ];
 
+
+
+
   const redistributeCounts = (activeSteps, totalRange) => {
     const newCounts = {
       step1: 0,
@@ -42,31 +47,24 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
       step4: 0,
       step5: 0
     };
-
+    console.log('totalRange    : '+totalRange)
     if (activeSteps.length === 0) return newCounts;
 
-    // 활성화된 스텝 수에 따른 분배
-    if (activeSteps.length === 3) {
-      // 3:4:3 비율로 분배
-      activeSteps.forEach((step, index) => {
-        if (index === 0) newCounts[step] = Math.floor(totalRange * 0.3);
-        else if (index === 1) newCounts[step] = Math.floor(totalRange * 0.4);
-        else if (index === 2) newCounts[step] = totalRange - newCounts[activeSteps[0]] - newCounts[activeSteps[1]];
-      });
-    } else if (activeSteps.length === 2) {
-      // 1:1 비율로 분배
-      const baseCount = Math.floor(totalRange / 2);
-      activeSteps.forEach((step, index) => {
-        if (index === 0) newCounts[step] = baseCount;
-        else newCounts[step] = totalRange - baseCount;
-      });
-    } else if (activeSteps.length === 1) {
-      // 단일 스텝에 전체 할당
-      newCounts[activeSteps[0]] = totalRange;
-    }
+    // 활성화된 스텝 수로 균등하게 나누기
+    const equalShare = Math.floor(totalRange / activeSteps.length);
+    activeSteps.forEach((step, index) => {
+      if (index === activeSteps.length - 1) {
+        // 마지막 스텝에 나머지 할당
+        newCounts[step] = totalRange - (equalShare * (activeSteps.length - 1));
+      } else {
+        newCounts[step] = equalShare;
+      }
+    });
 
     return newCounts;
-  };
+};
+
+
 
   const handleInputChange = (step, value) => {
     const newValue = parseInt(value) || 0;
@@ -89,7 +87,7 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
   const handleStepClick = (step) => {
     const difficulty = difficulties.find(d => d.step === step);
     if (difficulty.disabled || isStudent) return;
-  
+    console.log('step   : '+ step)
     const isCurrentlySelected = selectedSteps.includes(step);
     let newSelectedSteps;
     let newCounts;
@@ -97,35 +95,24 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
     if (isCurrentlySelected) {
       // 비활성화할 때
       newSelectedSteps = selectedSteps.filter(s => s !== step);
-      // 이전 값을 previousCounts에 저장
       setPreviousCounts(prev => ({
         ...prev,
         [step]: counts[step]
       }));
-      
-      // 나머지 활성화된 스텝들에 대해 재분배
-      newCounts = redistributeCounts(
-        newSelectedSteps.filter(s => !difficulties.find(d => d.step === s).disabled),
-        Number(range)
-      );
     } else {
       // 활성화할 때
-      newSelectedSteps = [...selectedSteps, step];
-      // 이전에 저장된 값이 있으면 복원하고, 나머지 값들 재분배
-      const prevValue = previousCounts[step];
-      const remainingRange = Number(range) - (prevValue || 0);
-      
-      // 임시로 새로운 counts 생성
-      newCounts = redistributeCounts(
-        newSelectedSteps.filter(s => !difficulties.find(d => d.step === s).disabled),
-        Number(range)
-      );
+      newSelectedSteps = [...selectedSteps, step].sort();
     }
-    
+
+    // 활성화된 스텝들 가져오기
+    const activeSteps = newSelectedSteps.filter(s => !difficulties.find(d => d.step === s).disabled);
+    console.log('range1: '+ range)
+    newCounts = redistributeCounts(activeSteps, Number(range));
+    console.log('range2: '+ range)
     setSelectedSteps(newSelectedSteps);
     setCounts(newCounts);
     handleDifficultyCounts(newCounts);
-  };
+};
 
   const handleAutoChange = () => {
     handleDifficultyCounts(counts);
