@@ -1,9 +1,28 @@
-import {useRef} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
+import {getItemTest} from "../../api/step4Api.js";
 
-const Step4Component = ({response}) => {
+const Step4Component = () => {
+
+    const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
     const pdfRef = useRef();
+
+    // 데이터 로드: 컴포넌트가 마운트 될 때 API 호출
+    useEffect(() => {
+        const fetchData = async () => {
+            try{
+                const data = await getItemTest(); //API에서 데이터 받아오기
+                console.log("ID에 따라 받아온 데이터: ", data);
+                // console.log("시험지 아이디: ", data.);
+
+                setResponse(data); // 응답 데이터 상태에 저장
+            }catch(error){
+                console.error("데이터 로딩 실패: ", error);
+            }
+        };
+        fetchData();
+    }, []); // 빈 배열을 전달하여 한 번만호출되도록 설정
 
     const handlePrint = () => {
         // 인쇄할 내용을 위한 새로운 HTML 생성
@@ -90,56 +109,58 @@ const Step4Component = ({response}) => {
 
     const indicators = ['①', '②', '③', '④', '⑤'];
 
-    const renderContent = () => {
-        const sections = [];
-        response.collection.map((item, index) => {
-
-            // 지문 추가
-            sections.push(
-                <div key={`passage-${index}`} style={{marginBottom: '50px'}}>
-                    <div style={{fontWeight:"bold", marginLeft:"15px"}}>[ 1 ~ 3 ] 다음 지문을 읽고 질문에 답하시오. (5점)</div>
-                    <div dangerouslySetInnerHTML={{__html: item.passage.passageHtml}}/>
-                </div>
-            );
-
-            // 각 질문에 대해 처리
-            item.questions.forEach((question, qIndex) => {
-                sections.push(<div key={`section-${index}-${qIndex}`} style={{marginBottom: '30px'}}/>);
-
-                // 질문을 현재 섹션에 추가
-                sections.push(
-                    <div key={`question-${index}-${qIndex}`} style={{margin: "0 10px 80px 10px"}}>
-                        <div style={{display: 'inline-block', fontWeight: 'bold'}}>
-                            {qIndex + 1}.
-                        </div>
-                        &nbsp;
-                        <div
-                            style={{display: 'inline-block', marginBottom: '30px', verticalAlign: 'top'}}
-                            dangerouslySetInnerHTML={{__html: question.questionHtml}}
-                        />
-
-                        {/*보기 추가*/}
-                        {question.questionType === '객관식' ? (
-                            question.options.map((option, optIndex) => (
-                                <div key={`option-${index}-${qIndex}-${optIndex}`}
-                                     style={{marginBottom: '15px', display: 'flex'}}>
-                                    <div>{indicators[optIndex]}</div>
-                                    &nbsp; {/* 인덱스 기호 추가 */}
-                                    <div dangerouslySetInnerHTML={{__html: option[`choice${optIndex + 1}Html`]}}/>
-                                </div>
-                            ))
-                        ) : (
-                            <div style={{border: "solid 1px lightgrey", width: "60%", height: "150px", padding: "10px"}}>
-                                <span> 정답 : </span>
-                            </div>
-                        )}
-                    </div>
-                );
-            });
-        });
-
-        return sections;
-    };
+    // const renderContent = () => {
+    //     if(!response) return <div>Loading...</div>; // 데이터 로딩 중 표시
+    //
+    //     const sections = [];
+    //     response.collection.map((item, index) => {
+    //
+    //         // 지문 추가
+    //         sections.push(
+    //             <div key={`passage-${index}`} style={{marginBottom: '50px'}}>
+    //                 <div style={{fontWeight:"bold", marginLeft:"15px"}}>[ 1 ~ 3 ] 다음 지문을 읽고 질문에 답하시오. (5점)</div>
+    //                 <div dangerouslySetInnerHTML={{__html: item.passage.passageHtml}}/>
+    //             </div>
+    //         );
+    //
+    //         // 각 질문에 대해 처리
+    //         item.questions.forEach((question, qIndex) => {
+    //             sections.push(<div key={`section-${index}-${qIndex}`} style={{marginBottom: '30px'}}/>);
+    //
+    //             // 질문을 현재 섹션에 추가
+    //             sections.push(
+    //                 <div key={`question-${index}-${qIndex}`} style={{margin: "0 10px 80px 10px"}}>
+    //                     <div style={{display: 'inline-block', fontWeight: 'bold'}}>
+    //                         {qIndex + 1}.
+    //                     </div>
+    //                     &nbsp;
+    //                     <div
+    //                         style={{display: 'inline-block', marginBottom: '30px', verticalAlign: 'top'}}
+    //                         dangerouslySetInnerHTML={{__html: question.questionHtml}}
+    //                     />
+    //
+    //                     {/*보기 추가*/}
+    //                     {question.questionType === '객관식' ? (
+    //                         question.options.map((option, optIndex) => (
+    //                             <div key={`option-${index}-${qIndex}-${optIndex}`}
+    //                                  style={{marginBottom: '15px', display: 'flex'}}>
+    //                                 <div>{indicators[optIndex]}</div>
+    //                                 &nbsp; {/* 인덱스 기호 추가 */}
+    //                                 <div dangerouslySetInnerHTML={{__html: option[`choice${optIndex + 1}Html`]}}/>
+    //                             </div>
+    //                         ))
+    //                     ) : (
+    //                         <div style={{border: "solid 1px lightgrey", width: "60%", height: "150px", padding: "10px"}}>
+    //                             <span> 정답 : </span>
+    //                         </div>
+    //                     )}
+    //                 </div>
+    //             );
+    //         });
+    //     });
+    //
+    //     return sections;
+    // };
 
     return (
         <>
@@ -147,7 +168,7 @@ const Step4Component = ({response}) => {
             <Button onClick={handlePrint} variant="contained">문제만</Button>
             <div ref={pdfRef}
                  style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: "none"}}>
-                {renderContent()}
+                {/*{renderContent()}*/}
             </div>
         </>
     );
