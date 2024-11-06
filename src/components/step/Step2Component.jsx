@@ -334,11 +334,9 @@ export default function Step2Component() {
     }, [itemList]);
 
     useEffect(() => {
-        document.body.style.zoom = "125%";
-        document.body.style.transform = "scale(0.67)";
-        document.body.style.transformOrigin = "top ";
+        document.body.style.transform = "scale(0.8)";
+        document.body.style.transformOrigin = "top";
         return () => {
-            document.body.style.zoom = "100%";
             document.body.style.transform = "none";
         };
     }, []);
