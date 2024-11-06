@@ -121,9 +121,6 @@ const Step4Component = () => {
                                placeholder="이름 :   "/>
                     </div>
                 </div>
-                <div className="paper" style={{}}>
-                    <div>{response.className}</div>
-                </div>
             </>
         )
         // 콜렉션에서 지문과 문제 정보 추출
@@ -132,28 +129,48 @@ const Step4Component = () => {
 
         const examSection = collections.map((collection, collectionIndex) => {
             // 각 콜렉션에서 지문이 있는지 확인
-            const passages = collection.getPassagesResponse || [];
-            //console.log(passages);
-            console.log("지문: ", passages.getPassageResponses)
+            const passages = collection.getPassagesResponse?.getPassageResponses || [];
+            // console.log("지문s", passages);
+            // console.log("지문: ", passages.getPassageResponses)
 
-            const questions = collection.getQuestionsResponse || [];
-            //console.log(questions);
+            const questions = collection.getQuestionsResponse?.getQuestionResponses || [];
+            // console.log("문제 배열: ", questions);
 
             // 지문 HTML을 저장할 변수
             let passageHtml = "";
 
             // 지문이 있으면 HTML을 추출
             if (passages.length > 0) {
-                // console.log(passages);
                 passageHtml = passages.map((passage, passageIndex) => {
-                    console.log("지문: ", passage.html);  // passage의 html을 콘솔에 출력
                     return (
-                        <div key={passageIndex} dangerouslySetInnerHTML={{ __html: passage.html }} />
+                        <div key={passageIndex}>
+                            {/* 지문을 HTML로 렌더링 */}
+                            <div dangerouslySetInnerHTML={{ __html: passage.html }} />
+                        </div>
                     );
                 });
-                return { passages: passageHtml };  // 결과 반환
             }
-            console.log("지문 길이가 항상 0?");
+
+            // 문제 렌더링 (옵션: 객관식/주관식 처리)
+            const questionHtml = questions.map((question, questionIndex) => {
+                console.log("문제: ", question);
+                return (
+                    <div key={questionIndex}>
+                        <div dangerouslySetInnerHTML={{ __html: question.html }}></div>
+                        {/* 추가적으로 선택지나 입력란을 여기에 추가할 수 있습니다 */}
+                    </div>
+                );
+            });
+            return (
+                <div key={collectionIndex}>
+                    <div className="passages">
+                        {passageHtml}
+                    </div>
+                    <div className="questions">
+                        {questionHtml}
+                    </div>
+                </div>
+            );
 
         });
 
