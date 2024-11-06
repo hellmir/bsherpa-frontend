@@ -200,7 +200,7 @@ export default function Step3Component() {
     }
     const handleClickMoveToStepTwo = () => {
         dispatch(setExamData({bookId, totalQuestions, groupedItems, step1Data}))
-        moveToStepWithData('step2', {bookId, totalQuestions,groupedItems, step1Data});
+        moveToStepWithData('step2', step1Data);
     };
 
     return (
