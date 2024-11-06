@@ -1,16 +1,34 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useSelector} from "react-redux";
 import {getQuestionData, registerExam} from "../../api/step3Api.js";
 import {useQuery} from "@tanstack/react-query";
+import ModalComponent from "../common/ModalComponent.jsx";
+import useCustomMove from "../../hooks/useCustomMove.jsx";
 export default function Step3Component() {
 
+    const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+    const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+    useEffect(() => {
+        console.log('bookId', bookId);
+        if (!bookId) {
+            setIsAccessModalOpen(true);
+        }
+    }, []);
+
+    const {moveToPath} = useCustomMove();
+    const handleCloseAccessModal = () => {
+        setIsShiftModalOpen(false);
+        moveToPath('/');
+    };
+
     //const [itemList, setItemList] = useState([]);
-    const { bookId, totalQuestions, groupedItems } = useSelector((state) => state.examDataSlice);
+    const { bookId, totalQuestions, groupedItems, step1Data } = useSelector((state) => state.examDataSlice);
     console.log('Step2로부터 전송된 bookId:', bookId);
     console.log('Step2로부터 전송된 문제 수:', totalQuestions);
     console.log('Step2로부터 전송된 지문과 문제 데이터 목록: ', groupedItems);
+    console.log('Step2로부터 전송된 Step1 데이터 ', step1Data);
 
     const loginState = useSelector(state => state.loginSlice)
     const email = loginState.email;
@@ -128,6 +146,15 @@ export default function Step3Component() {
 
     return (
         <div className="view-box">
+            <ModalComponent
+                title="비정상적인 접근"
+                content={
+                    <>비정상적인 접근이 감지되었습니다.<br/>
+                        메인 페이지로 이동합니다.</>
+                }
+                handleClose={handleCloseAccessModal}
+                open={isAccessModalOpen}
+            />
             <CommonResource />
             <div className="view-top">
                 <div className="paper-info">
