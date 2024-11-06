@@ -558,7 +558,7 @@ export default function Step2Component() {
 
     const handleClickMoveToStepOne = () => {
         console.log('STEP 1 단원 선택');
-        moveToPath('../step1')
+        moveToStepWithData('../exam/step1', bookId);
     };
 
     const handleClickMoveToStepThree = () => {
