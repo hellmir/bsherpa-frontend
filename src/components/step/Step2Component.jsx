@@ -333,6 +333,17 @@ export default function Step2Component() {
         console.log("itemList가 업데이트되었습니다: ", itemList);
     }, [itemList]);
 
+    useEffect(() => {
+        document.body.style.zoom = "125%";
+        // 또는 방법 2: transform scale 사용
+        document.body.style.transform = "scale(0.67)";
+        document.body.style.transformOrigin = "top ";
+        return () => {
+            document.body.style.zoom = "100%";
+            document.body.style.transform = "none";
+        };
+    }, []);
+
     const totalQuestions = itemList.length;
 
     const [forceRender, setForceRender] = useState(false);
