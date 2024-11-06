@@ -5,7 +5,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import koreanBook from "../../assets/국어책.jpg";
+import koreanBook from "../../assets/korean.jpg";
 
 export default function ExamCardComponent({examId, subjectName, examName, grade}) {
     const {moveToStepWithData} = useCustomMove();
