@@ -1,12 +1,21 @@
 import React, {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import CommonResource from "../../util/CommonResource.jsx";
-import {useSelector} from "react-redux";
-import {getQuestionData, registerExam} from "../../api/step3Api.js";
+import {useDispatch, useSelector} from "react-redux";
+import {getBookData, getQuestionData, registerExam} from "../../api/step3Api.js";
 import {useQuery} from "@tanstack/react-query";
-import ModalComponent from "../common/ModalComponent.jsx";
+import {setExamData} from "../../slices/examDataSlice.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
+import Button from "@mui/material/Button";
+import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
+import ModalComponent from "../common/ModalComponent.jsx";
+
 export default function Step3Component() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [modalOpen, setModalOpen] = useState(false);
 
     const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
@@ -35,17 +44,14 @@ export default function Step3Component() {
     console.log('loginYn: ',loginState);
     console.log(email)
 
-
     // 시험명 추가용 로직
     const [examName, setExamName] = useState("");
-
-    // 예외처리용 regExp (주석처리)
-    // const regExp= /[\/?:|*+<>\;\"#%\\]/gi;
+    const regExp = /[\/?:|*+<>\;\"#%\\]/gi;
 
 
     // 배치순서 부여 (groupedItem의 itemNo가 초기화되면서 itemNo가 순서대로 바뀜)
+    let globalIndex = 1; //컴포넌트 범위에서 초기화
     const updatedGroupedItems = groupedItems.map(group => {
-        let globalIndex = 1; // 전역 인덱스 초기화
         return {
             ...group,
             items: group.items.map(item => ({
@@ -66,18 +72,36 @@ export default function Step3Component() {
         staleTime: 1000 * 3,
         enabled: !!itemIds.length
     });
-    console.log('Question Data: ', questionData) // 데이터 확인완료
+
+    console.log("questionData : ", questionData)
+
+    const {data: bookData, isLoading: isBookDataLoading} = useQuery({
+        queryKey: ['subjectId', bookId],
+        queryFn: () => getBookData(bookId),
+        staleTime: 1000*3,
+        enabled: !!bookId
+    });
+    console.log("bookData: ", bookData)
+
 
     const totalCount = updatedGroupedItems.reduce((count, group) => {
         return count + group.items.length; // 각 그룹의 질문 개수를 더함
     }, 0);
 
-    const handleSave = async () => {
+    console.log("totalCount: ",totalCount)
+    console.log("count: ", itemIds.length)
+
+    const handleSaveExam = async () => {
         //questionData와 updatedGroupedItems를 병합
         const questionDataMap = {};
         const passageMap = {};
 
-        if (questionData) {
+        if (!examName) {
+            alert("시험지명을 입력해 주세요.");
+            return;
+        }
+
+        if (questionData && Array.isArray(questionData.itemList)) {
             questionData.itemList.forEach(question => {
                 questionDataMap[question.itemId] = question; // itemId를 키로 하는 객체
 
@@ -87,22 +111,35 @@ export default function Step3Component() {
             });
         }
 
-
         const exam = {
             email : email,
-            bookId : bookId,
+            bookId : bookId.toString(),
             examName : examName,
             totalCount : totalCount,
+            examType : "custom",
             collections: updatedGroupedItems.map(group=> ({
                 questions: group.items.map(item=> {
-                    const questionDetails = questionDataMap[item.itemId] || {};
+                    const questionDetails = questionData && Array.isArray(questionData.itemList)
+                        ? questionData.itemList.find(q => q.itemId === item.itemId) || {}
+                        : {};
+                    const options = [];
+
+                    for (let i = 1; i<=5; i++){
+                        const choiceHtml = questionDetails[`choice${i}Html`];
+                        if (choiceHtml) {
+                            options.push({
+                                optionNo: i,
+                                answerYn: questionDetails.answer === choiceHtml || questionDetails.answer === i.toString(),
+                                html: choiceHtml
+                            });
+                        }
+                    }
                     return{
                         itemId: item.itemId,
-                        questionUrl: item.questionUrl,
-                        questionType: item.questionFormName,
+                        questionType: item.questionFormCode,
                         url: item.questionUrl,
                         answerUrl: item.answerUrl,
-                        difficulty: item.difficultyName,
+                        difficulty: item.difficultyCode,
                         descriptionUrl: item.explainUrl,
                         largeChapterName: item.largeChapterName,
                         largeChapterCode: item.largeChapterId,
@@ -116,15 +153,9 @@ export default function Step3Component() {
                         // 병합되는 data
                         answer: questionDetails.answer,
                         answerHtml: questionDetails.answerHtml,
-                        explain: questionDetails.explain, // 설명
-                        explainHtml: questionDetails.explainHtml,
-                        question: questionDetails.question,
-                        questionHtml: questionDetails.questionHtml,
-                        choice1Html: questionDetails.choice1Html,
-                        choice2Html: questionDetails.choice2Html,
-                        choice3Html: questionDetails.choice3Html,
-                        choice4Html: questionDetails.choice4Html,
-                        choice5Html: questionDetails.choice5Html
+                        descriptionHtml: questionDetails.explainHtml,
+                        html: questionDetails.questionHtml,
+                        options: options.length > 0 ? options : []
                         };
                 }),
                 passages: group.passageId ? [{
@@ -132,17 +163,45 @@ export default function Step3Component() {
                     url: group.passageUrl,
                     html: passageMap[group.passageId] || "", // passageMap에서 해당 passageId의 HTML 데이터를 가져옴
                 }] : []
-                // passages: [{
-                //     passageId: group.passageId,
-                //     url: group.passageUrl,
-                //     html: group.p
-                // }]
             }))
         }
         console.log("exam data: ",exam);
-        await registerExam(exam)
+        setLoading(true);
+        setModalOpen(true);
+        try{
+            const response = await registerExam(exam);
+            if(response.status === 200) {
+                console.log("response",response)
+                navigate("/");
+            } else {
+                alert("저장에 실패했습니다");
+            }
+        }catch(error){
+            alert("오류가 발생했습니다");
+        }finally{
+            setLoading(false);
+        }
     }
     console.log("updateItems: ",updatedGroupedItems);
+
+    const handleExamNameChange = (e) => {
+        const inputValue = e.target.value;
+        if (regExp.test(inputValue)) {
+            alert("시험지명에 사용할 수 없는 문자가 포함되어 있습니다.");
+            setExamName(inputValue.replace(regExp, "")); // 불허된 문자를 제거한 값으로 설정
+        } else {
+            setExamName(inputValue);
+        }
+    };
+    const {moveToStepWithData} = useCustomMove();
+
+    const handleClickMoveToStepOne = () => {
+        moveToStepWithData('step1', bookId);
+    }
+    const handleClickMoveToStepTwo = () => {
+        dispatch(setExamData({bookId, totalQuestions, groupedItems, step1Data}))
+        moveToStepWithData('step2', {bookId, totalQuestions,groupedItems, step1Data});
+    };
 
     return (
         <div className="view-box">
@@ -158,10 +217,19 @@ export default function Step3Component() {
             <CommonResource />
             <div className="view-top">
                 <div className="paper-info">
-                    <span>수학 1</span> 이준열(2015)
+                    {isBookDataLoading ? (
+                        <span>로딩 중...</span>
+                    ) : (
+                        <span>{bookData?.subjectInfoList?.[0]?.subjectName}</span>
+                    )}
                 </div>
                 <div className="btn-wrap">
-                    <Link to="/exam/step1/" className="btn-default">처음으로</Link>
+                    <Button
+                        variant="contained"
+                        onClick={handleClickMoveToStepOne}
+                        className="btn-default"
+                    > 처음으로
+                    </Button>
                 </div>
             </div>
             <div className="view-bottom type02 scroll-inner">
@@ -175,7 +243,7 @@ export default function Step3Component() {
                                     placeholder="시험지명을 입력해주세요. (최대 20자)"
                                     className="search"
                                     value={examName}
-                                    onChange={(e) => setExamName(e.target.value)}
+                                    onChange={handleExamNameChange}
                                 />
                             </div>
                         </div>
@@ -214,9 +282,28 @@ export default function Step3Component() {
                 </div>
             </div>
             <div className="step-btn-wrap">
-                <Link to = "/exam/step2/" className="btn-step">STEP 2 문항 편집</Link>
-                <button type="button" className="btn-step next done" onClick={handleSave}>시험지 저장하기</button>
+                <Button
+                    variant="contained"
+                    onClick={handleClickMoveToStepTwo}
+                    className="btn-step"
+                >
+                    <BorderColorOutlinedIcon/> STEP 2 문항 편집
+                </Button>
+                <Button variant="contained"
+                        className="btn-step next done"
+                        onClick={handleSaveExam}
+                >시험지 저장하기
+                </Button>
             </div>
+            <ModalComponent
+                title={loading ? "로딩 중" : "저장 완료"}
+                content={loading ?
+                    <img src="../images/common/loading_icon.gif" alt="Loading..." className="loading-gif"/>
+                    : "저장 완료되었습니다!"}
+                handleClose={() => setModalOpen(false)}
+                open={modalOpen}
+                isLoading={loading}
+            />
         </div>
     )
 }
