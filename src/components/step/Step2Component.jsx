@@ -352,6 +352,8 @@ export default function Step2Component() {
     const handleConfirm = () => {
         setItemList([...tempItemList]);
         setDifficultyCounts([...tempDifficultyCounts]);
+        setSimilarItems([]);
+        setDeletedItems([]);
         setIsConfirmOpen(false);
         organizeItems(tempItemList);
     };
