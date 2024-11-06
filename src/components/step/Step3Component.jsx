@@ -10,6 +10,9 @@ import useCustomMove from "../../hooks/useCustomMove.jsx";
 import Button from "@mui/material/Button";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import ModalComponent from "../common/ModalComponent.jsx";
+import {CircularProgress} from "@mui/material";
+import Box from "@mui/material/Box";
+import Step3SuccessComponent from "./Step3SuccessComponent.jsx";
 
 export default function Step3Component() {
     const dispatch = useDispatch();
@@ -91,6 +94,7 @@ export default function Step3Component() {
     console.log("totalCount: ",totalCount)
     console.log("count: ", itemIds.length)
 
+    const [isSuccess, setIsSuccess] = useState(false);
     const handleSaveExam = async () => {
         //questionData와 updatedGroupedItems를 병합
         const questionDataMap = {};
@@ -116,7 +120,7 @@ export default function Step3Component() {
             bookId : bookId.toString(),
             examName : examName,
             totalCount : totalCount,
-            examType : "custom",
+            examCategory : "custom",
             collections: updatedGroupedItems.map(group=> ({
                 questions: group.items.map(item=> {
                     const questionDetails = questionData && Array.isArray(questionData.itemList)
@@ -168,16 +172,21 @@ export default function Step3Component() {
         console.log("exam data: ",exam);
         setLoading(true);
         setModalOpen(true);
+        setIsSuccess(false);
         try{
             const response = await registerExam(exam);
             if(response.status === 200) {
+                setLoading(false);
+                setModalOpen(false);
+                setIsSuccess(true);
                 console.log("response",response)
-                navigate("/");
             } else {
-                alert("저장에 실패했습니다");
+                alert("저장에 실패했습니다.");
+                setLoading(false);
             }
         }catch(error){
-            alert("오류가 발생했습니다");
+            alert("오류가 발생했습니다. 메인 화면으로 돌아갑니다.")
+            moveToPath('/');
         }finally{
             setLoading(false);
         }
@@ -215,10 +224,14 @@ export default function Step3Component() {
                 open={isAccessModalOpen}
             />
             <CommonResource />
+            {isSuccess ? (
+                <Step3SuccessComponent />
+            ) : (
+                <>
             <div className="view-top">
                 <div className="paper-info">
                     {isBookDataLoading ? (
-                        <span>로딩 중...</span>
+                        <CircularProgress />
                     ) : (
                         <span>{bookData?.subjectInfoList?.[0]?.subjectName}</span>
                     )}
@@ -233,6 +246,7 @@ export default function Step3Component() {
                 </div>
             </div>
             <div className="view-bottom type02 scroll-inner">
+
                 <div className="top-form">
                     <div className="left-wrap">
                         <span>시험지명</span>
@@ -280,6 +294,7 @@ export default function Step3Component() {
                         </div>
                     </div>
                 </div>
+
             </div>
             <div className="step-btn-wrap">
                 <Button
@@ -296,14 +311,24 @@ export default function Step3Component() {
                 </Button>
             </div>
             <ModalComponent
-                title={loading ? "로딩 중" : "저장 완료"}
-                content={loading ?
-                    <img src="../images/common/loading_icon.gif" alt="Loading..." className="loading-gif"/>
-                    : "저장 완료되었습니다!"}
+                title={loading ? "저장 중" : isSuccess ? "저장 완료" : "오류 발생"}
+                content={loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+                        <CircularProgress />
+                    </Box>
+                    ) : isSuccess ? (
+                        <Step3SuccessComponent/>
+                    ) : (
+                        <span>저장 실패!</span>
+                    )
+                }
                 handleClose={() => setModalOpen(false)}
                 open={modalOpen}
                 isLoading={loading}
             />
+                </>
+            )}
         </div>
+
     )
 }
