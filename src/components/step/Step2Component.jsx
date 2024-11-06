@@ -725,8 +725,10 @@ export default function Step2Component() {
                                                                 paddingBottom: "5px",
                                                                 marginBottom: "10px"
                                                             }}>
-    <span style={{fontSize: "18px", fontWeight: "bold", marginTop: "-10px"}}>
-    {itemList.indexOf(group.items[0]) + 1} ~ {itemList.indexOf(group.items[group.items.length - 1]) + 1}
+<span style={{fontSize: "18px", fontWeight: "bold", marginTop: "-10px"}}>
+    {group.items.length === 1
+        ? itemList.indexOf(group.items[0]) + 1
+        : `${itemList.indexOf(group.items[0]) + 1} ~ ${itemList.indexOf(group.items[group.items.length - 1]) + 1}`}
 </span>
                                                             </div>
 
