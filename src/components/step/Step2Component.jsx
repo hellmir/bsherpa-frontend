@@ -453,7 +453,7 @@ export default function Step2Component() {
     const scrollToNewItem = (newItemId) => {
         const newItemElement = document.getElementById(`question-${newItemId}`);
         if (newItemElement) {
-            newItemElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+            newItemElement.scrollIntoView({behavior: 'smooth', block: 'center'});
         }
     };
 
@@ -485,6 +485,10 @@ export default function Step2Component() {
                     items: group.items.filter((item) => item.itemId !== newItem.itemId),
                 }))
                 .filter((group) => group.items.length > 0)
+        );
+
+        setSimilarItems((prevSimilarItems) =>
+            prevSimilarItems.filter((item) => item.itemId !== newItem.itemId)
         );
     };
 

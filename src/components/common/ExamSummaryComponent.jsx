@@ -14,7 +14,7 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
     const handleScrollToQuestion = (itemId) => {
         const element = document.getElementById(`question-${itemId}`);
         if (element) {
-            element.scrollIntoView({behavior: 'smooth', block: 'start'});
+            element.scrollIntoView({behavior: 'smooth', block: 'center'});
         }
     };
 
@@ -24,7 +24,7 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
 
     return (
         <div className="contents on">
-            <div className="table half-type no-passage" style={{overflowY: "auto", maxHeight: "565px"}}>
+            <div className="table half-type no-passage" style={{overflowY: "auto", maxHeight: "562px"}}>
                 <div className="fix-head" style={{position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1}}>
                     <span className="move-header">이동</span>
                     <span className="number-header">번호</span>
@@ -32,7 +32,7 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                     <span className="question-type-header">문제 유형</span>
                     <span className="difficulty-header">난이도</span>
                 </div>
-                <div className="table-body" style={{overflowY: "auto", maxHeight: "516px"}}>
+                <div className="table-body" style={{overflowY: "auto", maxHeight: "70vh"}}>
                     <Droppable droppableId="passageGroups" type="PASSAGE_GROUP">
                         {(provided) => (
                             <div

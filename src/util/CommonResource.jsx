@@ -4,22 +4,19 @@ const CommonResource = () => {
     useEffect(() => {
         // 공통 CSS
         const commonLink = document.createElement("link");
-        const VITE_COMMON_LINK = import.meta.env.VITE_COMMON_LINK
-        commonLink.href = VITE_COMMON_LINK;
+        commonLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/css/common.css";
         commonLink.rel = "stylesheet";
         document.head.appendChild(commonLink);
 
         // 폰트 CSS
         const fontLink = document.createElement("link");
-        const VITE_FONT_LINK = import.meta.env.VITE_FONT_LINK
-        fontLink.href = VITE_FONT_LINK;
+        fontLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/font.css";
         fontLink.rel = "stylesheet";
         document.head.appendChild(fontLink);
 
         // 리셋 CSS
         const resetLink = document.createElement("link");
-        const VITE_RESET_LINK = import.meta.env.VITE_RESET_LINK
-        resetLink.href = VITE_RESET_LINK;
+        resetLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/reset.css";
         resetLink.rel = "stylesheet";
         document.head.appendChild(resetLink);
 
