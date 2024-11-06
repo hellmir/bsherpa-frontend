@@ -15,6 +15,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import {Link} from "react-router-dom";
 import {getKakaoLink} from "../../api/kakaoApi.js";
 import {GridViewStreamIcon} from "@mui/x-data-grid";
+import Box from "@mui/material/Box";
 
 const drawerWidth = 240;
 const initState = {
@@ -22,51 +23,49 @@ const initState = {
   password:''
 }
 
-
 function DrawerComponent() {
   const [result, setResult] = useState(null)
   const [success, setSuccess] = useState(false)
   const [fail, setFail] = useState(false)
-const {doLogin,doLogout,moveToPath,isLogin,loginState} = useCustomLogin()
+  const {doLogin,doLogout,moveToPath,isLogin,loginState} = useCustomLogin()
   const [user, setUser] = useState(initState)
 
-const handleChange = (e) => {
-  user[e.target.name] = e.target.value
-  setUser({...user})
-}
+  const handleChange = (e) => {
+    user[e.target.name] = e.target.value
+    setUser({...user})
+  }
 
-const handleClickLogin = () => {
-  console.log('로그인 클릭')
-  console.log(user)
-  doLogin(user)
-  .then(data => {
-    console.log(data)
-    if (data.error) {
-      setFail(true)
-    } else {
-      console.log('로그인 성공')
+  const handleClickLogin = () => {
+    console.log('로그인 클릭')
+    console.log(user)
+    doLogin(user)
+    .then(data => {
+      console.log(data)
+      if (data.error) {
+        setFail(true)
+      } else {
+        console.log('로그인 성공')
+        setSuccess(true)
+        setResult(data.username)
+      }
+    })
+  }
 
-      setSuccess(true)
-      setResult(data.username)
-    }
-  })
-}
-
-const handleClickLogOut = () => {
+  const handleClickLogOut = () => {
     doLogout()
     moveToPath('/')
-}
+  }
 
-const handleClickText = (e) => {
-  const value = e.target.textContent
-  console.log(value)
-  if (value==='회원가입'){
-    moveToPath('/users/join')
+  const handleClickText = (e) => {
+    const value = e.target.textContent
+    console.log(value)
+    if (value==='회원가입'){
+      moveToPath('/users/join')
+    }
+    if (value==='Home'){
+      moveToPath('/')
+    }
   }
-  if (value==='Home'){
-    moveToPath('/')
-  }
-}
 
   const handleClickLink = (link) => {
     window.location.href = link;
@@ -82,140 +81,148 @@ const handleClickText = (e) => {
     }
   }
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleClickLogin();
+    }
+  }
+
+
   return (
-      <>
-        {result ? <ModalComponent
-                open={success}
-                title={`안녕하세요 ${result}, 님`}
-                content={"로그인 하셨습니다."}
-                handleClose={handleClose}
-            />
-            :
-            <></>}
-        {fail ? <ModalComponent
-            open={fail}
-            title={`안녕하세요 로그인에 실패하셨습니다`}
-            content={'아이디와 비밀번호를 다시 확인해주세요'}
-            handleClose={handleClose}
-        /> : <></>}
+    <>
+      {result ? <ModalComponent
+        open={success}
+        title={`안녕하세요 ${result}, 님`}
+        content={"로그인 하셨습니다."}
+        handleClose={handleClose}
+      />
+      :
+      <></>}
+      {fail ? <ModalComponent
+        open={fail}
+        title={`안녕하세요 로그인에 실패하셨습니다`}
+        content={'아이디와 비밀번호를 다시 확인해주세요'}
+        handleClose={handleClose}
+      /> : <></>}
       <Drawer
-          sx={{
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
             width: drawerWidth,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: drawerWidth,
-              boxSizing: 'border-box',
-            },
-          }}
-          variant="permanent"
-          anchor="right"
+            boxSizing: 'border-box',
+          },
+        }}
+        variant="permanent"
+        anchor="right"
       >
-        <Toolbar />
-        <Divider />
-        <List>
-
-          {isLogin?
+        <Box
+          sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}
+        >
+          <List>
+            {isLogin?
               <>{
-                      <ListItemButton>
-                        <ListItemIcon>
-                          <LoginIcon
-                              onClick={handleClickLogOut}/>
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={'로그아웃'}
-                            onClick={handleClickLogOut}
-                        />
-                      </ListItemButton>
-                }
-                <TextField
-                    readOnly
-                    margin="dense"
-                    id={'loginUserName'}
-                    name={'username'}
-                    type={'text'}
-                    label={'유저명'}
-                    value={loginState.username}
-                    fullWidth
-                    variant="filled"
-                />
-
-
-              </>
-                :
-              <>
-                      <ListItemButton>
-                        <ListItemIcon>
-                          <LoginIcon
-                              onClick={handleClickLogin}
-                          />
-                        </ListItemIcon>
-
-                        <ListItemText
-                            primary={'로그인'}
-                            onClick={handleClickLogin}
-                        />
-                      </ListItemButton>
-                <TextFieldComponent
-                    id={'email'}
-                    name={'email'}
-                    type={'email'}
-                    label={'이메일'}
-                    value={user.email}
-                    handleChange={handleChange}
-                />
-                <TextFieldComponent
-                    auto={false}
-                    id={'password'}
-                    name={'password'}
-                    type={'password'}
-                    label={'비밀번호'}
-                    value={user.password}
-                    handleChange={handleChange}
-                />
-              </>
-          }
-        </List>
-        <Divider />
-        <List>
-          {
-            <ListItemButton>
-              <ListItemIcon>
-                <Link to={getKakaoLink()}>
-                  <LoginIcon
-                      // onClick={handleClickLogin}
-                  />
-                </Link>
-              </ListItemIcon>
-              <Link
-                  style={{textDecoration:'none',color:'inherit'}}
-                  to={getKakaoLink()}>
-                <ListItemText
-                    primary={'회원가입'}
-                    // onClick={handleClickLogin}
-                />
-              </Link>
-            </ListItemButton>
-          },{
                 <ListItemButton>
                   <ListItemIcon>
-                     <HomeIcon />
+                    <LoginIcon
+                      onClick={handleClickLogOut}/>
                   </ListItemIcon>
-                  <ListItemText primary={'Home'}
-                                onClick={handleClickText}
+                  <ListItemText
+                    primary={'로그아웃'}
+                    onClick={handleClickLogOut}
                   />
                 </ListItemButton>
-          },
-          {
+              }
+              <TextField
+                readOnly
+                margin="dense"
+                id={'loginUserName'}
+                name={'username'}
+                type={'text'}
+                label={'유저명'}
+                value={loginState.username}
+                fullWidth
+                variant="filled"
+              />
+              </>
+              :
+              <>
+                <ListItemButton>
+                  <ListItemIcon>
+                    <LoginIcon
+                      onClick={handleClickLogin}
+                    />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={'로그인'}
+                    onClick={handleClickLogin}
+
+                  />
+                </ListItemButton>
+                <TextFieldComponent
+                  id={'email'}
+                  name={'email'}
+                  type={'email'}
+                  label={'이메일'}
+                  value={user.email}
+                  handleChange={handleChange}
+                  onKeyPress={handleKeyPress}
+                />
+                <TextFieldComponent
+                  auto={false}
+                  id={'password'}
+                  name={'password'}
+                  type={'password'}
+                  label={'비밀번호'}
+                  value={user.password}
+                  handleChange={handleChange}
+                  onKeyPress={handleKeyPress}
+                />
+              </>
+            }
+          </List>
+          <Divider />
+          <List>
+            {!isLogin && (
+              <ListItemButton>
+                <ListItemIcon>
+                  <Link to={getKakaoLink()}>
+                    <LoginIcon />
+                  </Link>
+                </ListItemIcon>
+                <Link
+                  style={{textDecoration:'none',color:'inherit'}}
+                  to={getKakaoLink()}>
+                  <ListItemText
+                    primary={'회원가입'}
+                  />
+                </Link>
+              </ListItemButton>
+            )}
+            <ListItemButton>
+              <ListItemIcon>
+                <HomeIcon />
+              </ListItemIcon>
+              <ListItemText 
+                primary={'Home'}
+                onClick={handleClickText}
+              />
+            </ListItemButton>
             <ListItemButton onClick={() => handleClickLink('https://exsherpa.com')}>
               <ListItemIcon>
                 <GridViewStreamIcon />
               </ListItemIcon>
               <ListItemText primary={'EX셀파로 이동'} />
             </ListItemButton>
-          }
-        </List>
+          </List>
+        </Box>
       </Drawer>
-      </>
+    </>
   );
 }
 

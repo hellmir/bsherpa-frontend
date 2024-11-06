@@ -1,6 +1,6 @@
 import TextField from "@mui/material/TextField";
 
-function TextFieldComponent({auto = true,id,name,type,label,value,handleChange,disabled=false}) {
+function TextFieldComponent({auto = true,id,name,type,label,value,handleChange,disabled=false,onKeyPress}) {
   return (
       <TextField
           autoFocus={auto}
@@ -15,6 +15,7 @@ function TextFieldComponent({auto = true,id,name,type,label,value,handleChange,d
           value={value}
           onChange={handleChange}
           disabled={disabled}
+          onKeyDown={onKeyPress}
       />
   );
 }
