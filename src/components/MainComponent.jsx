@@ -8,7 +8,6 @@ import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getBook } from "../api/mainApi.js";
 import useCustomMove from "../hooks/useCustomMove.jsx";
-
 const initState = {
   name: '국어'
 };
@@ -18,14 +17,12 @@ function MainComponent() {
   const { refresh } = useCustomMove();
   const location = useLocation();
   const selectSubjectName = location.state?.data || initState.name;
-
   const { data, isLoading, isError } = useQuery({
     queryKey: ['subjectName', { selectSubjectName, refresh }],
     queryFn: getBook,
     staleTime: 1000,
   });
 
-  console.log(data)
 
   useEffect(() => {
     setSubject({ name: selectSubjectName });
@@ -38,6 +35,9 @@ function MainComponent() {
   const groupedBooks = Array.from({ length: Math.ceil(filteredBooks.length / 4) }, (_, i) =>
       filteredBooks.slice(i * 4, i * 4 + 4)
   );
+
+
+
 
   return (
       <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}>
