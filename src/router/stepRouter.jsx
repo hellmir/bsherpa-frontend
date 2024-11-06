@@ -6,6 +6,7 @@ const Step1 = lazy(()=>import("../pages/step/Step1Page.jsx"))
 const Step2 = lazy(()=>import("../pages/step/Step2Page.jsx"))
 const Step3 = lazy(()=>import("../pages/step/Step3Page.jsx"))
 const Step4 = lazy(()=>import("../pages/step/Step4Page.jsx"))
+const Storage = lazy(()=> import("../pages/step/ExamStoragePage.jsx"))
 const stepRouter = () => {
   return [
     {
@@ -28,6 +29,10 @@ const stepRouter = () => {
       path:'step4',
       element:<Suspense fallback={Loading}><Step4/></Suspense>,
     },
+    {
+      path:'storage',
+      element: <Suspense fallback={Loading}><Storage/></Suspense>
+    }
   ]
 }
 
