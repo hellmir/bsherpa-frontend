@@ -7,11 +7,12 @@ import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
 
 export default function ExamCardComponent({examId, subjectName, examName, grade}) {
+    const {moveToStepWithData} = useCustomMove();
 
-    const {moveToStepWithData} = useCustomMove()
+    const handleClickLoadPdf = (event) => {
+        console.log("clicked examId: ",examId);
 
-    const handleClickLoadPdf = () => {
-        moveToStepWithData(`step4`,{examId : examId})
+        moveToStepWithData(`step4`, examId);
     }
 
     const handleClickLoadExamPage = () => {

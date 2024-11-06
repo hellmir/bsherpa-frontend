@@ -7,7 +7,6 @@ import {getExam} from "../../api/mainApi.js";
 import {CircularProgress} from "@mui/material";
 import ExamCardComponent from "./ExamCardComponent.jsx";
 
-
 export default function ExamStorageComponent() {
     const loginState = useSelector(state=> state.loginSlice)
     const email = loginState.email;
@@ -31,15 +30,15 @@ export default function ExamStorageComponent() {
                     <CircularProgress />
                 </Box>
             ) : (
-                // 로딩이 끝나고 데이터가 있을 때 표시
+                // 로딩이 끝나고 데이터가 있으면 Card로 Exam 표시
                 exams.length > 0 ? (
                     <Box sx={{ marginBottom: 2, marginTop: 2 }}>
                         <Typography variant="h6">{exams[0].username}님의 시험지 보관함</Typography>
                         {exams.map((exam, index) => (
-                            <Box key={exam.id} sx={{ display: 'flex', gap: 2, marginBottom: 2, marginTop: 2 }}>
-                                {/* 여기에 ExamCardComponent를 추가하여 렌더링 */}
+                            <Box key={index} sx={{ display: 'flex', gap: 2, marginBottom: 2, marginTop: 2 }}>
                                 <ExamCardComponent
                                     key={exam.id}
+                                    examId={exam.id}
                                     examName={exam.examName}
                                     className={exam.className}
                                     subjectName={exam.subjectName}
@@ -49,7 +48,7 @@ export default function ExamStorageComponent() {
                         ))}
                     </Box>
                 ) : (
-                    // 데이터가 없을 때 표시
+                    // 데이터가 없을 때 보여줌
                     <Typography variant="body1">{examData[0]?.username}님이 작성한 시험지가 없습니다.</Typography>
                 )
             )}
