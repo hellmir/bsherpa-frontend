@@ -32,6 +32,7 @@ function MainComponent() {
   if (isError) return <Typography>Something went wrong!</Typography>;
 
   const filteredBooks = data && data.data ? data.data.filter(book => book.subjectName === subject.name) : [];
+  console.log(filteredBooks)
   const groupedBooks = Array.from({ length: Math.ceil(filteredBooks.length / 4) }, (_, i) =>
       filteredBooks.slice(i * 4, i * 4 + 4)
   );
