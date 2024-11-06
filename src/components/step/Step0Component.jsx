@@ -49,6 +49,10 @@ function Step0Component() {
       sessionStorage.setItem("isReloaded", "true");
       window.location.reload();
     }
+    
+    return () => {
+      sessionStorage.removeItem("isReloaded");
+    };
   }, []);
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
