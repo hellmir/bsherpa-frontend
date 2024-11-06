@@ -715,7 +715,9 @@ export default function Step2Component() {
                                                             padding: "20px",
                                                             borderRadius: "8px",
                                                             marginBottom: "20px",
-                                                            position: "relative"
+                                                            position: "relative",
+                                                            width: "100%",
+                                                            boxSizing: "border-box"
                                                         }}>
                                                             <div className="passage-group-header" style={{
                                                                 display: "flex",
@@ -747,10 +749,17 @@ export default function Step2Component() {
                                                             <div className="passage" style={{
                                                                 border: "1px solid #ccc",
                                                                 borderRadius: "8px",
-                                                                padding: "10px"
+                                                                padding: "10px",
+                                                                overflow: "hidden",
+                                                                width: "100%",
+                                                                boxSizing: "border-box"
                                                             }}>
                                                                 <img src={group.passageUrl} alt="지문 이미지"
-                                                                     style={{width: "100%"}}/>
+                                                                     style={{
+                                                                         width: "100%",
+                                                                         height: "auto",
+                                                                         objectFit: "contain"
+                                                                     }}/>
                                                             </div>
                                                         </div>
                                                     )}
