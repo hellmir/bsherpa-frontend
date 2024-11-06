@@ -4,6 +4,7 @@ import useCustomMove from "../../../hooks/useCustomMove";
 import {useLocation} from "react-router-dom";
 import DifficultyDisplay from './DifficultyDisplay.jsx';
 import jwtAxios from "../../../util/jwtUtil.jsx";
+import ModalComponent from "../../common/ModalComponent.jsx";
 
 // InfoModal.jsx - 정보 표시용 모달
 const InfoModal = ({
@@ -785,7 +786,7 @@ const Step1Component = () => {
   const [selectedQuestiontype, setSelectedQuestiontype] = useState([]);
   const [source, setSource] = useState('');
   const {moveToStepWithData} = useCustomMove();
-  const bookId = useLocation().state.data;
+  const bookId = useLocation().state ? useLocation().state.data : null;
   const [evaluation, setEvaluation] = useState({});
   const [curriculumCode, setCurriculumCode] = useState('');
   const [subjectId, setSubjectId] = useState('');
@@ -820,6 +821,22 @@ const Step1Component = () => {
     step4: 10,
     step5: 0
   });
+
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+  useEffect(() => {
+    console.log('bookId', bookId);
+    if (!bookId) {
+      setIsAccessModalOpen(true);
+    }
+  }, []);
+
+
+  const {moveToPath} = useCustomMove();
+  const handleCloseAccessModal = () => {
+    setIsShiftModalOpen(false);
+    moveToPath('/');
+  };
 
 
   const location = useLocation();
@@ -934,6 +951,21 @@ const Step1Component = () => {
         });
   }, [bookId]);
 
+  useEffect(() => {
+    // 방법 1: zoom 속성 사용
+    document.body.style.zoom = "125%";  // 75% 크기로 축소
+  
+    // 또는 방법 2: transform scale 사용
+    document.body.style.transform = "scale(0.67)";
+    document.body.style.transformOrigin = "top ";
+  
+    return () => {
+      // 컴포넌트 언마운트 시 원래대로 복구
+      document.body.style.zoom = "100%";
+      // 또는
+      document.body.style.transform = "none";
+    };
+  }, []);
 
 
 // i 태그 클릭 핸들러
@@ -1484,6 +1516,15 @@ if (activeSteps.length === 0) {
 
   return (
       <div id="wrap" className="full-pop-que">
+        <ModalComponent
+            title="비정상적인 접근"
+            content={
+              <>비정상적인 접근이 감지되었습니다.<br/>
+                메인 페이지로 이동합니다.</>
+            }
+            handleClose={handleCloseAccessModal}
+            open={isAccessModalOpen}
+        />
         <div className="full-pop-wrap">
           {/* 팝업 헤더 */}
           <div className="pop-header">
@@ -1676,9 +1717,9 @@ if (activeSteps.length === 0) {
 
                       {/* 출처 */}
                       <div className="box">
-                        <div className="title-wrap">
-                          <span className="tit-text">출처</span>
-                        </div>
+                      <div className="title-wrap" style={{  marginTop: '-60px' }}>
+                        <span className="tit-text">출처</span>
+                      </div>
                         <div className="btn-wrap multi">
                           <button
                               type="button"

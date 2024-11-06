@@ -141,8 +141,10 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
   return (
     <div className="difficulty-section">
     <div className="box">
-      <div className="title-wrap">
-        <span className="tit-text">난이도 구성</span>
+      <div className="title-wrap"  style={{
+        marginTop: '-50px'  // 텍스트 위 여백 줄임
+      }}>
+        <span className="tit-text" >난이도 구성</span>
       </div>
       <div className="step-wrap">
         {difficulties.map(({ step, text, color, disabled }) => (
@@ -162,7 +164,9 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
     </div>
 
     <div className="box">
-      <div className="title-wrap">
+      <div className="title-wrap"  style={{
+        marginTop: '-30px'  // 텍스트 위 여백 줄임
+      }}>
         <span className="tit-text">
           난이도별 문제 수
           <button
