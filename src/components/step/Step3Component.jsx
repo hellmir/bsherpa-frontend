@@ -98,7 +98,7 @@ export default function Step3Component() {
             bookId : bookId.toString(),
             examName : examName,
             totalCount : totalCount,
-            examCategory : "custom",
+            examType : "custom",
             collections: updatedGroupedItems.map(group=> ({
                 questions: group.items.map(item=> {
                     const questionDetails = questionData && Array.isArray(questionData.itemList)
@@ -153,7 +153,7 @@ export default function Step3Component() {
         try{
             const response = await registerExam(exam);
             if(response.status === 200) {
-                console.log("response: ",response);
+                console.log("response",response)
                 navigate("/");
             } else {
                 alert("저장에 실패했습니다");
@@ -270,7 +270,9 @@ export default function Step3Component() {
             </div>
             <ModalComponent
                 title={loading ? "로딩 중" : "저장 완료"}
-                content={loading ? "저장 중입니다. 잠시만 기다려주세요..." : "저장 완료되었습니다!"}
+                content={loading ?
+                    <img src="../images/common/loading_icon.gif" alt="Loading..." className="loading-gif"/>
+                    : "저장 완료되었습니다!"}
                 handleClose={() => setModalOpen(false)}
                 open={modalOpen}
                 isLoading={loading}
