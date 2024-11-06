@@ -12,6 +12,10 @@ function MainSelectComponent({ subjectName, outlined = 'contained' }) {
     moveToPathWithData(`/`,selectSubjectName);
   };
 
+  const handleClickExamStorage = () => {
+      moveToPathWithData('/exam/storage');
+  }
+
   const subjects = ['국어', '수학', '영어', '과학', '사회', '역사', '도덕'];
 
   return (
@@ -27,7 +31,7 @@ function MainSelectComponent({ subjectName, outlined = 'contained' }) {
       >
         <ButtonGroup variant="outlined" aria-label="Basic button group">
           <Button variant={outlined}>중학</Button>
-          <Button>시험지 보관함</Button>
+          <Button onClick={handleClickExamStorage}>시험지 보관함</Button>
         </ButtonGroup>
         <ButtonGroup variant="text" aria-label="Basic button group">
           {subjects.map((subject) => (
