@@ -1,28 +1,43 @@
 import {useEffect, useRef, useState} from 'react';
 import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
-import {getItemTest} from "../../api/step4Api.js";
+import {getExamTest} from "../../api/step4Api.js";
 
 const Step4Component = () => {
 
     const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
+    const [isLoading, setIsLoading] = useState(true); // 로딩 상태
+
     const pdfRef = useRef();
 
     // 데이터 로드: 컴포넌트가 마운트 될 때 API 호출
     useEffect(() => {
         const fetchData = async () => {
             try{
-                const data = await getItemTest(); //API에서 데이터 받아오기
+                setIsLoading(true); // 로딩 시작
+                const data = await getExamTest(); //API에서 데이터 받아오기
                 console.log("ID에 따라 받아온 데이터: ", data);
                 // console.log("시험지 아이디: ", data.);
 
                 setResponse(data); // 응답 데이터 상태에 저장
+                console.log("setResponse 호출됨");
             }catch(error){
                 console.error("데이터 로딩 실패: ", error);
+            }finally{
+                setIsLoading(false); // 로딩 끝
             }
         };
         fetchData();
     }, []); // 빈 배열을 전달하여 한 번만호출되도록 설정
+
+    // API 호출 후, response 값이 제대로 세팅되었는지 로그 확인 // response 값이 변경될 때마다 콘솔 찍기
+    useEffect(() => {
+        console.log("현재 response 상태:", response);
+    }, [response]);
+
+
+
+
 
     const handlePrint = () => {
         // 인쇄할 내용을 위한 새로운 HTML 생성
@@ -107,6 +122,8 @@ const Step4Component = () => {
         printWindow.close();
     };
 
+    // response 데이터를 사용하여 정보 표시
+
     const indicators = ['①', '②', '③', '④', '⑤'];
 
     // const renderContent = () => {
@@ -166,9 +183,12 @@ const Step4Component = () => {
         <>
             <CommonResource/>
             <Button onClick={handlePrint} variant="contained">문제만</Button>
-            <div ref={pdfRef}
-                 style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: "none"}}>
-                {/*{renderContent()}*/}
+            <div ref={pdfRef} style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue'}}>
+                {isLoading ? (
+                    <div>Loading...</div>  // 로딩 중일 때 표시
+                ) : (
+                    <div>응답 데이터 ID: {response?.id || "응답 없음"}</div>  // 데이터가 준비되면 출력
+                )}
             </div>
         </>
     );
