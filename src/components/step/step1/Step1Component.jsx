@@ -951,6 +951,21 @@ const Step1Component = () => {
         });
   }, [bookId]);
 
+  useEffect(() => {
+    // 방법 1: zoom 속성 사용
+    document.body.style.zoom = "125%";  // 75% 크기로 축소
+  
+    // 또는 방법 2: transform scale 사용
+    document.body.style.transform = "scale(0.67)";
+    document.body.style.transformOrigin = "top ";
+  
+    return () => {
+      // 컴포넌트 언마운트 시 원래대로 복구
+      document.body.style.zoom = "100%";
+      // 또는
+      document.body.style.transform = "none";
+    };
+  }, []);
 
 
 // i 태그 클릭 핸들러
@@ -1702,9 +1717,9 @@ if (activeSteps.length === 0) {
 
                       {/* 출처 */}
                       <div className="box">
-                        <div className="title-wrap">
-                          <span className="tit-text">출처</span>
-                        </div>
+                      <div className="title-wrap" style={{  marginTop: '-60px' }}>
+                        <span className="tit-text">출처</span>
+                      </div>
                         <div className="btn-wrap multi">
                           <button
                               type="button"
