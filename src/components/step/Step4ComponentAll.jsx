@@ -2,12 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
 import { getExamTest } from "../../api/step4Api.js";
+import {Image} from "@mui/icons-material";
 
-const Step4ComponentAll = ({examId}) => {
-
+const Step4ComponentQuestion = ({ examId }) => {
     const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
     const [isLoading, setIsLoading] = useState(true); // 로딩 상태
     const pdfRef = useRef();
+
+    const getOptionNumber = (number) => {
+        const numbers = ["①", "②", "③", "④", "⑤"];
+        return numbers[number - 1] || number; // 1부터 시작하는 번호를 ①, ②로 변환
+    };
 
     // 데이터 로드: 컴포넌트가 마운트 될 때 API 호출
     useEffect(() => {
@@ -34,20 +39,20 @@ const Step4ComponentAll = ({examId}) => {
       <style>
         body {
           margin: 0;
-          padding: 20px;
+          padding: 5px;
           background-color: white;
           color: black;
         }
         
       @media print {
         body {
-          display: block;
+          /*display: block;*/
         }
       }
       @media screen {
         body {
           display: none;
-          width: 80%;
+          /*width: 80%;*/
         }
       }
       </style>
@@ -84,7 +89,7 @@ const Step4ComponentAll = ({examId}) => {
                 border: "solid 3px lightgray",
                 borderRadius: "20px",
                 alignItems: "center",
-                marginBottom: "30px"
+                marginBottom: "45px"
             }}>
                 <h1 className="examSubject" style={{
                     width: "75%",
@@ -105,8 +110,7 @@ const Step4ComponentAll = ({examId}) => {
                     flexDirection: "column",
                     justifyContent: "space-evenly"
                 }}>
-                    <input style={{ border: "none", outline: "none", margin: "0 5px" }} placeholder="           학년        반        번" />
-                    <input style={{ border: "none", outline: "none", margin: "0 5px" }} placeholder="이름 :   " />
+                    <div>시험지 정보</div>
                 </div>
             </div>
         );
@@ -118,14 +122,30 @@ const Step4ComponentAll = ({examId}) => {
             const passages = collection.getPassagesResponse?.getPassageResponses || [];
             const questions = collection.getQuestionsResponse?.getQuestionResponses || [];
 
+            const extractTdContent = (htmlString) => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = htmlString;
+                const tdElement = tempDiv.querySelector('td');
+                if (tdElement) {
+                    return tdElement.innerHTML;  // Return the HTML inside <td>
+                }
+                return '';
+            };
+
             // 지문은 번호를 매기지 않고 그냥 출력, 문제만 순차적으로 번호 매기기
             let contentHtml = [];
 
             if (passages.length > 0) {
                 // 지문을 그냥 출력 (번호 매기지 않음)
                 passages.forEach((passage, passageIndex) => {
+                    const tdContent = extractTdContent(passage.html);
+
                     contentHtml.push(
-                        <div key={`passage-${collectionIndex}-${passageIndex}`} dangerouslySetInnerHTML={{ __html: passage.html }} />
+                        <div key={`passage-${collectionIndex}-${passageIndex}`}
+                             style={{marginLeft: '15px', marginTop: ''}}>
+                            <div style={{marginBottom:'10px'}}>다음 지문을 읽고 질문에 답하시오.</div>
+                            <div style={{border:'solid 1px lightgrey', borderRadius:'5px',padding:'30px 15px'}} dangerouslySetInnerHTML={{__html: tdContent}}/>
+                        </div>
                     );
                 });
             }
@@ -134,18 +154,73 @@ const Step4ComponentAll = ({examId}) => {
                 // 문제는 순차적으로 번호 매기기
                 questions.forEach((question, questionIndex) => {
                     contentHtml.push(
-                        <div key={`question-${collectionIndex}-${questionIndex}`}>
-                            <span>{questionCounter}. </span>
-                            <span dangerouslySetInnerHTML={{__html: question.html}}/>
+                        <div style={{display: 'flex', flexDirection: 'column'}}>
+                            <div key={`question-${collectionIndex}-${questionIndex}`}
+                                 style={{display: 'inline-flex', marginTop: '30px', marginBottom: '30px'}}>
+                                <div style={{display: 'inline', fontWeight: 'bold', marginLeft: '15px'}}>
+                                    {questionCounter}.
+                                </div>
+                                &nbsp;
+                                {/* 객관식 문제일 경우 (subjective가 false인 경우) */}
+                                {question.subjective === false ? (
+                                    <div style={{display: 'inline'}}>
+                                        <div style={{marginBottom: '18px'}}
+                                             dangerouslySetInnerHTML={{__html: question.html}}/>
+                                        <div>
+                                            {/* 보기를 나열 */}
+                                            {question.getOptionsResponse?.getOptiosResponses.map((option, index) => (
+                                                <div key={`option-${questionCounter}-${index}`}
+                                                     style={{
+                                                         display: 'flex',
+                                                         paddingLeft: '10px',
+                                                         marginBottom: '8px'
+                                                     }}>
+                                                    <div>{getOptionNumber(option.optionNo)}</div>
+                                                    &nbsp;
+                                                    <div dangerouslySetInnerHTML={{__html: option.html}}/>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    // 주관식 문제일 경우 (subjective가 true인 경우)
+                                    <div style={{display: 'inline'}}>
+                                        <div dangerouslySetInnerHTML={{__html: question.html}}/>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                placeholder="정답을 입력하세요"
+                                                style={{marginLeft: '10px', border: '1px solid gray', padding: '5px'}}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div style={{
+                                margin: '20px',
+                                padding: '10px',
+                                width: '600px',
+                                border: 'solid 1px lightgray',
+                                borderRadius: '5px'
+                            }}>
+                                <div style={{display: 'flex', marginBottom: '10px'}}>
+                                    <div style={{fontSize: '18px'}}>정답</div>
+                                    &nbsp;&nbsp;
+                                    <img src={question.answerUrl} alt="Answer image"/>
+                                </div>
+                                <div style={{display: 'flex'}}>
+                                    <div style={{fontSize: '18px'}}>해설</div>
+                                    <img src={question.descriptionUrl} style={{marginLeft: "50px"}}></img>
+                                </div>
+                            </div>
                         </div>
-                    );
+                    )
+                    ;
                     questionCounter++; // 문제 번호 증가
                 });
             }
-
-            return <div key={collectionIndex}>{contentHtml}</div>;
+            return <div key={`collection-${collectionIndex}`}>{contentHtml}</div>;
         });
-
         return (
             <div>
                 {examHeader}
@@ -156,13 +231,14 @@ const Step4ComponentAll = ({examId}) => {
 
     return (
         <>
-            <CommonResource />
-            <Button onClick={handlePrint} variant="contained">문제만</Button>
-            <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none' }}>
+            <CommonResource/>
+            <Button onClick={handlePrint} variant="contained">문제 + 정답</Button>
+            <div ref={pdfRef}
+                 style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}}>
                 {renderContent()}
             </div>
         </>
     );
 };
 
-export default Step4ComponentAll;
+export default Step4ComponentQuestion;

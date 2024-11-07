@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
 import { getExamTest } from "../../api/step4Api.js";
+import {Image} from "@mui/icons-material";
 
-const Step4ComponentAnswer = ({examId}) => {
-
+const Step4ComponentQuestion = ({ examId }) => {
     const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
     const [isLoading, setIsLoading] = useState(true); // 로딩 상태
     const pdfRef = useRef();
@@ -16,6 +16,7 @@ const Step4ComponentAnswer = ({examId}) => {
                 setIsLoading(true); // 로딩 시작
                 const data = await getExamTest(examId); //API에서 데이터 받아오기
                 setResponse(data); // 응답 데이터 상태에 저장
+                console.log("response: ", response);
             } catch (error) {
                 console.error("데이터 로딩 실패: ", error);
             } finally {
@@ -28,26 +29,25 @@ const Step4ComponentAnswer = ({examId}) => {
     const handlePrint = () => {
         // 인쇄할 내용을 위한 새로운 HTML 생성
         const printContent = pdfRef.current.innerHTML;
-
         const printWindow = window.open('', '_blank');
         const printStyle = `
       <style>
         body {
           margin: 0;
-          padding: 20px;
+          padding: 5px;
           background-color: white;
           color: black;
         }
         
       @media print {
         body {
-          display: block;
+          /*display: block;*/
         }
       }
       @media screen {
         body {
           display: none;
-          width: 80%;
+          /*width: 80%;*/
         }
       }
       </style>
@@ -67,7 +67,7 @@ const Step4ComponentAnswer = ({examId}) => {
         printWindow.document.close();
 
         // 인쇄 대화상자 열기
-        printWindow.print("", { filename: "내가 만든 시험지" });
+        printWindow.print("", { filename: response.examName});
 
         // 인쇄 후 창 닫기
         printWindow.close();
@@ -84,7 +84,7 @@ const Step4ComponentAnswer = ({examId}) => {
                 border: "solid 3px lightgray",
                 borderRadius: "20px",
                 alignItems: "center",
-                marginBottom: "30px"
+                marginBottom: "45px"
             }}>
                 <h1 className="examSubject" style={{
                     width: "75%",
@@ -105,8 +105,8 @@ const Step4ComponentAnswer = ({examId}) => {
                     flexDirection: "column",
                     justifyContent: "space-evenly"
                 }}>
-                    <input style={{ border: "none", outline: "none", margin: "0 5px" }} placeholder="           학년        반        번" />
-                    <input style={{ border: "none", outline: "none", margin: "0 5px" }} placeholder="이름 :   " />
+                    <div>{response.subjectName} ({response.className}{response.grade})</div>
+                    <div>제작자: {response.username}</div>
                 </div>
             </div>
         );
@@ -115,37 +115,45 @@ const Step4ComponentAnswer = ({examId}) => {
         let questionCounter = 1; // 문제 번호를 순차적으로 증가시키기 위한 카운터
 
         const allContentHtml = collections.map((collection, collectionIndex) => {
-            const passages = collection.getPassagesResponse?.getPassageResponses || [];
             const questions = collection.getQuestionsResponse?.getQuestionResponses || [];
 
             // 지문은 번호를 매기지 않고 그냥 출력, 문제만 순차적으로 번호 매기기
             let contentHtml = [];
 
-            if (passages.length > 0) {
-                // 지문을 그냥 출력 (번호 매기지 않음)
-                passages.forEach((passage, passageIndex) => {
-                    contentHtml.push(
-                        <div key={`passage-${collectionIndex}-${passageIndex}`} dangerouslySetInnerHTML={{ __html: passage.html }} />
-                    );
-                });
-            }
-
             if (questions.length > 0) {
                 // 문제는 순차적으로 번호 매기기
                 questions.forEach((question, questionIndex) => {
                     contentHtml.push(
-                        <div key={`question-${collectionIndex}-${questionIndex}`}>
-                            <strong>{questionCounter}. </strong>
-                            <div dangerouslySetInnerHTML={{ __html: question.html }} />
+                        <div key={`question-${collectionIndex}-${questionIndex}`}
+                             style={{display: 'inline-flex', marginTop: '30px', marginBottom: '30px'}}>
+                            <div style={{display: 'inline', fontWeight: 'bold', marginLeft: '15px'}}>
+                                {questionCounter}.
+                            </div>
+                            &nbsp;
+                            <div style={{
+                                marginTop: '20px',
+                                padding: '10px',
+                                width: '600px',
+                                border: 'solid 1px lightgray',
+                                borderRadius: '5px'
+                            }}>
+                                <div style={{display: 'flex', marginBottom: '10px'}}>
+                                    <div style={{fontSize: '18px'}}>정답</div>
+                                    &nbsp;&nbsp;
+                                    <img src={question.answerUrl} alt="Answer image"/>
+                                </div>
+                                <div style={{display: 'flex'}}>
+                                    <div style={{fontSize: '18px'}}>해설</div>
+                                    <img src={question.descriptionUrl} style={{marginLeft: "50px"}}></img>
+                                </div>
+                            </div>
                         </div>
                     );
                     questionCounter++; // 문제 번호 증가
                 });
             }
-
-            return <div key={collectionIndex}>{contentHtml}</div>;
+            return <div key={`collection-${collectionIndex}`}>{contentHtml}</div>;
         });
-
         return (
             <div>
                 {examHeader}
@@ -156,13 +164,14 @@ const Step4ComponentAnswer = ({examId}) => {
 
     return (
         <>
-            <CommonResource />
-            <Button onClick={handlePrint} variant="contained">문제만</Button>
-            <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none' }}>
+            <CommonResource/>
+            <Button onClick={handlePrint} variant="contained">정답</Button>
+            <div ref={pdfRef}
+                 style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}}>
                 {renderContent()}
             </div>
         </>
     );
 };
 
-export default Step4ComponentAnswer;
+export default Step4ComponentQuestion;

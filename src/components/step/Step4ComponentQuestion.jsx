@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
 import { getExamTest } from "../../api/step4Api.js";
+import {Image} from "@mui/icons-material";
 
-const Step4ComponentQuestion = ({examId}) => {
-
+const Step4ComponentQuestion = ({ examId }) => {
     const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
     const [isLoading, setIsLoading] = useState(true); // 로딩 상태
     const pdfRef = useRef();
@@ -33,13 +33,12 @@ const Step4ComponentQuestion = ({examId}) => {
     const handlePrint = () => {
         // 인쇄할 내용을 위한 새로운 HTML 생성
         const printContent = pdfRef.current.innerHTML;
-
         const printWindow = window.open('', '_blank');
         const printStyle = `
       <style>
         body {
           margin: 0;
-          padding: 20px;
+          padding: 5px;
           background-color: white;
           color: black;
         }
@@ -52,7 +51,7 @@ const Step4ComponentQuestion = ({examId}) => {
       @media screen {
         body {
           display: none;
-          width: 80%;
+          /*width: 80%;*/
         }
       }
       </style>
@@ -123,18 +122,29 @@ const Step4ComponentQuestion = ({examId}) => {
             const passages = collection.getPassagesResponse?.getPassageResponses || [];
             const questions = collection.getQuestionsResponse?.getQuestionResponses || [];
 
+            const extractTdContent = (htmlString) => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = htmlString;
+                const tdElement = tempDiv.querySelector('td');
+                if (tdElement) {
+                    return tdElement.innerHTML;  // Return the HTML inside <td>
+                }
+                return '';
+            };
+
             // 지문은 번호를 매기지 않고 그냥 출력, 문제만 순차적으로 번호 매기기
             let contentHtml = [];
 
             if (passages.length > 0) {
                 // 지문을 그냥 출력 (번호 매기지 않음)
                 passages.forEach((passage, passageIndex) => {
+                    const tdContent = extractTdContent(passage.html);
                     contentHtml.push(
-                        <>
-                            <div style={{marginLeft:'15px'}}>다음 지문을 읽고 질문에 답하시오.</div>
-                            <div style={{marginBottom:'30px'}} key={`passage-${collectionIndex}-${passageIndex}`}
-                                 dangerouslySetInnerHTML={{__html: passage.html}}/>
-                        </>
+                        <div key={`passage-${collectionIndex}-${passageIndex}`}
+                             style={{marginLeft: '15px', marginTop: ''}}>
+                            <div style={{marginBottom:'10px'}}>다음 지문을 읽고 질문에 답하시오.</div>
+                            <div style={{border:'solid 1px lightgrey', borderRadius:'5px',padding:'30px 15px'}} dangerouslySetInnerHTML={{__html: tdContent}}/>
+                        </div>
                     );
                 });
             }
@@ -143,48 +153,49 @@ const Step4ComponentQuestion = ({examId}) => {
                 // 문제는 순차적으로 번호 매기기
                 questions.forEach((question, questionIndex) => {
                     contentHtml.push(
-                        <div key={`question-${collectionIndex}-${questionIndex}`} style={{ display: 'inline-flex', marginTop:'30px', marginBottom:'30px'}}>
-                            <div style={{ display: 'inline', fontWeight:'bold', marginLeft:'15px'}}>{questionCounter}. </div> &nbsp;
+                        <div key={`question-${collectionIndex}-${questionIndex}`}
+                             style={{display: 'inline-flex', marginTop: '30px', marginBottom: '30px'}}>
+                            <div style={{display: 'inline', fontWeight: 'bold', marginLeft: '15px'}}>
+                                {questionCounter}.
+                            </div>
+                            &nbsp;
                             {/* 객관식 문제일 경우 (subjective가 false인 경우) */}
                             {question.subjective === false ? (
-                                <div style={{ display: 'inline' }}>
-                                    <div style={{ marginBottom:'18px' }} dangerouslySetInnerHTML={{ __html: question.html }} />
+                                <div style={{display: 'inline'}}>
+                                    <div style={{marginBottom: '18px'}}
+                                         dangerouslySetInnerHTML={{__html: question.html}}/>
                                     <div>
                                         {/* 보기를 나열 */}
                                         {question.getOptionsResponse?.getOptiosResponses.map((option, index) => (
-                                            <div key={index} style={{ display:'flex', paddingLeft: '10px', marginBottom:'8px' }}>
-                                                <div key={`question-${questionCounter}`}>{getOptionNumber(option.optionNo)}</div>
+                                            <div key={`option-${questionCounter}-${index}`}
+                                                 style={{display: 'flex', paddingLeft: '10px', marginBottom: '8px'}}>
+                                                <div>{getOptionNumber(option.optionNo)}</div>
                                                 &nbsp;
-                                                <div dangerouslySetInnerHTML={{ __html: option.html }}/>
+                                                <div dangerouslySetInnerHTML={{__html: option.html}}/>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             ) : (
                                 // 주관식 문제일 경우 (subjective가 true인 경우)
-                                <div style={{ display: 'inline' }}>
-                                    <div dangerouslySetInnerHTML={{ __html: question.html }} />
+                                <div style={{display: 'inline'}}>
+                                    <div dangerouslySetInnerHTML={{__html: question.html}}/>
                                     <div>
                                         <input
                                             type="text"
                                             placeholder="정답을 입력하세요"
-                                            style={{ marginLeft: '10px', border: '1px solid gray', padding: '5px' }}
+                                            style={{marginLeft: '10px', border: '1px solid gray', padding: '5px'}}
                                         />
                                     </div>
                                 </div>
                             )}
-
                         </div>
-
-
                     );
                     questionCounter++; // 문제 번호 증가
                 });
             }
-
-            return <div key={collectionIndex}>{contentHtml}</div>;
+            return <div key={`collection-${collectionIndex}`}>{contentHtml}</div>;
         });
-
         return (
             <div>
                 {examHeader}
@@ -195,9 +206,10 @@ const Step4ComponentQuestion = ({examId}) => {
 
     return (
         <>
-            <CommonResource />
-            <Button onClick={handlePrint} variant="contained">문제만</Button>
-            <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}}>
+            <CommonResource/>
+            <Button onClick={handlePrint} variant="contained">문제</Button>
+            <div ref={pdfRef}
+                 style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}}>
                 {renderContent()}
             </div>
         </>
