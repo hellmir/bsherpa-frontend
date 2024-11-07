@@ -4,29 +4,24 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import TableComponent from "./TableComponent.jsx";
 
-export default function AccordionComponent({largeChapter, exams}) {
-  return (
-      <div>
-        <Accordion>
-          <AccordionSummary
-              expandIcon={<ExpandMoreIcon/>}
-              aria-controls="panel1-content"
-              id="panel1-header"
-          >
-            {largeChapter}
-          </AccordionSummary>
-              <>
-
+export default function AccordionComponent({ largeChapter, exams, isUserExamSelected }) {
+    return (
+        <div>
+            <Accordion>
+                <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1-content"
+                    id="panel1-header"
+                >
+                    {largeChapter}
+                </AccordionSummary>
                 <AccordionDetails>
-                  <TableComponent
-                      data={exams}
-                  />
+                    <TableComponent
+                        data={exams}
+                        isUserExamSelected={isUserExamSelected}
+                    />
                 </AccordionDetails>
-              </>
-
-
-
-        </Accordion>
-      </div>
-  );
+            </Accordion>
+        </div>
+    );
 }
