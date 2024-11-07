@@ -1,7 +1,7 @@
 import {useLocation} from "react-router-dom";
 import AccordionComponent from "../common/AccordionComponent.jsx";
 import Button from "@mui/material/Button";
-import {Box} from "@mui/material";
+import {Box, CircularProgress} from "@mui/material";
 import BorderColorOutlinedIcon from '@mui/icons-material/BorderColorOutlined';
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
 import {useDispatch, useSelector} from "react-redux";
@@ -14,7 +14,8 @@ import {addBookId} from "../../slices/bookIdSlice.jsx";
 import {resetExamId} from "../../slices/examIdSlice.jsx";
 import {useEffect, useState} from "react";
 import useCustomLogin from "../../hooks/useCustomLogin.jsx";
-import jwtAxios from '../../util/jwtUtil.jsx';
+import {getExam} from "../../api/mainApi.js";
+import {getQuestionData} from "../../api/step3Api.js";
 
 
 const groupByLargeChapterId = (array) => {
@@ -40,6 +41,8 @@ function Step0Component() {
   const location = useLocation()
   const {doLogin,doLogout,isLogin,loginState} = useCustomLogin();
   const [examList ,setExamList] = useState([]);
+
+  const email = loginState.email;
 
   if (location.state===null){
     return moveToMainReturn()
@@ -68,35 +71,103 @@ function Step0Component() {
   }, [dispatch, book.id]); // 의존성 배열에 추가
 
 
- // 나의 시험지 목록 가져오기
-  useEffect(() => {
-  jwtAxios.get(`https://bsherpa.duckdns.org/exams/storage?email=${loginState.email}`)
-      .then((response) => {
-        console.log('이메일으로 받아오기 성공')
-          setExamList(response.data.getExamResponses)
-          console.log(examList)
-          console.log(response.data)
-      })
-      .catch((error) => {
-        console.error('Error :', error);
-      })
-}, [loginState.email]); 
-useEffect(() => {
-  console.log('examList 받아오기 성공')
-  console.log(examList)
-});
-
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { data } = useQuery({
     queryKey: [],
     queryFn: () => getSubjectExamsFromTsherpa(book.id),
-    staleTime: 1000 * 3,
+    enabled: !!email,
+    staleTime: Infinity,
   });
 
   const groupedData = data ? groupByLargeChapterId(data.examList) : [];
-  
-  console.log(groupedData)
+  console.log("check groupedData: ",groupedData)
+
+  const {data: userExam, isLoading} = useQuery({
+    queryKey: ['email', email],
+    queryFn: () => getExam(email),
+    enabled: !!email,
+    staleTime: Infinity,
+    select: (userExam) => {
+      // userExam 데이터가 없으면 빈 배열 반환
+      if (!userExam) {
+        console.error("No userExam data available");
+        return [];
+      }
+
+      console.log("exExamData: ", userExam);
+
+      // getExamResponses가 없거나 비어 있으면 빈 배열 반환
+      if (!userExam.getExamResponses || userExam.getExamResponses.length === 0) {
+        console.error("No getExamResponses available");
+        return [];
+      }
+      console.log("CollectionResponse: ", userExam.getExamResponses[0].getCollectionsResponse);
+      console.log("PassageResponse: ", userExam.getExamResponses[0].getCollectionsResponse.getCollectionResponses[0].getPassagesResponse.getPassageResponses);
+      console.log("QuestionResponse: ", userExam.getExamResponses[0].getCollectionsResponse.getCollectionResponses[0].getQuestionsResponse.getQuestionResponses);
+      const structuredExamData = userExam.getExamResponses.map(exam => {
+        const collections = exam.getCollectionsResponse.getCollectionResponses.flatMap(collection=>{
+          const passages = collection.getPassagesResponse.getPassageResponses.length > 0
+              ? collection.getPassagesResponse.getPassageResponses[0]
+              : null;
+          const questions = collection.getQuestionsResponse.getQuestionResponses.map(q=>{
+            return {
+              passageId: passages ? passages.passageId : null,
+              passageHtml: passages ? passages.html : null,
+              passageUrl: passages ? passages.url : null,
+              itemid : q.itemId,
+              itemNo : q.placementNumber,
+              html : q.html,
+              answer : q.answer,
+              answerUrl : q.answerUrl,
+              difficultyCode : q.difficultyCode,
+              difficultyName : q.difficulty,
+              explainUrl : q.descriptionUrl,
+              largeChapterId : q.largeChapterCode,
+              largeChapterName : q.largeChapterName,
+              mediumChapterId : q.mediumChapterCode,
+              mediumChapterName : q.mediumChapterName,
+              smallChapterId : q.smallChapterCode,
+              smallChapterName : q.smallChapterName,
+              topicChapterId : q.topicChapterCode,
+              topicChapterName : q.topicChapterName,
+              questionFormName : q.questionType,
+            };
+          })
+          return questions;
+        })
+        return {
+          examId : exam.id,
+          examName : exam.examName,
+          className : exam.className,
+          grade : exam.grade,
+          subjectName : exam.subjectName,
+          itemCnt : exam.size,
+          exams : collections,
+        }
+      });
+
+      console.log("test",structuredExamData);
+      return structuredExamData;
+    },
+  });
+
+  console.log("loading? : ", isLoading);
+  console.log("가공된 데이터:", userExam);
+
+  const onClick = false;
+
+  if(onClick) {
+  const {data : questionData, } = useQuery({
+    queryKey: ['itemIds', itemIds],
+    queryFn: () => getQuestionData(itemIds),
+    stableTime: 1000*3,
+    select : (questionData) => {
+      const toStep2Data = questionData.map()
+
+    }
+  })
+}
   const handleClickSelectedExamEdit = () => {
     moveToStepWithData('step2', examIdList);
   };
@@ -110,12 +181,41 @@ useEffect(() => {
 
     moveToPath('/');
   };
-  console.log(loginState.email)
 
-  return (
+  const renderContent = () => {
+    if (isLoading) {
+      return <CircularProgress />;
+    }
+
+    const renderLargeChapterAccordions = Object.entries(groupedData).map(([id, group]) => (
+        <AccordionComponent
+            key={id}
+            largeChapter={group.largeChapterName}
+            exams={group.exams}
+            isUserExamSelected={!!examIdList.length}
+        />
+    ));
+
+    const renderUserExamAccordion = userExam.length > 0 && (
+        <AccordionComponent
+            key="userExam"
+            largeChapter="내가 만든 시험지"
+            exams={userExam}
+            isUserExamSelected={!!examIdList.length}
+        />
+    );
+    return (
+        <div>
+          {renderLargeChapterAccordions}
+          {renderUserExamAccordion}
+        </div>
+    );
+  };
+
+    return (
       <>
-
         <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2 }}>
+
           <Box>
             <Typography variant="h4" sx={{ color: 'primary.main', display: 'inline' }}>
               {book.name}
@@ -134,36 +234,20 @@ useEffect(() => {
           </Box>
         </Box>
 
-        <div>
-          {groupedData ? (
-              Object.entries(groupedData).map(([id, group]) => (
-                  <AccordionComponent
-                      key={id}
-                      largeChapter={group.largeChapterName}
-                      exams={group.exams}
-                  />
-              ))
-          ) : (
-              <Typography variant="body1">관련 문제가 없습니다.</Typography>
-          )}
-           {/* 수정된 examList 렌더링 부분 */}
-           {Array.isArray(examList) && examList.length > 0 ? (
-          examList.map((exam) => (
-            <AccordionComponent
-              key={exam.id}
-              largeChapter={exam.username}
-              exams={exam.exams || []} // exam.exams가 없을 경우 빈 배열 사용
-            />
-          ))
-        ) : (
-          <Typography variant="body1">저장된 시험지가 없습니다.</Typography>
-        )}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-            <Button variant={'outlined'} onClick={handleClickHome}>
-              <HomeIcon />홈
-            </Button>
-          </Box>
-        </div>
+          <div>
+            {isLoading ? (
+                  <CircularProgress/>
+                ) : (
+                <div>
+                  {renderContent()}
+                </div>
+              )}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+              <Button variant={'outlined'} onClick={handleClickHome}>
+                <HomeIcon />홈
+              </Button>
+            </Box>
+          </div>
       </>
   );
 }
