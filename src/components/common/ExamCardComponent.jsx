@@ -19,7 +19,6 @@ import Step4Component from "../step/Step4Component.jsx";
 export default function ExamCardComponent({examId, subjectName, examName, grade}) {
     const {moveToStepWithData} = useCustomMove();
 
-    // 과목별 이미지 매핑 함수
     const getSubjectImage = (subject) => {
         switch (subject) {
             case '국어':
@@ -43,21 +42,12 @@ export default function ExamCardComponent({examId, subjectName, examName, grade}
 
     const handleClickLoadExamPage = () => {
         window.open("https://exsherpa.com", "_blank");
-    }
+    };
 
     return (
-        <Card sx={{ 
-            maxWidth: 345,
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column'
-        }}>
+        <Card sx={{ maxWidth: 345, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardMedia
-                sx={{ 
-                    height: 140,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                }}
+                sx={{ height: 140, backgroundSize: 'cover', backgroundPosition: 'center' }}
                 image={getSubjectImage(subjectName)}
                 title={`${subjectName} 교과서 이미지`}
             />
@@ -69,13 +59,8 @@ export default function ExamCardComponent({examId, subjectName, examName, grade}
                     {subjectName} {grade}
                 </Typography>
             </CardContent>
-            <CardActions sx={{ 
-                marginTop: 'auto',
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '8px 16px'
-            }}>
-                <Step4Component examId={examId}/>
+            <CardActions sx={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', padding: '8px 16px' }}>
+                <Step4Component examId={examId} />
                 <Button size="small" onClick={handleClickLoadExamPage}>
                     온라인 시험지 보기
                 </Button>
