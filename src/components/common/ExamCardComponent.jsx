@@ -1,13 +1,12 @@
-import useCustomMove from "../../hooks/useCustomMove.jsx";
 import Card from "@mui/material/Card";
 import CardMedia from "@mui/material/CardMedia";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
 
 import Step4ComponentQuestion from "../step/Step4ComponentQuestion.jsx";
-import ButtonGroup from "@mui/material/ButtonGroup";
 import Step4ComponentAnswer from "../step/Step4ComponentAnswer.jsx";
 import Step4ComponentAll from "../step/Step4ComponentAll.jsx";
 
@@ -18,11 +17,8 @@ import SocialBook from '../../assets/social.jpg';
 import ScienceBook from '../../assets/science.jpg';
 import HistoryBook from '../../assets/history.webp';
 import MoralBook from '../../assets/moral.jpg';
-import {useEffect, useRef, useState} from "react";
-import {getExamTest} from "../../api/step4Api.js";
 
 export default function ExamCardComponent({examId, subjectName, examName, grade}) {
-    const {moveToStepWithData} = useCustomMove();
 
     const getSubjectImage = (subject) => {
         switch (subject) {
