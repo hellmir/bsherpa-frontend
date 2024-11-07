@@ -207,7 +207,7 @@ const Step4ComponentQuestion = ({ examId }) => {
     return (
         <>
             <CommonResource/>
-            <Button onClick={handlePrint} variant="contained">문제</Button>
+            <Button onClick={handlePrint} variant="contained" color="error">문제</Button>
             <div ref={pdfRef}
                  style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}}>
                 {renderContent()}
