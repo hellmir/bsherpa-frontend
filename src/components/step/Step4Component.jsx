@@ -3,7 +3,8 @@ import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
 import { getExamTest } from "../../api/step4Api.js";
 
-const Step4Component = () => {
+const Step4Component = ({examId}) => {
+    console.log(examId);
 
     const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
     const [isLoading, setIsLoading] = useState(true); // 로딩 상태
@@ -158,7 +159,7 @@ const Step4Component = () => {
         <>
             <CommonResource />
             <Button onClick={handlePrint} variant="contained">문제만</Button>
-            <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue' }}>
+            <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none' }}>
                 {renderContent()}
             </div>
         </>
