@@ -5,6 +5,12 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
+
+import Step4ComponentQuestion from "../step/Step4ComponentQuestion.jsx";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Step4ComponentAnswer from "../step/Step4ComponentAnswer.jsx";
+import Step4ComponentAll from "../step/Step4ComponentAll.jsx";
+
 import KoreanBook from "../../assets/korean.jpg";
 import MathBook from '../../assets/math.jpg';
 import EnglishBook from '../../assets/english.png';
@@ -14,7 +20,6 @@ import HistoryBook from '../../assets/history.webp';
 import MoralBook from '../../assets/moral.jpg';
 import {useEffect, useRef, useState} from "react";
 import {getExamTest} from "../../api/step4Api.js";
-import Step4Component from "../step/Step4Component.jsx";
 
 export default function ExamCardComponent({examId, subjectName, examName, grade}) {
     const {moveToStepWithData} = useCustomMove();
@@ -59,11 +64,16 @@ export default function ExamCardComponent({examId, subjectName, examName, grade}
                     {subjectName} {grade}
                 </Typography>
             </CardContent>
-            <CardActions sx={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', padding: '8px 16px' }}>
-                <Step4Component examId={examId} />
-                <Button size="small" onClick={handleClickLoadExamPage}>
-                    온라인 시험지 보기
-                </Button>
+            <CardActions>
+                <ButtonGroup variant="contained" aria-label="outlined primary button group">
+                    {/* PDF 출력 버튼을 Step4Component로 처리 */}
+                    <Step4ComponentQuestion examId={examId}/>
+
+                    {/* 다른 버튼들 */}
+                    <Step4ComponentAnswer examId={examId}/>
+                    <Step4ComponentAll examId={examId}/>
+                </ButtonGroup>
+                <Button size="small" onClick={handleClickLoadExamPage}>온라인 시험지 보기</Button>
             </CardActions>
         </Card>
     );

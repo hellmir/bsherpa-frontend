@@ -3,7 +3,7 @@ import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
 import { getExamTest } from "../../api/step4Api.js";
 
-const Step4Component = ({examId}) => {
+const Step4ComponentAll = ({examId}) => {
 
     const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
     const [isLoading, setIsLoading] = useState(true); // 로딩 상태
@@ -135,8 +135,8 @@ const Step4Component = ({examId}) => {
                 questions.forEach((question, questionIndex) => {
                     contentHtml.push(
                         <div key={`question-${collectionIndex}-${questionIndex}`}>
-                            <strong>{questionCounter}. </strong>
-                            <div dangerouslySetInnerHTML={{ __html: question.html }} />
+                            <span>{questionCounter}. </span>
+                            <span dangerouslySetInnerHTML={{__html: question.html}}/>
                         </div>
                     );
                     questionCounter++; // 문제 번호 증가
@@ -165,4 +165,4 @@ const Step4Component = ({examId}) => {
     );
 };
 
-export default Step4Component;
+export default Step4ComponentAll;
