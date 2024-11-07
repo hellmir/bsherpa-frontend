@@ -6,8 +6,10 @@ import Typography from "@mui/material/Typography";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
 import koreanBook from "../../assets/korean.jpg";
-import Step4Component from "../step/Step4Component.jsx";
+import Step4ComponentQuestion from "../step/Step4ComponentQuestion.jsx";
 import ButtonGroup from "@mui/material/ButtonGroup";
+import Step4ComponentAnswer from "../step/Step4ComponentAnswer.jsx";
+import Step4ComponentAll from "../step/Step4ComponentAll.jsx";
 
 export default function ExamCardComponent({examId, subjectName, examName, grade}) {
 
@@ -33,11 +35,11 @@ export default function ExamCardComponent({examId, subjectName, examName, grade}
             <CardActions>
                 <ButtonGroup variant="contained" aria-label="outlined primary button group">
                     {/* PDF 출력 버튼을 Step4Component로 처리 */}
-                    <Step4Component examId={examId}/>
+                    <Step4ComponentQuestion examId={examId}/>
 
                     {/* 다른 버튼들 */}
-                    <Step4Component examId={examId}/>
-                    <Step4Component examId={examId}/>
+                    <Step4ComponentAnswer examId={examId}/>
+                    <Step4ComponentAll examId={examId}/>
                 </ButtonGroup>
                 <Button size="small" onClick={handleClickLoadExamPage}>온라인 시험지 보기</Button>
             </CardActions>
