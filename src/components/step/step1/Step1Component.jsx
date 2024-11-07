@@ -544,7 +544,8 @@ const DynamicAccordionItem = ({
 
   // node-id에서 실제 ID 추출
   const actualId = id.replace('node-', '');
-
+  // 최상위 레벨(largeChapter) 체크 - ID가 1자리인 경우
+  const isLargeChapter = actualId.length === 1;
   // topic level 체크 (12자리 숫자인지 확인)
   const isTopicLevel = actualId.length === 12;
 
@@ -561,14 +562,16 @@ const DynamicAccordionItem = ({
   const count = countObj?.itemCount || 0;
 
   return (
-      <div className={`check-group title ${isActive ? 'on' : ''}`}>
-        <div className="title-chk" style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          width: '100%',
-          paddingLeft: `${depth * 20}px`
-        }}>
+    <div className={`check-group title ${isActive ? 'on' : ''}`} >
+    <div className="title-chk" style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      width: '100%',
+      paddingLeft: `${depth * 20 + 30}px`,
+      marginTop: depth === 0 ? '10px' : '0'
+      // backgroundColor 스타일 제거됨
+    }}>
           <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
             <input
                 ref={checkboxRef}
@@ -629,7 +632,8 @@ const DynamicAccordionItem = ({
         {children && (
             <div className="depth02" style={{
               display: isActive ? 'block' : 'none',
-              width: '100%'
+              width: '100%',
+              paddingLeft: '0px' // 하위 항목들도 동일하게 이동
             }}>
               {children}
             </div>
