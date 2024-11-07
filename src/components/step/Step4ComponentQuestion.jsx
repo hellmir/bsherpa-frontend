@@ -198,7 +198,7 @@ const Step4ComponentQuestion = ({examId}) => {
         <>
             <CommonResource />
             <Button onClick={handlePrint} variant="contained">문제만</Button>
-            <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue' }}>
+            <div ref={pdfRef} style={{ textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}}>
                 {renderContent()}
             </div>
         </>
