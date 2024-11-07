@@ -6,12 +6,10 @@ import Typography from "@mui/material/Typography";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
 import koreanBook from "../../assets/korean.jpg";
-import {useEffect, useRef, useState} from "react";
-import {getExamTest} from "../../api/step4Api.js";
 import Step4Component from "../step/Step4Component.jsx";
+import ButtonGroup from "@mui/material/ButtonGroup";
 
 export default function ExamCardComponent({examId, subjectName, examName, grade}) {
-    const {moveToStepWithData} = useCustomMove();
 
     const handleClickLoadExamPage = () => {
         window.open("https://exsherpa.com", "_blank");
@@ -33,7 +31,14 @@ export default function ExamCardComponent({examId, subjectName, examName, grade}
                 </Typography>
             </CardContent>
             <CardActions>
-                <Step4Component examId={examId}/>
+                <ButtonGroup variant="contained" aria-label="outlined primary button group">
+                    {/* PDF 출력 버튼을 Step4Component로 처리 */}
+                    <Step4Component examId={examId}/>
+
+                    {/* 다른 버튼들 */}
+                    <Step4Component examId={examId}/>
+                    <Step4Component examId={examId}/>
+                </ButtonGroup>
                 <Button size="small" onClick={handleClickLoadExamPage}>온라인 시험지 보기</Button>
             </CardActions>
         </Card>
