@@ -13,8 +13,6 @@ import Step4Component from "../step/Step4Component.jsx";
 export default function ExamCardComponent({examId, subjectName, examName, grade}) {
     const {moveToStepWithData} = useCustomMove();
 
-    // console.log(examId)
-
     const handleClickLoadExamPage = () => {
         window.open("https://exsherpa.com", "_blank");
     }
