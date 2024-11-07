@@ -125,85 +125,6 @@ function DrawerComponent() {
           }}
         >
           <List>
-            {isLogin?
-              <>{
-                <ListItemButton>
-                  <ListItemIcon>
-                    <LoginIcon
-                      onClick={handleClickLogOut}/>
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={'로그아웃'}
-                    onClick={handleClickLogOut}
-                  />
-                </ListItemButton>
-              }
-              <TextField
-                readOnly
-                margin="dense"
-                id={'loginUserName'}
-                name={'username'}
-                type={'text'}
-                label={'유저명'}
-                value={loginState.username}
-                fullWidth
-                variant="filled"
-              />
-              </>
-              :
-              <>
-                <ListItemButton>
-                  <ListItemIcon>
-                    <LoginIcon
-                      onClick={handleClickLogin}
-                    />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={'로그인'}
-                    onClick={handleClickLogin}
-
-                  />
-                </ListItemButton>
-                <TextFieldComponent
-                  id={'email'}
-                  name={'email'}
-                  type={'email'}
-                  label={'이메일'}
-                  value={user.email}
-                  handleChange={handleChange}
-                  onKeyPress={handleKeyPress}
-                />
-                <TextFieldComponent
-                  auto={false}
-                  id={'password'}
-                  name={'password'}
-                  type={'password'}
-                  label={'비밀번호'}
-                  value={user.password}
-                  handleChange={handleChange}
-                  onKeyPress={handleKeyPress}
-                />
-              </>
-            }
-          </List>
-          <Divider />
-          <List>
-            {!isLogin && (
-              <ListItemButton>
-                <ListItemIcon>
-                  <Link to={getKakaoLink()}>
-                    <LoginIcon />
-                  </Link>
-                </ListItemIcon>
-                <Link
-                  style={{textDecoration:'none',color:'inherit'}}
-                  to={getKakaoLink()}>
-                  <ListItemText
-                    primary={'회원가입'}
-                  />
-                </Link>
-              </ListItemButton>
-            )}
             <ListItemButton>
               <ListItemIcon>
                 <HomeIcon />
@@ -219,6 +140,86 @@ function DrawerComponent() {
               </ListItemIcon>
               <ListItemText primary={'EX셀파로 이동'} />
             </ListItemButton>
+            {!isLogin && (
+                <ListItemButton>
+                  <ListItemIcon>
+                    <Link to={getKakaoLink()}>
+                      <LoginIcon />
+                    </Link>
+                  </ListItemIcon>
+                  <Link
+                      style={{textDecoration:'none',color:'inherit'}}
+                      to={getKakaoLink()}>
+                    <ListItemText
+                        primary={'회원가입'}
+                    />
+                  </Link>
+                </ListItemButton>
+            )}
+          </List>
+          <Divider />
+          <List>
+            {isLogin?
+                <>
+                  <TextField
+                      readOnly
+                      margin="dense"
+                      id={'loginUserName'}
+                      name={'username'}
+                      type={'text'}
+                      label={'유저명'}
+                      value={loginState.username}
+                      fullWidth
+                      variant="filled"
+                  />
+                  {
+                  <ListItemButton>
+                    <ListItemIcon>
+                      <LoginIcon
+                          onClick={handleClickLogOut}/>
+                    </ListItemIcon>
+                    <ListItemText
+                        primary={'로그아웃'}
+                        onClick={handleClickLogOut}
+                    />
+                  </ListItemButton>
+                  }
+                </>
+                :
+                <>
+                  <TextFieldComponent
+                      id={'email'}
+                      name={'email'}
+                      type={'email'}
+                      label={'이메일'}
+                      value={user.email}
+                      handleChange={handleChange}
+                      onKeyPress={handleKeyPress}
+                  />
+                  <TextFieldComponent
+                      auto={false}
+                      id={'password'}
+                      name={'password'}
+                      type={'password'}
+                      label={'비밀번호'}
+                      value={user.password}
+                      handleChange={handleChange}
+                      onKeyPress={handleKeyPress}
+                  />
+                  <ListItemButton>
+                    <ListItemIcon>
+                      <LoginIcon
+                          onClick={handleClickLogin}
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                        primary={'로그인'}
+                        onClick={handleClickLogin}
+
+                    />
+                  </ListItemButton>
+                </>
+            }
           </List>
         </Box>
       </Drawer>
