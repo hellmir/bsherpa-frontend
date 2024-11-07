@@ -28,7 +28,7 @@ function DrawerComponent() {
   const [fail, setFail] = useState(false);
   const { doLogin, doLogout, moveToPath, isLogin, loginState } = useCustomLogin();
   const [user, setUser] = useState(initState);
-  const [username, setUsername] = useState('');  // 상태를 추가하여 username을 관리
+  const [username, setUsername] = useState(localStorage.getItem('username') || '');  // 로컬 스토리지에서 초기값 설정
 
   const handleChange = (e) => {
     user[e.target.name] = e.target.value;
@@ -48,6 +48,7 @@ function DrawerComponent() {
             setSuccess(true);
             setResult(data.username);
             setUsername(data.username);  // 로그인 성공 시 username 상태 업데이트
+            localStorage.setItem('username', data.username);  // 로컬 스토리지에 저장
           }
         });
   };
@@ -55,7 +56,8 @@ function DrawerComponent() {
   const handleClickLogOut = () => {
     doLogout();
     moveToPath('/');
-    setUsername('');  // 로그아웃 시 username 초기화
+    setUsername('');  // username 초기화
+    localStorage.removeItem('username');  // 로컬 스토리지에서 username 제거
   };
 
   const handleClickText = (e) => {
@@ -180,18 +182,16 @@ function DrawerComponent() {
                         fullWidth
                         variant="filled"
                     />
-                    {
-                      <ListItemButton>
-                        <ListItemIcon>
-                          <LoginIcon
-                              onClick={handleClickLogOut} />
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={'로그아웃'}
-                            onClick={handleClickLogOut}
-                        />
-                      </ListItemButton>
-                    }
+                    <ListItemButton>
+                      <ListItemIcon>
+                        <LoginIcon
+                            onClick={handleClickLogOut} />
+                      </ListItemIcon>
+                      <ListItemText
+                          primary={'로그아웃'}
+                          onClick={handleClickLogOut}
+                      />
+                    </ListItemButton>
                   </>
                   :
                   <>
@@ -223,7 +223,6 @@ function DrawerComponent() {
                       <ListItemText
                           primary={'로그인'}
                           onClick={handleClickLogin}
-
                       />
                     </ListItemButton>
                   </>
