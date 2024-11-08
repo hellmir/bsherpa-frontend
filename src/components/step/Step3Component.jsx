@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+import {Link} from "react-router-dom";
 import {useNavigate} from "react-router-dom";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useDispatch, useSelector} from "react-redux";
@@ -152,7 +153,7 @@ export default function Step3Component() {
                         smallChapterCode: item.smallChapterId,
                         topicChapterName: item.topicChapterName,
                         topicChapterCode: item.topicChapterId,
-                        placementNumber: item.placementNumber,
+                        placementNumber: item.itemId,
                         // 병합되는 data
                         answer: questionDetails.answer,
                         answerHtml: questionDetails.answerHtml,
