@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
 import { getExamTest } from "../../api/step4Api.js";
-import {Image} from "@mui/icons-material";
+import katex from "katex"; // KaTeX import
 
 const Step4ComponentQuestion = ({ examId }) => {
     const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
@@ -19,7 +19,7 @@ const Step4ComponentQuestion = ({ examId }) => {
         const fetchData = async () => {
             try {
                 setIsLoading(true); // 로딩 시작
-                const data = await getExamTest(examId); //API에서 데이터 받아오기
+                const data = await getExamTest(examId); // API에서 데이터 받아오기
                 setResponse(data); // 응답 데이터 상태에 저장
             } catch (error) {
                 console.error("데이터 로딩 실패: ", error);
@@ -35,28 +35,15 @@ const Step4ComponentQuestion = ({ examId }) => {
         const printContent = pdfRef.current.innerHTML;
         const printWindow = window.open('', '_blank');
         const printStyle = `
-      <style>
-        body {
-          margin: 0;
-          padding: 5px;
-          background-color: white;
-          color: black;
-        }
-        
-      @media print {
-        body {
-          /*display: block;*/
-        }
-      }
-      @media screen {
-        body {
-          display: none;
-          /*width: 80%;*/
-        }
-      }
-      </style>
-    `;
-
+            <style>
+                body {
+                    margin: 0;
+                    padding: 5px;
+                    background-color: white;
+                    color: black;
+                }
+            </style>
+        `;
         printWindow.document.write(`
             <html>
             <head>
@@ -67,7 +54,7 @@ const Step4ComponentQuestion = ({ examId }) => {
               ${printContent}
             </body>
             </html>
-    `);
+        `);
         printWindow.document.close();
 
         // 인쇄 대화상자 열기
@@ -75,6 +62,61 @@ const Step4ComponentQuestion = ({ examId }) => {
 
         // 인쇄 후 창 닫기
         printWindow.close();
+    };
+
+    // 수식을 KaTeX로 렌더링
+    const renderMath = (mathString) => {
+        if (mathString) {
+            try {
+                // 수식에서 \(\) 또는 \displaystyle 같은 불필요한 문법을 제거
+                let cleanedMathString = mathString
+                    // \(\)와 \displaystyle 등을 제거
+                    .replace(/\\\(\s*/g, '')   // \(\ 제거
+                    .replace(/\s*\\\)/g, '')   // \) 제거
+                    .replace(/\\displaystyle\s*/g, '');  // \displaystyle 제거
+
+                cleanedMathString = cleanedMathString
+                    .replace(/\{\{\s*/g, '{')    // {{ 을 { 으로 변경
+                    .replace(/\s*\}\}/g, '}')    // }} 을 } 으로 변경
+                    .replace(/\{\s*\{/g, '{')    // 중복된 { 제거
+                    .replace(/\}\s*\}/g, '}');   // 중복된 } 제거
+
+                // 불필요한 공백 제거 및 양쪽 공백 정리
+                cleanedMathString = cleanedMathString.replace(/\s+/g, ' ').trim();
+
+                console.log("정리된 수식: ", cleanedMathString); // 정리된 수식 확인
+
+                // KaTeX 렌더링
+                return katex.renderToString(cleanedMathString, {
+                    throwOnError: false, // 오류가 나면 그냥 표시
+                });
+            } catch (error) {
+                console.error("수식 렌더링 오류: ", error);
+                return ''; // 오류가 나면 빈 문자열 반환
+            }
+        }
+        return ''; // 수식이 없다면 빈 문자열 반환
+    };
+
+
+    // 수식을 렌더링할 수 있게 하는 함수
+    const renderQuestionWithMath = (html) => {
+        // 먼저 수식을 포함한 html을 그대로 렌더링
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // 수식이 있는 부분에 KaTeX 적용
+        const mathElements = tempDiv.querySelectorAll('.latex_equation'); // class="latex_equation"인 요소 찾기
+
+        mathElements.forEach(element => {
+            const mathString = element.textContent || element.innerText; // 수식 텍스트 가져오기
+            console.log("수식 html: ", mathString);
+            const renderedMath = renderMath(mathString); // 수식 렌더링
+            console.log("수식 렌더링 완료: ", renderedMath);
+            element.innerHTML = renderedMath; // 수식을 KaTeX로 변환하여 삽입
+        });
+
+        return tempDiv.innerHTML;
     };
 
     const renderContent = () => {
@@ -143,7 +185,8 @@ const Step4ComponentQuestion = ({ examId }) => {
                         <div key={`passage-${collectionIndex}-${passageIndex}`}
                              style={{marginLeft: '15px', marginTop: ''}}>
                             <div style={{marginBottom:'10px'}}>다음 지문을 읽고 질문에 답하시오.</div>
-                            <div style={{border:'solid 1px lightgrey', borderRadius:'5px',padding:'30px 15px'}} dangerouslySetInnerHTML={{__html: tdContent}}/>
+                            <div style={{border:'solid 1px lightgrey', borderRadius:'5px',padding:'30px 15px'}}
+                                 dangerouslySetInnerHTML={{__html: renderQuestionWithMath(tdContent)}} />
                         </div>
                     );
                 });
@@ -163,7 +206,9 @@ const Step4ComponentQuestion = ({ examId }) => {
                             {question.subjective === false ? (
                                 <div style={{display: 'inline'}}>
                                     <div style={{marginBottom: '18px'}}
-                                         dangerouslySetInnerHTML={{__html: question.html}}/>
+                                         dangerouslySetInnerHTML={{
+                                             __html: renderQuestionWithMath(question.html)
+                                         }} />
                                     <div>
                                         {/* 보기를 나열 */}
                                         {question.getOptionsResponse?.getOptiosResponses.map((option, index) => (
@@ -171,7 +216,9 @@ const Step4ComponentQuestion = ({ examId }) => {
                                                  style={{display: 'flex', paddingLeft: '10px', marginBottom: '8px'}}>
                                                 <div>{getOptionNumber(option.optionNo)}</div>
                                                 &nbsp;
-                                                <div dangerouslySetInnerHTML={{__html: option.html}}/>
+                                                <div dangerouslySetInnerHTML={{
+                                                    __html: renderQuestionWithMath(option.html)
+                                                }} />
                                             </div>
                                         ))}
                                     </div>
@@ -179,7 +226,9 @@ const Step4ComponentQuestion = ({ examId }) => {
                             ) : (
                                 // 주관식 문제일 경우 (subjective가 true인 경우)
                                 <div style={{display: 'inline'}}>
-                                    <div dangerouslySetInnerHTML={{__html: question.html}}/>
+                                    <div dangerouslySetInnerHTML={{
+                                        __html: renderQuestionWithMath(question.html)
+                                    }} />
                                     <div>
                                         <input
                                             type="text"
@@ -196,6 +245,7 @@ const Step4ComponentQuestion = ({ examId }) => {
             }
             return <div key={`collection-${collectionIndex}`}>{contentHtml}</div>;
         });
+
         return (
             <div>
                 {examHeader}
@@ -206,10 +256,10 @@ const Step4ComponentQuestion = ({ examId }) => {
 
     return (
         <>
-            <CommonResource/>
+            <CommonResource />
             <Button onClick={handlePrint} variant="contained" color="error">문제</Button>
             <div ref={pdfRef}
-                 style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display: 'none'}}>
+                 style={{textAlign: 'left', padding: '20px', backgroundColor: 'aliceblue', display:'none'}}>
                 {renderContent()}
             </div>
         </>
