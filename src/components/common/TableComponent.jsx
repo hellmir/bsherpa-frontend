@@ -37,16 +37,7 @@ const columns = [
         field: 'download',
         headerName: '다운로드',
         sortable: false,
-        width: 400,
-        renderCell: (params) => (
-            <div>
-                <ButtonGroup variant="contained">
-                    <Step4ComponentQuestion examId={params.row.examId} />
-                    <Step4ComponentAnswer examId={params.row.examId} />
-                    <Step4ComponentAll examId={params.row.examId} />
-                </ButtonGroup>
-            </div>
-        ),
+        width: 400
     },
 ];
 
