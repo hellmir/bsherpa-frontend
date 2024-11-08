@@ -16,7 +16,6 @@ const Step4ComponentQuestion = ({ examId }) => {
                 setIsLoading(true); // 로딩 시작
                 const data = await getExamTest(examId); //API에서 데이터 받아오기
                 setResponse(data); // 응답 데이터 상태에 저장
-                console.log("response: ", response);
             } catch (error) {
                 console.error("데이터 로딩 실패: ", error);
             } finally {
