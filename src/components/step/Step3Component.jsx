@@ -153,7 +153,7 @@ export default function Step3Component() {
                         smallChapterCode: item.smallChapterId,
                         topicChapterName: item.topicChapterName,
                         topicChapterCode: item.topicChapterId,
-                        placementNumber: item.itemId,
+                        placementNumber: item.placementNumber,
                         // 병합되는 data
                         answer: questionDetails.answer,
                         answerHtml: questionDetails.answerHtml,
