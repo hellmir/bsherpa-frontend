@@ -24,7 +24,7 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
 
     return (
         <div className="contents on">
-            <div className="table half-type no-passage" style={{overflowY: "auto", maxHeight: "100%"}}>
+            <div className="table half-type no-passage" style={{overflowY: "auto", maxHeight: "90%"}}>
                 <div className="fix-head" style={{position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1}}>
                     <span className="move-header">이동</span>
                     <span className="number-header">번호</span>
