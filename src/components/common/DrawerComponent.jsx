@@ -7,7 +7,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Drawer from "@mui/material/Drawer";
 import LoginIcon from '@mui/icons-material/Login';
 import TextFieldComponent from "./TextFieldComponent.jsx";
-import {useState,useMemo} from "react";
+import {useState,useMemo, useEffect} from "react";
 import useCustomLogin from "../../hooks/useCustomLogin.jsx";
 import ModalComponent from "./ModalComponent.jsx";
 import TextField from "@mui/material/TextField";
@@ -29,7 +29,23 @@ function DrawerComponent() {
   const [fail, setFail] = useState(false)
   const {doLogin,doLogout,moveToPath,isLogin,loginState} = useCustomLogin()
   const [user, setUser] = useState(initState)
-
+  const [currentUsername, setCurrentUsername] = useState('')  // 현재 유저명을 저장할 상태 추가
+   // loginState가 변경될 때마다 username 업데이트
+   useEffect(() => {
+    if (loginState?.accessToken) {
+      try {
+        const payload = loginState.accessToken.split('.')[1];
+        const decodedPayload = JSON.parse(atob(payload));
+        const decoded = decodeURIComponent(escape(decodedPayload.username)) || '';
+        setCurrentUsername(decoded);
+      } catch (e) {
+        console.error('JWT decoding failed:', e);
+        setCurrentUsername(loginState.username || '');
+      }
+    } else {
+      setCurrentUsername('');
+    }
+  }, [loginState]);
   const handleChange = (e) => {
     user[e.target.name] = e.target.value
     setUser({...user})
@@ -39,16 +55,38 @@ function DrawerComponent() {
     console.log('로그인 클릭')
     console.log(user)
     doLogin(user)
-    .then(data => {
-      console.log(data)
-      if (data.error) {
-        setFail(true)
-      } else {
-        console.log('로그인 성공')
-        setSuccess(true)
-        setResult(data.username)
-      }
-    })
+      .then(data => {
+        console.log('로그인 응답:', data)
+        if (data.error) {
+          setFail(true)
+        } else {
+          console.log('로그인 성공')
+          try {
+            const decodedUsername = decodeURIComponent(
+              escape(
+                JSON.parse(
+                  atob(data.accessToken.split('.')[1])
+                ).username
+              )
+            )
+            setResult({
+              original: data.username || '',
+              decoded: decodedUsername || ''
+            })
+            setCurrentUsername(decodedUsername)  // 즉시 username 업데이트
+            setSuccess(true)
+            setUser(initState)  // 입력 필드 초기화
+          } catch (error) {
+            console.error('디코딩 에러:', error)
+            setResult({
+              original: data.username || '',
+              decoded: data.username || ''
+            })
+            setCurrentUsername(data.username || '')
+            setSuccess(true)
+          }
+        }
+      })
   }
 
   const handleClickLogOut = () => {
@@ -72,12 +110,10 @@ function DrawerComponent() {
   }
 
   const handleClose = () => {
-    if (result) {
-      setResult(null)
+    setSuccess(false)  // 성공 모달 닫기
+    setFail(false)     // 실패 모달 닫기
+    if (success) {     // 성공했을 경우에만 홈으로 이동
       moveToPath('/')
-    }
-    if (fail) {
-      setFail(false)
     }
   }
 
@@ -105,14 +141,15 @@ function DrawerComponent() {
 
   return (
     <>
-      {result ? <ModalComponent
+       {success && result ? (
+      <ModalComponent
         open={success}
-        title={`안녕하세요 ${result}, 님`}
-        content={"로그인 하셨습니다."}
+        title={`안녕하세요 ${result.decoded}님`}
+        content={'로그인 되셨습니다.'}
+        
         handleClose={handleClose}
       />
-      :
-      <></>}
+    ) : null}
       {fail ? <ModalComponent
         open={fail}
         title={`안녕하세요 로그인에 실패하셨습니다`}
@@ -140,8 +177,8 @@ function DrawerComponent() {
           }}
         >
           <List>
-            {isLogin?
-              <>{
+            {isLogin ?
+              <>
                 <ListItemButton>
                   <ListItemIcon>
                     <LoginIcon
@@ -152,18 +189,17 @@ function DrawerComponent() {
                     onClick={handleClickLogOut}
                   />
                 </ListItemButton>
-              }
-              <TextField
-                readOnly
-                margin="dense"
-                id={'loginUserName'}
-                name={'username'}
-                type={'text'}
-                label={'유저명'}
-                value={decodeUsername}
-                fullWidth
-                variant="filled"
-              />
+                <TextField
+                  readOnly
+                  margin="dense"
+                  id={'loginUserName'}
+                  name={'username'}
+                  type={'text'}
+                  label={'유저명'}
+                  value={currentUsername}
+                  fullWidth
+                  variant="filled"
+                />
               </>
               :
               <>
@@ -176,7 +212,6 @@ function DrawerComponent() {
                   <ListItemText
                     primary={'로그인'}
                     onClick={handleClickLogin}
-
                   />
                 </ListItemButton>
                 <TextFieldComponent
