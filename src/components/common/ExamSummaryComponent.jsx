@@ -26,11 +26,11 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
         <div className="contents on">
             <div className="table half-type no-passage" style={{overflowY: "auto", maxHeight: "100%"}}>
                 <div className="fix-head" style={{position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 1}}>
-                    <span className="move-header">이동</span>
-                    <span className="number-header">번호</span>
-                    <span className="question-form-header">문제 형태</span>
-                    <span className="question-type-header">문제 유형</span>
-                    <span className="difficulty-header">난이도</span>
+                    <span className="move-header" style={{marginLeft: "5px"}}>이동</span>
+                    <span className="number-header" style={{marginLeft: "10px"}}>번호</span>
+                    <span className="question-form-header" style={{marginLeft: "70px"}}>문제 형태</span>
+                    <span className="question-type-header" style={{marginRight: "20px"}}>문제 유형</span>
+                    <span className="difficulty-header" style={{marginRight: "18px"}}>난이도</span>
                 </div>
                 <div className="table-body" style={{overflowY: "auto", maxHeight: "32.23em"}}>
                     <Droppable droppableId="passageGroups" type="PASSAGE_GROUP">
