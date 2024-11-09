@@ -1,85 +1,71 @@
+import React from "react";
 import Box from '@mui/material/Box';
-import {DataGrid} from '@mui/x-data-grid';
-import Button from "@mui/material/Button";
+import { DataGrid } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
-import {useDispatch, useSelector} from "react-redux";
-import {addExamId} from "../../slices/examIdSlice.jsx";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import Step4ComponentQuestion from "../step/Step4ComponentQuestion.jsx";
-import Step4ComponentAnswer from "../step/Step4ComponentAnswer.jsx";
-import Step4ComponentAll from "../step/Step4ComponentAll.jsx";
+import { useDispatch, useSelector } from "react-redux";
+import { addExamId } from "../../slices/examIdSlice.jsx";
+import Button from "@mui/material/Button";
+import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 
-const handleAction = (action, id) => {
-    console.log(`${action} clicked for ID: ${id}`);
-};
-
-const columns = [
-    {field: 'id', headerName: '선택', width: 90},
-    {
-        field: 'examName',
-        headerName: '시험지명',
-        width: 500,
-        editable: false,
-    },
-    {
-        field: 'examCount',
-        headerName: '문항수',
-        width: 150,
-        editable: false,
-    },
-    {
-        field: 'preView',
-        headerName: '미리보기',
-        width: 110,
-        renderCell: () => <SearchIcon/>,
-    },
-    {
-        field: 'download',
-        headerName: '다운로드',
-        sortable: false,
-        width: 400,
-        renderCell: (params) => (
-            <div>
-                <ButtonGroup variant="contained">
-                    <Step4ComponentQuestion examId={params.row.examId} />
-                    <Step4ComponentAnswer examId={params.row.examId} />
-                    <Step4ComponentAll examId={params.row.examId} />
-                </ButtonGroup>
-            </div>
-        ),
-    },
-];
-
-export default function TableComponent({data}) {
+export default function TableComponent({ data, onEditClick }) {
     const dispatch = useDispatch();
     const examIdList = useSelector(state => state.examIdSlice);
 
-    const rows = data.map((item, index) => (
-        {
-            id: index + 1,
-            examName: item.examName,
-            examCount: item.itemCnt,
-            examId: item.examId
-        }
-    ));
+    const handleEditButtonClick = (examId) => {
+        dispatch(addExamId([examId]));  // examId를 Redux에 추가
 
-    const handleRowSelection = (selectionModel) => {
-        if (selectionModel.length > 0) {
-            const selectedRow = selectionModel.map((item) =>
-                rows.find(row => row.id === item)
-            );
-
-            console.log('Selected Row:', selectedRow);
-
-            const newExamIds = selectedRow.map(row => row.examId);
-            console.log(newExamIds);
-
-            dispatch(addExamId(newExamIds));
+        // 최상위 컴포넌트로 examId를 전달
+        if (onEditClick) {
+            onEditClick(examId);
         }
     };
 
+    const columns = [
+        { field: 'id', headerName: '선택', width: 90 },
+        {
+            field: 'examName',
+            headerName: '시험지명',
+            width: 500,
+            editable: false,
+        },
+        {
+            field: 'examCount',
+            headerName: '문항수',
+            width: 150,
+            editable: false,
+        },
+        {
+            field: 'preView',
+            headerName: '미리보기',
+            width: 110,
+            renderCell: () => <SearchIcon />,
+        },
+        {
+            field: 'download',
+            headerName: '편집하기',
+            sortable: false,
+            width: 400,
+            renderCell: (params) => (
+                <Button
+                    variant="contained"
+                    onClick={() => handleEditButtonClick(params.row.examId)} // 클릭 시 호출
+                    startIcon={<BorderColorOutlinedIcon />}
+                >
+                    편집하기
+                </Button>
+            ),
+        },
+    ];
+
+    const rows = data.map((item, index) => ({
+        id: index + 1,
+        examName: item.examName,
+        examCount: item.itemCnt,
+        examId: item.examId,
+    }));
+
     return (
-        <Box sx={{height: 400, width: '100%'}}>
+        <Box sx={{ height: 400, width: '100%' }}>
             <DataGrid
                 rows={rows}
                 columns={columns}
@@ -91,9 +77,13 @@ export default function TableComponent({data}) {
                     },
                 }}
                 pageSizeOptions={[5]}
-                checkboxSelection
                 disableRowSelectionOnClick
-                onRowSelectionModelChange={handleRowSelection}
+                onRowSelectionModelChange={(selectionModel) => {
+                    const selectedExamIds = selectionModel.map(
+                        (selectedId) => rows.find((row) => row.id === selectedId)?.examId
+                    );
+                    dispatch(addExamId(selectedExamIds)); // 선택된 examIds를 Redux에 추가
+                }}
             />
         </Box>
     );
