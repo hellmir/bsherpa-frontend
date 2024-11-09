@@ -4,7 +4,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import TableComponent from "./TableComponent.jsx";
 
-export default function AccordionComponent({ largeChapter, exams, isUserExamSelected }) {
+export default function AccordionComponent({ largeChapter, exams, onEditClick}) {
     return (
         <div>
             <Accordion>
@@ -18,7 +18,7 @@ export default function AccordionComponent({ largeChapter, exams, isUserExamSele
                 <AccordionDetails>
                     <TableComponent
                         data={exams}
-                        isUserExamSelected={isUserExamSelected}
+                        onEditClick = {onEditClick}
                     />
                 </AccordionDetails>
             </Accordion>
