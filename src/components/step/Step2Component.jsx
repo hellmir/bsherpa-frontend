@@ -1,6 +1,8 @@
 import React, {useEffect, useRef, useState} from "react";
 import CommonResource from "../../util/CommonResource.jsx";
 import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
+import HomeIcon from '@mui/icons-material/Home';
+
 import {
     getAdjustedChapterItemImagesFromTsherpa,
     getBookFromTsherpa,
@@ -333,7 +335,7 @@ export default function Step2Component() {
     }, [itemList]);
 
     useEffect(() => {
-        document.body.style.transform = "scale(0.85)";
+        document.body.style.transform = "scale(0.8)";
         document.body.style.transformOrigin = "top ";
         return () => {
             document.body.style.zoom = "100%";
@@ -580,9 +582,25 @@ export default function Step2Component() {
         dispatch(setExamData({bookId, totalQuestions, groupedItems, step1Data}));
         moveToStepWithData('step3', {bookId, groupedItems});
     };
-
+    const handleClickHome = () => {
+    
+        moveToPath('/');
+      };
     return (
         <>
+            <Button 
+                    variant={'outlined'} 
+                    onClick={handleClickHome}
+                    style={{
+                        position: 'relative',
+                        top: '55px',
+                        right: '-50%',
+                        zIndex:1000,
+                        margin: '5px'
+                    }}
+                    >
+                <HomeIcon />홈
+              </Button>
             <CommonResource/>
             {isConfirmOpen && (
                 <ConfirmationModal
@@ -626,7 +644,13 @@ export default function Step2Component() {
                         <button type="button" className="del-btn"></button>
                     </div>
                     <div className="pop-content">
-                        <div className="view-box">
+                    <div className="view-box" style={{ border: '2px solid #1976d2',
+            width:'103%',
+            height: '850px',
+            margin: 'auto',
+              // 가운데 정렬을 위해
+         }}>
+
                             <div className="view-top">
                                 <div className="paper-info">
                                     <span>{subjectName}</span> {author}({curriculumYear})
@@ -920,6 +944,11 @@ export default function Step2Component() {
                             variant="contained"
                             onClick={handleClickMoveToStepThree}
                             className="btn-step next"
+                            style={{ 
+                                right: '50px',
+                                float: 'right',     // 오른쪽 정렬 추가
+                                marginRight: '-90px' // 필요한 경우 여백 추가
+                            }}
                         ><b>시험지 저장</b>
                         </Button>
                     </div>
