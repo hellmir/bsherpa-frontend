@@ -847,27 +847,30 @@ const Step1Component = () => {
 
   // CSS 스타일시트 로딩
   useEffect(() => {
+    // 공통 CSS
     const commonLink = document.createElement("link");
-    commonLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/common.css";
+    commonLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/css/common.css";
     commonLink.rel = "stylesheet";
     document.head.appendChild(commonLink);
 
+    // 폰트 CSS
     const fontLink = document.createElement("link");
     fontLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/font.css";
     fontLink.rel = "stylesheet";
     document.head.appendChild(fontLink);
 
+    // 리셋 CSS
     const resetLink = document.createElement("link");
     resetLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/reset.css";
     resetLink.rel = "stylesheet";
     document.head.appendChild(resetLink);
 
     return () => {
-      document.head.removeChild(commonLink);
-      document.head.removeChild(fontLink);
-      document.head.removeChild(resetLink);
+        document.head.removeChild(commonLink);
+        document.head.removeChild(fontLink);
+        document.head.removeChild(resetLink);
     };
-  }, []);
+}, []);
 
   // 평가 영역 데이터 로드
   useEffect(() => {
@@ -1116,21 +1119,24 @@ const Step1Component = () => {
     if (newCheckedNodes.length > 0) {
       // 출처 설정 - 교사용으로 기본 설정
       setSource('teacher');
-
+  
       // 평가영역 설정 - 모든 항목 선택
       if (Array.isArray(evaluation) && evaluation.length > 0) {
         const allDomainIds = evaluation.map(item => item.domainId);
         setSelectedEvaluation(allDomainIds);
       }
-
-      // 문제형태 설정 - 객관식과 주관식 모두 선택
-      setSelectedQuestiontype('objective,subjective');
+  
+      // 문제형태 설정 - 객관식과 주관식 모두 선택 (배열로 변경)
+      setSelectedQuestiontype(['objective', 'subjective']);
+    } else {
+      // 전체 해제시
+      setSource('');
+      setSelectedEvaluation([]);
+      setSelectedQuestiontype([]); // 빈 배열로 초기화
     }
-
+  
     // 기존의 체크노드 업데이트 로직
     setCheckedNodes(newCheckedNodes);
-    console.log('Updated checked nodes:', newCheckedNodes);
-
   };
 
 
@@ -1194,15 +1200,18 @@ const Step1Component = () => {
   };
 
   // 문제 형태 클릭 핸들러 수정
-  const handleQuestionTypeClick = (type) => {
-    setSelectedQuestiontype(prev => {
-      if (prev.includes(type)) {
-        return prev.filter(item => item !== type);
-      } else {
-        return [...prev, type];
-      }
-    });
-  };
+const handleQuestionTypeClick = (type) => {
+  setSelectedQuestiontype(prev => {
+    // prev가 배열인지 확인
+    const currentTypes = Array.isArray(prev) ? prev : [];
+    
+    if (currentTypes.includes(type)) {
+      return currentTypes.filter(item => item !== type);
+    } else {
+      return [...currentTypes, type];
+    }
+  });
+};
   
   const handleSourceClick = (sourceType) => {
     setSource(prev => prev === sourceType ? '' : sourceType);
@@ -1311,13 +1320,15 @@ if (activeSteps.length === 0) {
   ];
 
   let questionForm = '';
+if (Array.isArray(selectedQuestiontype)) {
   if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
     questionForm = 'multiple,subjective';
   } else if (selectedQuestiontype.includes('objective')) {
-    questionForm = 'multiple,';
+    questionForm = 'multiple';
   } else if (selectedQuestiontype.includes('subjective')) {
     questionForm = 'subjective';
   }
+}
   
   // 필수 입력값 확인
   if (activityCategoryList.length === 0) {
@@ -1437,12 +1448,12 @@ if (activeSteps.length === 0) {
             ...questionsByDifficulty["상"].slice(0, equalCount)
           ];
 
-          counts = [
-            {level: "최하", count: 0, targetCount: 0, adjustedCount: 0},
-            {level: "하", count: questionsByDifficulty["하"].length, targetCount: equalCount, adjustedCount: equalCount},
-            {level: "중", count: questionsByDifficulty["중"].length, targetCount: equalCount + remainder, adjustedCount: equalCount + remainder},
-            {level: "상", count: questionsByDifficulty["상"].length, targetCount: equalCount, adjustedCount: equalCount},
-            {level: "최상", count: 0, targetCount: 0, adjustedCount: 0}
+          counts =Array.isArray(tempDifficultyCounts) ? tempDifficultyCounts : [
+            { level: "최하", count: 0, targetCount: 0, adjustedCount: 0 },
+            { level: "하", count: itemList.filter(item => item.difficultyName === "하").length, targetCount: 0, adjustedCount: 0 },
+            { level: "중", count: itemList.filter(item => item.difficultyName === "중").length, targetCount: 0, adjustedCount: 0 },
+            { level: "상", count: itemList.filter(item => item.difficultyName === "상").length, targetCount: 0, adjustedCount: 0 },
+            { level: "최상", count: 0, targetCount: 0, adjustedCount: 0 }
           ];
         }
 
@@ -1776,30 +1787,29 @@ if (activeSteps.length === 0) {
 
                       {/* 문제 형태 */}
 
-                      <div className='box'>
-                        <div className='title-wrap'>
-                          <span className='tit-text'>문제 형태</span>
-                        </div>
-                        <div className='btn-wrap multi'>
-                        <button
-          type='button'
-          className={`btn-line ${selectedQuestiontype.includes('objective') ? 'active' : ''}`}
-
-          data-step='objective'
-          onClick={() => handleQuestionTypeClick('objective')}
-        >
-                            객관식
-                          </button>
-                          <button
-          type='button'
-          className={`btn-line ${selectedQuestiontype.includes('subjective') ? 'active' : ''}`}
-          data-step='subjective'
-          onClick={() => handleQuestionTypeClick('subjective')}
-        >
-                            주관식
-                          </button>
-                        </div>
-                      </div>
+<div className='box'>
+  <div className='title-wrap'>
+    <span className='tit-text'>문제 형태</span>
+  </div>
+  <div className='btn-wrap multi'>
+    <button
+      type='button'
+      className={`btn-line ${selectedQuestiontype.includes('objective') ? 'active' : ''}`}
+      data-step='objective'
+      onClick={() => handleQuestionTypeClick('objective')}
+    >
+      객관식
+    </button>
+    <button
+      type='button'
+      className={`btn-line ${selectedQuestiontype.includes('subjective') ? 'active' : ''}`}
+      data-step='subjective'
+      onClick={() => handleQuestionTypeClick('subjective')}
+    >
+      주관식
+    </button>
+  </div>
+</div>
 
 
                       <DifficultyDisplay
