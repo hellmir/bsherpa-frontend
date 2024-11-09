@@ -618,7 +618,8 @@ const DynamicAccordionItem = ({
                     backgroundColor: '#f5f5f5',
                     fontSize: '0.9em',
                     color: '#666',
-                    border: '1px solid #e0e0e0'
+                    border: '1px solid #e0e0e0',
+                    marginRight: '100px'
                   }}>
                     <span style={{ marginRight: '4px' }}>문항수</span>
                     <strong style={{
@@ -1605,7 +1606,9 @@ if (Array.isArray(selectedQuestiontype)) {
                 <div className="view-box-wrap">
                   <div className="unit-box-wrap">
                     <div className="unit-box">
-                      <div className="unit-cnt scroll-inner">
+                      <div className="unit-cnt scroll-inner"  style={{ marginTop: '30px' ,
+                        
+                      }}>
                         {isLoadingChapters ? (
                             <LoadingSpinner />
                         ) : (
