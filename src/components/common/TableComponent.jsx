@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { addExamId } from "../../slices/examIdSlice.jsx";
 import Button from "@mui/material/Button";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
-
 export default function TableComponent({ data, onEditClick }) {
     const dispatch = useDispatch();
     const examIdList = useSelector(state => state.examIdSlice);
