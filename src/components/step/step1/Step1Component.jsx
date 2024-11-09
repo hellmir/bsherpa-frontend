@@ -5,6 +5,9 @@ import {useLocation} from "react-router-dom";
 import DifficultyDisplay from './DifficultyDisplay.jsx';
 import jwtAxios from "../../../util/jwtUtil.jsx";
 import ModalComponent from "../../common/ModalComponent.jsx";
+import HomeIcon from '@mui/icons-material/Home';
+import {useDispatch} from "react-redux";
+import Button from "@mui/material/Button";
 
 // InfoModal.jsx - 정보 표시용 모달
 const InfoModal = ({
@@ -963,7 +966,7 @@ const Step1Component = () => {
     document.body.style.zoom = "125%";  // 75% 크기로 축소
   
     // 또는 방법 2: transform scale 사용
-    document.body.style.transform = "scale(0.67)";
+    document.body.style.transform = "scale(0.65)";
     document.body.style.transformOrigin = "top ";
   
     return () => {
@@ -1527,7 +1530,10 @@ if (Array.isArray(selectedQuestiontype)) {
     setIsConfirmOpen(isConfirm)
   }
 
+  const handleClickHome = () => {
 
+    moveToPath('/');
+  };
 
   return (
       <div id="wrap" className="full-pop-que">
@@ -1540,10 +1546,38 @@ if (Array.isArray(selectedQuestiontype)) {
             handleClose={handleCloseAccessModal}
             open={isAccessModalOpen}
         />
+        <Button 
+          variant={'outlined'} 
+          onClick={handleClickHome}
+          style={{
+            position: 'absolute',
+            top: '-15px',
+            right: '-100px'
+          }}
+        >
+                <HomeIcon />홈
+              </Button>
         <div className="full-pop-wrap">
           {/* 팝업 헤더 */}
-          <div className="pop-header">
-            <ul className="title">
+         
+          <div className="pop-header" style={{
+    width: '100%',
+    padding: '0 16px',
+    boxSizing: 'border-box',
+    marginTop: '20px', // 헤더를 아래로 내림
+    marginBottom: '-40px' // 콘텐츠와의 간격 조정
+}}>
+            <ul className="title" style={{
+        display: 'flex',
+        position: 'absolute',
+        top: '-17px',
+        left: '20px',
+        listStyle: 'none',
+        padding: 0,
+        margin: 0,
+        gap: '40px', // 각 단계 사이의 간격
+        borderBottom: 'none' // 선 제거
+    }}>
               <li className="active">STEP 1 단원선택</li>
               <li>STEP 2 문항 편집</li>
               <li>STEP 3 시험지 저장</li>
@@ -1552,7 +1586,14 @@ if (Array.isArray(selectedQuestiontype)) {
           </div>
 
           <div className="pop-content">
-            <div className="view-box">
+          <div className="view-box" style={{ 
+        border: '2px solid #1976d2',
+        width: '110%',        // 110%에서 100%로 수정
+        height: '850px',
+        margin: '0',          // auto에서 0으로 수정
+        marginTop: '20px'     // 필요한 경우 상단 여백 추가
+    }}>
+
               <div className="view-top">
                 <div className="paper-info">
                   <span>{name}</span>
@@ -1846,7 +1887,13 @@ if (Array.isArray(selectedQuestiontype)) {
           {/* 하단 버튼 */}
           <div className='step-btn-wrap'>
             <button type='button' className='btn-step'
-                    onClick={submitToStep0}>
+                    onClick={submitToStep0}
+                    style={{ 
+                      right: '50px',
+                      float: 'right',     // 오른쪽 정렬 추가
+                      marginLeft: '20px', // 필요한 경우 여백 추가
+                      marginTop: '-20px'
+                  }}>
               출제 방법 선택
             </button>
             <button
@@ -1854,8 +1901,14 @@ if (Array.isArray(selectedQuestiontype)) {
                 className='btn-step next pop-btn'
                 data-pop='que-pop'
                 onClick={submitToStep2}
+                style={{ 
+                  right: '50px',
+                  float: 'right',     // 오른쪽 정렬 추가
+                  marginRight: '-105px', // 필요한 경우 여백 추가
+                  marginTop: '-20px'
+              }}
             >
-              STEP2 문항 편집
+              문항 편집
             </button>
           </div>
 
