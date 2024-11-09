@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import '../../assets/css/errorReportModal.css';
 import {postRegisterErrorReport} from "../../api/step2Api.js";
 import useCustomLogin from "../../hooks/useCustomLogin.jsx";
@@ -12,6 +12,14 @@ export default function ErrorReportModal({itemId, isOpen, onClose}) {
     const [submissionFailureMessage, setSubmissionFailureMessage] = useState(null);
     const {loginState, doLogout, moveToPath, isLogin, moveToLoginReturn}
         = useCustomLogin()
+
+    useEffect(() => {
+        if (isOpen) {
+            setSubmissionSuccess(false);
+            setSubmissionFailure(false);
+            setSubmissionFailureMessage(null);
+        }
+    }, [isOpen]);
 
     const handleFileChange = (event) => {
         setSelectedFile(event.target.files[0]);
@@ -27,9 +35,6 @@ export default function ErrorReportModal({itemId, isOpen, onClose}) {
             formData.append("image", selectedFile);
         }
         formData.append("content", errorContent);
-
-        console.log(userEmail + "asdlfkj;s");
-        console.log(itemId + "asdlfkj;s");
 
         try {
             await postRegisterErrorReport(formData);
@@ -50,6 +55,8 @@ export default function ErrorReportModal({itemId, isOpen, onClose}) {
 
     const handleClose = () => {
         setSubmissionSuccess(false);
+        setSubmissionFailure(false);
+        setSubmissionFailureMessage(null);
         setSelectedFile(null);
         setErrorContent("");
         setErrorType("문제오류");
