@@ -32,7 +32,7 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                     <span className="question-type-header">문제 유형</span>
                     <span className="difficulty-header">난이도</span>
                 </div>
-                <div className="table-body" style={{overflowY: "auto", maxHeight: "32.15rem"}}>
+                <div className="table-body" style={{overflowY: "auto", maxHeight: "32.17rem"}}>
                     <Droppable droppableId="passageGroups" type="PASSAGE_GROUP">
                         {(provided) => (
                             <div
