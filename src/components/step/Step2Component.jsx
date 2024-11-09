@@ -9,7 +9,6 @@ import {
     getSimilarItemsImagesFromTsherpa
 } from "../../api/step2Api.js";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
-import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
 import Button from "@mui/material/Button";
 import ConfirmationModal from "../common/ConfirmationModal.jsx";
 import "../../assets/css/confirmationModal.css";
@@ -915,15 +914,13 @@ export default function Step2Component() {
                             variant="contained"
                             onClick={handleClickMoveToStepOne}
                             className="btn-step"
-                        >
-                            <BorderColorOutlinedIcon/>STEP 1 단원 선택
+                        ><b>단원 선택</b>
                         </Button>
                         <Button
                             variant="contained"
                             onClick={handleClickMoveToStepThree}
                             className="btn-step next"
-                        >
-                            <BorderColorOutlinedIcon/>STEP 3 시험지 저장
+                        ><b>시험지 저장</b>
                         </Button>
                     </div>
                 </div>
