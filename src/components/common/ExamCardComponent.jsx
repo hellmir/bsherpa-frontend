@@ -68,12 +68,11 @@ export default function ExamCardComponent({examId, bookId, subjectName, examName
             </CardContent>
             <CardActions>
                 <ButtonGroup variant="contained" aria-label="outlined primary button group">
-                    {/* PDF 출력 버튼을 Step4Component로 처리 */}
-                    {/*<Step4ComponentQuestion examId={examId}/>*/}
-
-                    {/*/!* 다른 버튼들 *!/*/}
-                    {/*<Step4ComponentAnswer examId={examId}/>*/}
-                    {/*<Step4ComponentAll examId={examId}/>*/}
+                     PDF 출력 버튼을 Step4Component로 처리
+                    <Step4ComponentQuestion examId={examId}/>
+                    {/* 다른 버튼들 */}
+                    <Step4ComponentAnswer examId={examId}/>
+                    <Step4ComponentAll examId={examId}/>
                 </ButtonGroup>
                 <Button size="small" onClick={handleModifyClick}>수정하기</Button>
                 <Button size="small" onClick={handleClickLoadExamPage}>온라인 시험지 보기</Button>
