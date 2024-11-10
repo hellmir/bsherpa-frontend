@@ -124,16 +124,15 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
   const handleReset = () => {
     const resetCounts = {
       step1: 0,
-      step2: 0,
-      step3: 0,
-      step4: 0,
+      step2: 10,
+      step3: 10,
+      step4: 10,
       step5: 0
     };
     setCounts(resetCounts);
     setPreviousCounts(resetCounts);
     handleDifficultyCounts(resetCounts);
   };
-
 
 
 
@@ -291,18 +290,21 @@ const DifficultyDisplay = ({ isStudent = false, countsData, handleDifficultyCoun
 </div>
             </div>
             <div className="pop-footer">
-              <button 
-                onClick={() => {
-                  setCounts({
-                    step1: 0,
-                    step2: 0,
-                    step3: 0,
-                    step4: 0,
-                    step5: 0
-                  });
-                }}
-                className="reset-btn"
-              >
+            <button 
+    onClick={() => {
+      const resetCounts = {
+        step1: 0,
+        step2: 10,
+        step3: 10,
+        step4: 10,
+        step5: 0
+      };
+      setCounts(resetCounts);  // 현재 counts 업데이트
+      setPreviousCounts(resetCounts);  // previousCounts 업데이트
+      handleDifficultyCounts(resetCounts);  // 부모 컴포넌트에 변경사항 전달
+    }}
+    className="reset-btn"
+  >
                 초기화
               </button>
               <button
