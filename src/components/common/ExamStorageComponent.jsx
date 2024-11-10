@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {useSelector} from "react-redux";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import {useQuery} from "@tanstack/react-query";
-import {getExam} from "../../api/mainApi.js";
+import {getExam, getQuestionImageData} from "../../api/mainApi.js";
 import {getQuestionData} from "../../api/step3Api.js";
 import {Box, CircularProgress} from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
@@ -119,7 +119,7 @@ export default function ExamStorageComponent() {
     // itemIds에 대한 query
     const { data: itemList, isLoading: questionLoading, isError: questionError } = useQuery({
         queryKey: ['itemIds', itemIds],
-        queryFn: () => getQuestionData(itemIds),
+        queryFn: () => getQuestionImageData(itemIds),
         enabled: itemIds.length>0,
         staleTime: Infinity,
     });
