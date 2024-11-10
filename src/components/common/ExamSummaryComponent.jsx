@@ -48,11 +48,19 @@ export default function ExamSummaryComponent({itemList, groupedItems}) {
                                         index={groupIndex}
                                         isDragDisabled={passageId === "noPassage"}
                                     >
-                                        {(provided) => (
+                                        {(provided, snapshot) => (
                                             <div
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
                                                 className={`depth-01 ${passageId !== "noPassage" ? "has-passage" : "no-passage"}`}
+                                                style={{
+                                                    ...provided.draggableProps.style,
+                                                    transform: snapshot.isDragging
+                                                        ? `${provided.draggableProps.style.transform} translateY(40px)`
+                                                        : provided.draggableProps.style.transform,
+                                                    marginTop: snapshot.isDragging ? "60px" : "0px",
+                                                    zIndex: snapshot.isDragging ? 1000 : undefined
+                                                }}
                                             >
                                                 {passageId !== "noPassage" && (
                                                     <div
