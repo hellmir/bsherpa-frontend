@@ -30,7 +30,7 @@ export default function ExamStorageComponent() {
         queryKey: ['email', email, 'subjectName', selectedSubject],
         queryFn: () => getExam(email, selectedSubject),
         enabled: !!email,
-        staleTime: Infinity,
+        staleTime: 3*1000,
         select: (userExam) => {
             if (!userExam) {
                 console.error("No userExam data available");

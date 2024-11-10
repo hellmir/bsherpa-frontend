@@ -58,8 +58,10 @@ export default function Step3Component() {
     console.log('Step2로부터 전송된 문제 수:', totalQuestions);
     console.log('Step2로부터 전송된 지문과 문제 데이터 목록: ', groupedItems);
     console.log('Step2로부터 전송된 Step1 데이터 ', step1Data);
+    console.log('step1Data의 bookId: ', step1Data?.bookId )
 
-    const step1bookId = bookId || step1Data.bookId;
+    const step1bookId = (bookId && bookId.length > 0 ? bookId : step1Data.bookId);
+    console.log("bookId: ",bookId)
     console.log("step1bookId: ",step1bookId)
 
     const loginState = useSelector(state => state.loginSlice)
@@ -137,7 +139,7 @@ export default function Step3Component() {
 
         const exam = {
             email : email,
-            bookId : step1bookId.toString(),
+            bookId : step1bookId,
             examName : examName,
             totalCount : totalCount,
             examCategory : "custom",
