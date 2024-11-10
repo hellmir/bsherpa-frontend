@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {useSelector} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import {useQuery} from "@tanstack/react-query";
 import {getExam, getQuestionImageData} from "../../api/mainApi.js";
@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import CustomMainSelectComponent from "./CustomMainSelectComponent.jsx";
 import Grid from "@mui/material/Grid";
 import ExamCardComponent from "./ExamCardComponent.jsx";
+import {addBookId} from "../../slices/bookIdSlice.jsx";
 
 export default function ExamStorageComponent() {
     const [selectedSubject, setSelectedSubject] = useState('국어');
@@ -24,6 +25,7 @@ export default function ExamStorageComponent() {
     const [itemIds, setItemIds] = useState([]);  // 선택된 itemIds 상태
     const [successYn, setSuccessYn] = useState('');
     const [selectedBookId, setSelectedBookId] = useState(null);
+    const dispatch = useDispatch();
 
     // userExam 쿼리
     const { data: userExam, isLoading } = useQuery({
@@ -89,6 +91,7 @@ export default function ExamStorageComponent() {
         setItemIds(selectedItemIds);  // itemIds 상태 업데이트
         setSelectedExamId(examId);  // 선택된 시험 ID 상태 업데이트
         setSelectedBookId(bookId);
+        dispatch(addBookId(bookId));
     };
 
 
