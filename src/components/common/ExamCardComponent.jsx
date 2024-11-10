@@ -18,7 +18,7 @@ import ScienceBook from '../../assets/science.jpg';
 import HistoryBook from '../../assets/history.webp';
 import MoralBook from '../../assets/moral.jpg';
 
-export default function ExamCardComponent({examId, subjectName, examName, grade}) {
+export default function ExamCardComponent({examId, subjectName, examName, grade, onModifyButtonClick}) {
 
     const getSubjectImage = (subject) => {
         switch (subject) {
@@ -38,6 +38,12 @@ export default function ExamCardComponent({examId, subjectName, examName, grade}
                 return MoralBook;
             default:
                 return KoreanBook;
+        }
+    };
+
+    const handleModifyClick = () => {
+        if (onModifyButtonClick) {
+            onModifyButtonClick(examId);  // 부모 컴포넌트로 examId 전달
         }
     };
 
@@ -69,6 +75,7 @@ export default function ExamCardComponent({examId, subjectName, examName, grade}
                     <Step4ComponentAnswer examId={examId}/>
                     <Step4ComponentAll examId={examId}/>
                 </ButtonGroup>
+                <Button size="small" onClick={handleModifyClick}>수정하기</Button>
                 <Button size="small" onClick={handleClickLoadExamPage}>온라인 시험지 보기</Button>
             </CardActions>
         </Card>
