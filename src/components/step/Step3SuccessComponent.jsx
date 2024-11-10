@@ -1,6 +1,6 @@
 import CommonResource from "../../util/CommonResource.jsx";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
-import Save from '../../assets/save.png';
+import Save from '/save.png';
 
 export default function Step3SuccessComponent(){
     const {moveToPath}= useCustomMove();
