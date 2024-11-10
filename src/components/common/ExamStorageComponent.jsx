@@ -115,7 +115,7 @@ export default function ExamStorageComponent() {
         queryKey: ['itemIds', itemIds],
         queryFn: () => getQuestionImageData(itemIds),
         enabled: itemIds.length>0,
-        staleTime: Infinity,
+        staleTime: 3*1000,
     });
 
     console.log(itemList)
