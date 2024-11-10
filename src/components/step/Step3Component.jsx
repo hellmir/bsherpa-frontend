@@ -53,10 +53,14 @@ export default function Step3Component() {
 
     //const [itemList, setItemList] = useState([]);
     const { bookId, totalQuestions, groupedItems, step1Data } = useSelector((state) => state.examDataSlice);
+
     console.log('Step2로부터 전송된 bookId:', bookId);
     console.log('Step2로부터 전송된 문제 수:', totalQuestions);
     console.log('Step2로부터 전송된 지문과 문제 데이터 목록: ', groupedItems);
     console.log('Step2로부터 전송된 Step1 데이터 ', step1Data);
+
+    const step1bookId = step1Data.bookId;
+    console.log("step1bookId: ",step1bookId)
 
     const loginState = useSelector(state => state.loginSlice)
     const email = loginState.email;
@@ -95,10 +99,10 @@ export default function Step3Component() {
     console.log("questionData : ", questionData)
 
     const {data: bookData, isLoading: isBookDataLoading} = useQuery({
-        queryKey: ['subjectId', bookId],
-        queryFn: () => getBookData(bookId),
+        queryKey: ['subjectId', step1bookId],
+        queryFn: () => getBookData(step1bookId),
         staleTime: 1000*3,
-        enabled: !!bookId
+        enabled: !!step1bookId
     });
     console.log("bookData: ", bookData)
 
@@ -133,7 +137,7 @@ export default function Step3Component() {
 
         const exam = {
             email : email,
-            bookId : bookId.toString(),
+            bookId : step1bookId.toString(),
             examName : examName,
             totalCount : totalCount,
             examCategory : "custom",
@@ -224,7 +228,7 @@ export default function Step3Component() {
         moveToStepWithData('step1', bookId);
     }
     const handleClickMoveToStepTwo = () => {
-        dispatch(setExamData({bookId, totalQuestions, groupedItems, step1Data}))
+        dispatch(setExamData({step1bookId, totalQuestions, groupedItems, step1Data}))
         moveToStepWithData('step2', step1Data);
     };
 
