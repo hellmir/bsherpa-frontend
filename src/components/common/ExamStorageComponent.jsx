@@ -23,6 +23,7 @@ export default function ExamStorageComponent() {
     const [selectedExamId, setSelectedExamId] = useState(null);  // 선택된 시험 ID 상태
     const [itemIds, setItemIds] = useState([]);  // 선택된 itemIds 상태
     const [successYn, setSuccessYn] = useState('');
+    const [selectedBookId, setSelectedBookId] = useState(null);
 
     // userExam 쿼리
     const { data: userExam, isLoading } = useQuery({
@@ -62,6 +63,7 @@ export default function ExamStorageComponent() {
                     className: exam.className,
                     grade: exam.grade,
                     subjectName: exam.subjectName,
+                    bookId: exam.bookId,
                     itemCnt: exam.size,
                     items: collections,
                     isUserExam: true,
@@ -79,11 +81,14 @@ export default function ExamStorageComponent() {
         }
     }, [userExam]);
 
-    const handleModifyButtonClick = (examId) => {
+    const handleModifyButtonClick = (examId, bookId) => {
         const selectedItemIds = getItemIds(examId);  // itemIds 추출
+        console.log("selected: ",selectedItemIds);
         setItemIds(selectedItemIds);  // itemIds 상태 업데이트
         setSelectedExamId(examId);  // 선택된 시험 ID 상태 업데이트
+        setSelectedBookId(bookId);
     };
+
 
     const getItemIds = (examId) => {
         const selectedExam = examList.find((exam) => exam.examId === examId);
@@ -93,25 +98,12 @@ export default function ExamStorageComponent() {
         return [];
     };
 
-    // const handleModifyButtonClick = (examId) => {
-    //     const selectedItemIds = getItemIds(examId);  // itemIds 추출
-    //     setItemIds(selectedItemIds);  // itemIds 상태 업데이트
-    //     setSelectedExamId(examId);  // 선택된 시험 ID 상태 업데이트
-    // };
-    //
-    // const getItemIds = (examId) => {
-    //     const selectedExam = examList.find((exam) => exam.examId === examId);
-    //     if (selectedExam) {
-    //         return selectedExam.items.map(item => item.itemId);
-    //     }
-    //     return [];
-    // };
-
     useEffect(() => {
         if (selectedExamId) {
             const newItemIds = getItemIds(selectedExamId);
             if (newItemIds) {
                 setItemIds(newItemIds);  // itemIds가 여기서 업데이트됨
+
             }
         }
     }, [selectedExamId]);
@@ -129,6 +121,7 @@ export default function ExamStorageComponent() {
     const tempItemList = itemList?.itemList || [];
 
     const toStep2Data = {
+        bookId : selectedBookId,
         tempItemList : tempItemList,
         apiResponse : itemList,
     }
@@ -230,6 +223,7 @@ export default function ExamStorageComponent() {
                                 >
                                     <ExamCardComponent
                                         examId={exam.examId}
+                                        bookId={exam.bookId}
                                         examName={exam.examName}
                                         className={exam.className}
                                         subjectName={exam.subjectName}
