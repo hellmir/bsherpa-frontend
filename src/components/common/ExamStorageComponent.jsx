@@ -195,9 +195,10 @@ export default function ExamStorageComponent() {
                     onSubjectChange={handleSubjectChange}
                 />
 
-                {isLoading2 ? (
+                {isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
                         <CircularProgress />
+                        <span> 시험지를 불러오는 중입니다 </span>
                     </Box>
                 ) : examList.length > 0 ? (
                     <Box sx={{ marginY: 4 }}>
