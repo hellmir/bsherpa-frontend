@@ -77,7 +77,9 @@ export default function ExamStorageComponent() {
 
     useEffect(() => {
         if (userExam) {
-            setExamList(userExam);
+            // examId를 기준으로 역순으로 정렬
+            const sortedExamList = [...userExam].sort((a, b) => b.examId - a.examId);
+            setExamList(sortedExamList);  // 정렬된 리스트를 상태에 설정
         }
     }, [userExam]);
 
