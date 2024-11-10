@@ -199,6 +199,18 @@ function DrawerComponent() {
                   value={currentUsername}
                   fullWidth
                   variant="filled"
+                  sx={{
+                    '& .MuiFilledInput-input': {
+                      paddingTop: '15px',  // input 텍스트 위치를 아래로 조정
+
+                    },
+                    '& .MuiInputLabel-filled': {
+                      transform: 'translate(12px, 10px) scale(1)',  // 라벨 위치 조정
+                      '&.MuiInputLabel-shrink': {
+                        transform: 'translate(12px, -2px) scale(0.9)',  // 축소된 라벨 위치 조정
+                      },
+                    },
+                  }}
                 />
               </>
               :
