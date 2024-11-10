@@ -23,13 +23,6 @@ export default function Step3Component() {
 
     const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
-    useEffect(() => {
-        console.log('bookId', bookId);
-        if (!bookId) {
-            setIsAccessModalOpen(true);
-        }
-    }, []);
-
 
     useEffect(() => {
         // 방법 1: zoom 속성 사용
@@ -60,7 +53,14 @@ export default function Step3Component() {
     console.log('Step2로부터 전송된 Step1 데이터 ', step1Data);
     console.log('step1Data의 bookId: ', step1Data?.bookId )
 
-    const step1bookId = (bookId && bookId.length > 0 ? bookId : step1Data.bookId);
+    const step1bookId = (bookId && bookId.length > 0 ? bookId : step1Data?.bookId); // null 체크
+
+    useEffect(() => {
+        if (!step1bookId) {
+            setIsAccessModalOpen(true);
+        }
+    }, [step1bookId]);
+
     console.log("bookId: ",bookId)
     console.log("step1bookId: ",step1bookId)
 
