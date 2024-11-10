@@ -59,7 +59,7 @@ export default function Step3Component() {
     console.log('Step2로부터 전송된 지문과 문제 데이터 목록: ', groupedItems);
     console.log('Step2로부터 전송된 Step1 데이터 ', step1Data);
 
-    const step1bookId = step1Data.bookId;
+    const step1bookId = bookId || step1Data.bookId;
     console.log("step1bookId: ",step1bookId)
 
     const loginState = useSelector(state => state.loginSlice)
