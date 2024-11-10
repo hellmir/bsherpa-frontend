@@ -24,20 +24,8 @@ export default function TableComponent({ data, onEditClick }) {
         {
             field: 'examName',
             headerName: '시험지명',
-            width: 500,
+            width: 700,
             editable: false,
-        },
-        {
-            field: 'examCount',
-            headerName: '문항수',
-            width: 150,
-            editable: false,
-        },
-        {
-            field: 'preView',
-            headerName: '미리보기',
-            width: 110,
-            renderCell: () => <SearchIcon />,
         },
         {
             field: 'download',
