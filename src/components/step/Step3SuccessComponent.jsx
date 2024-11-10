@@ -23,6 +23,7 @@ export default function Step3SuccessComponent(){
                     </div>
 
                     <div className="save-wrap">
+
                         <img src="/save.png" width="10%" height="auto" alt="저장완료 이미지" />
                         <span className="txt">
                             시험지가 저장되었습니다.
