@@ -1,4 +1,4 @@
-# ![icons-exam-30](https://github.com/user-attachments/assets/2d2249d7-5140-4556-8f7f-9c335ca660a3) 문제은행 서비스 B셀파<br><br>
+# ![icons-exam-30](https://github.com/user-attachments/assets/2d2249d7-5140-4556-8f7f-9c335ca660a3) 문제은행 서비스 B셀파 Client<br><br>
 
 ## 📋 프로젝트 설명
 - B개발자팀 프로젝트 B셀파
