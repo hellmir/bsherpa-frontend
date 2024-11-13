@@ -9,7 +9,7 @@ export default function StepBackgroundComponent({children}){
         <div id="wrap" className="full-pop-que">
             <div className="full-pop-wrap">
                 <div className="pop-header">
-                    <ul className="title">
+                    <ul className="title" style={{ marginLeft: '35px' }}>                      
                         <li className={step === 'step1' ? 'active' : ''}>STEP 1 단원 선택</li>
                         <li className={step === 'step2' ? 'active' : ''}>STEP 2 문항 편집</li>
                         <li className={step === 'step3' ? 'active' : ''}>STEP 3 시험지 저장</li>

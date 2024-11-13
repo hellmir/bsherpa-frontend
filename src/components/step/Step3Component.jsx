@@ -13,6 +13,7 @@ import ModalComponent from "../common/ModalComponent.jsx";
 import {CircularProgress} from "@mui/material";
 import Box from "@mui/material/Box";
 import Step3SuccessComponent from "./Step3SuccessComponent.jsx";
+import HomeIcon from '@mui/icons-material/Home';
 
 export default function Step3Component() {
     const dispatch = useDispatch();
@@ -22,12 +23,20 @@ export default function Step3Component() {
 
     const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+
     useEffect(() => {
-        console.log('bookId', bookId);
-        if (!bookId) {
-            setIsAccessModalOpen(true);
-        }
-    }, []);
+        // 방법 1: zoom 속성 사용
+        document.body.style.zoom = "125%";  // 75% 크기로 축소
+        // 또는 방법 2: transform scale 사용
+        document.body.style.transform = "scale(0.75)";
+        document.body.style.transformOrigin = "top ";
+        return () => {
+          // 컴포넌트 언마운트 시 원래대로 복구
+          document.body.style.zoom = "100%";
+          // 또는
+          document.body.style.transform = "none";
+        };
+      }, []);
 
     const {moveToPath} = useCustomMove();
     const handleCloseAccessModal = () => {
@@ -37,10 +46,23 @@ export default function Step3Component() {
 
     //const [itemList, setItemList] = useState([]);
     const { bookId, totalQuestions, groupedItems, step1Data } = useSelector((state) => state.examDataSlice);
+
     console.log('Step2로부터 전송된 bookId:', bookId);
     console.log('Step2로부터 전송된 문제 수:', totalQuestions);
     console.log('Step2로부터 전송된 지문과 문제 데이터 목록: ', groupedItems);
     console.log('Step2로부터 전송된 Step1 데이터 ', step1Data);
+    console.log('step1Data의 bookId: ', step1Data?.bookId )
+
+    const step1bookId = (bookId && bookId.length > 0 ? bookId : step1Data?.bookId); // null 체크
+
+    useEffect(() => {
+        if (!step1bookId) {
+            setIsAccessModalOpen(true);
+        }
+    }, [step1bookId]);
+
+    console.log("bookId: ",bookId)
+    console.log("step1bookId: ",step1bookId)
 
     const loginState = useSelector(state => state.loginSlice)
     const email = loginState.email;
@@ -79,10 +101,10 @@ export default function Step3Component() {
     console.log("questionData : ", questionData)
 
     const {data: bookData, isLoading: isBookDataLoading} = useQuery({
-        queryKey: ['subjectId', bookId],
-        queryFn: () => getBookData(bookId),
+        queryKey: ['subjectId', step1bookId],
+        queryFn: () => getBookData(step1bookId),
         staleTime: 1000*3,
-        enabled: !!bookId
+        enabled: !!step1bookId
     });
     console.log("bookData: ", bookData)
 
@@ -117,7 +139,7 @@ export default function Step3Component() {
 
         const exam = {
             email : email,
-            bookId : bookId.toString(),
+            bookId : step1bookId,
             examName : examName,
             totalCount : totalCount,
             examCategory : "custom",
@@ -208,12 +230,24 @@ export default function Step3Component() {
         moveToStepWithData('step1', bookId);
     }
     const handleClickMoveToStepTwo = () => {
-        dispatch(setExamData({bookId, totalQuestions, groupedItems, step1Data}))
+        dispatch(setExamData({step1bookId, totalQuestions, groupedItems, step1Data}))
         moveToStepWithData('step2', step1Data);
     };
 
+    const handleClickHome = () => {
+    
+        moveToPath('/');
+      };
+
+
     return (
-        <div className="view-box">
+        
+        <div className="view-box" style={{ border: '2px solid #1976d2',
+            width: '95%',  // 또는 'px' 단위로 직접 지정
+            height: '730px',
+            margin: 'auto',
+              // 가운데 정렬을 위해
+         }}>
             <ModalComponent
                 title="비정상적인 접근"
                 content={
@@ -223,6 +257,17 @@ export default function Step3Component() {
                 handleClose={handleCloseAccessModal}
                 open={isAccessModalOpen}
             />
+          <Button 
+          variant={'outlined'} 
+          onClick={handleClickHome}
+          style={{
+            position: 'absolute',
+            top: '25px',
+            right: '35px'
+          }}
+        >
+                <HomeIcon />홈
+              </Button>
             <CommonResource />
             {isSuccess ? (
                 <Step3SuccessComponent />
@@ -237,12 +282,7 @@ export default function Step3Component() {
                     )}
                 </div>
                 <div className="btn-wrap">
-                    <Button
-                        variant="contained"
-                        onClick={handleClickMoveToStepOne}
-                        className="btn-default"
-                    > 처음으로
-                    </Button>
+                   
                 </div>
             </div>
             <div className="view-bottom type02 scroll-inner">

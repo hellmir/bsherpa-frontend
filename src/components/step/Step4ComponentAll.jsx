@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Button from "@mui/material/Button";
 import CommonResource from "../../util/CommonResource.jsx";
 import { getExamTest } from "../../api/step4Api.js";
-import {Image} from "@mui/icons-material";
+import katex from "katex"; // KaTeX import
 
 const Step4ComponentQuestion = ({ examId }) => {
     const [response, setResponse] = useState(null); // API 응답 데이터를 상태로 관리
@@ -36,27 +36,15 @@ const Step4ComponentQuestion = ({ examId }) => {
 
         const printWindow = window.open('', '_blank');
         const printStyle = `
-      <style>
-        body {
-          margin: 0;
-          padding: 5px;
-          background-color: white;
-          color: black;
-        }
-        
-      @media print {
-        body {
-          /*display: block;*/
-        }
-      }
-      @media screen {
-        body {
-          display: none;
-          /*width: 80%;*/
-        }
-      }
-      </style>
-    `;
+            <style>
+                body {
+                    margin: 0;
+                    padding: 5px;
+                    background-color: white;
+                    color: black;
+                }
+            </style>
+        `;
 
         printWindow.document.write(`
             <html>
@@ -68,7 +56,7 @@ const Step4ComponentQuestion = ({ examId }) => {
               ${printContent}
             </body>
             </html>
-    `);
+        `);
         printWindow.document.close();
 
         // 인쇄 대화상자 열기
@@ -76,6 +64,61 @@ const Step4ComponentQuestion = ({ examId }) => {
 
         // 인쇄 후 창 닫기
         printWindow.close();
+    };
+
+    // 수식을 KaTeX로 렌더링
+    const renderMath = (mathString) => {
+        if (mathString) {
+            try {
+                // 수식에서 \(\) 또는 \displaystyle 같은 불필요한 문법을 제거
+                let cleanedMathString = mathString
+                    // \(\)와 \displaystyle 등을 제거
+                    .replace(/\\\(\s*/g, '')   // \(\ 제거
+                    .replace(/\s*\\\)/g, '')   // \) 제거
+                    .replace(/\\displaystyle\s*/g, '');  // \displaystyle 제거
+
+                cleanedMathString = cleanedMathString
+                    .replace(/\{\{\s*/g, '{')    // {{ 을 { 으로 변경
+                    .replace(/\s*\}\}/g, '}')    // }} 을 } 으로 변경
+                    .replace(/\{\s*\{/g, '{')    // 중복된 { 제거
+                    .replace(/\}\s*\}/g, '}');   // 중복된 } 제거
+
+                // 불필요한 공백 제거 및 양쪽 공백 정리
+                cleanedMathString = cleanedMathString.replace(/\s+/g, ' ').trim();
+
+                console.log("정리된 수식: ", cleanedMathString); // 정리된 수식 확인
+
+                // KaTeX 렌더링
+                return katex.renderToString(cleanedMathString, {
+                    throwOnError: false, // 오류가 나면 그냥 표시
+                });
+            } catch (error) {
+                console.error("수식 렌더링 오류: ", error);
+                return ''; // 오류가 나면 빈 문자열 반환
+            }
+        }
+        return ''; // 수식이 없다면 빈 문자열 반환
+    };
+
+
+    // 수식을 렌더링할 수 있게 하는 함수
+    const renderQuestionWithMath = (html) => {
+        // 먼저 수식을 포함한 html을 그대로 렌더링
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // 수식이 있는 부분에 KaTeX 적용
+        const mathElements = tempDiv.querySelectorAll('.latex_equation'); // class="latex_equation"인 요소 찾기
+
+        mathElements.forEach(element => {
+            const mathString = element.textContent || element.innerText; // 수식 텍스트 가져오기
+            console.log("수식 html: ", mathString);
+            const renderedMath = renderMath(mathString); // 수식 렌더링
+            console.log("수식 렌더링 완료: ", renderedMath);
+            element.innerHTML = renderedMath; // 수식을 KaTeX로 변환하여 삽입
+        });
+
+        return tempDiv.innerHTML;
     };
 
     const renderContent = () => {
@@ -144,7 +187,8 @@ const Step4ComponentQuestion = ({ examId }) => {
                         <div key={`passage-${collectionIndex}-${passageIndex}`}
                              style={{marginLeft: '15px', marginTop: ''}}>
                             <div style={{marginBottom:'10px'}}>다음 지문을 읽고 질문에 답하시오.</div>
-                            <div style={{border:'solid 1px lightgrey', borderRadius:'5px',padding:'30px 15px'}} dangerouslySetInnerHTML={{__html: tdContent}}/>
+                            <div style={{border:'solid 1px lightgrey', borderRadius:'5px', padding:'30px 15px'}}
+                                 dangerouslySetInnerHTML={{__html: renderQuestionWithMath(tdContent)}}/>
                         </div>
                     );
                 });
@@ -154,9 +198,8 @@ const Step4ComponentQuestion = ({ examId }) => {
                 // 문제는 순차적으로 번호 매기기
                 questions.forEach((question, questionIndex) => {
                     contentHtml.push(
-                        <div style={{display: 'flex', flexDirection: 'column'}}>
-                            <div key={`question-${collectionIndex}-${questionIndex}`}
-                                 style={{display: 'inline-flex', marginTop: '30px', marginBottom: '30px'}}>
+                        <div style={{display: 'flex', flexDirection: 'column'}} key={`question-${collectionIndex}-${questionIndex}`}>
+                            <div style={{display: 'inline-flex', marginTop: '30px', marginBottom: '30px'}}>
                                 <div style={{display: 'inline', fontWeight: 'bold', marginLeft: '15px'}}>
                                     {questionCounter}.
                                 </div>
@@ -165,7 +208,9 @@ const Step4ComponentQuestion = ({ examId }) => {
                                 {question.subjective === false ? (
                                     <div style={{display: 'inline'}}>
                                         <div style={{marginBottom: '18px'}}
-                                             dangerouslySetInnerHTML={{__html: question.html}}/>
+                                             dangerouslySetInnerHTML={{
+                                                 __html: renderQuestionWithMath(question.html)
+                                             }}/>
                                         <div>
                                             {/* 보기를 나열 */}
                                             {question.getOptionsResponse?.getOptiosResponses.map((option, index) => (
@@ -177,7 +222,9 @@ const Step4ComponentQuestion = ({ examId }) => {
                                                      }}>
                                                     <div>{getOptionNumber(option.optionNo)}</div>
                                                     &nbsp;
-                                                    <div dangerouslySetInnerHTML={{__html: option.html}}/>
+                                                    <div dangerouslySetInnerHTML={{
+                                                        __html: renderQuestionWithMath(option.html)
+                                                    }}/>
                                                 </div>
                                             ))}
                                         </div>
@@ -185,7 +232,9 @@ const Step4ComponentQuestion = ({ examId }) => {
                                 ) : (
                                     // 주관식 문제일 경우 (subjective가 true인 경우)
                                     <div style={{display: 'inline'}}>
-                                        <div dangerouslySetInnerHTML={{__html: question.html}}/>
+                                        <div dangerouslySetInnerHTML={{
+                                            __html: renderQuestionWithMath(question.html)
+                                        }}/>
                                         <div>
                                             <input
                                                 type="text"
@@ -210,17 +259,17 @@ const Step4ComponentQuestion = ({ examId }) => {
                                 </div>
                                 <div style={{display: 'flex'}}>
                                     <div style={{fontSize: '18px'}}>해설</div>
-                                    <img src={question.descriptionUrl} style={{marginLeft: "50px"}}></img>
+                                    <img src={question.descriptionUrl} style={{marginLeft: "50px"}}/>
                                 </div>
                             </div>
                         </div>
-                    )
-                    ;
+                    );
                     questionCounter++; // 문제 번호 증가
                 });
             }
             return <div key={`collection-${collectionIndex}`}>{contentHtml}</div>;
         });
+
         return (
             <div>
                 {examHeader}

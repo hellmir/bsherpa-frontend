@@ -5,6 +5,9 @@ import {useLocation} from "react-router-dom";
 import DifficultyDisplay from './DifficultyDisplay.jsx';
 import jwtAxios from "../../../util/jwtUtil.jsx";
 import ModalComponent from "../../common/ModalComponent.jsx";
+import HomeIcon from '@mui/icons-material/Home';
+import {useDispatch} from "react-redux";
+import Button from "@mui/material/Button";
 
 // InfoModal.jsx - 정보 표시용 모달
 const InfoModal = ({
@@ -615,7 +618,8 @@ const DynamicAccordionItem = ({
                     backgroundColor: '#f5f5f5',
                     fontSize: '0.9em',
                     color: '#666',
-                    border: '1px solid #e0e0e0'
+                    border: '1px solid #e0e0e0',
+                    marginRight: '100px'
                   }}>
                     <span style={{ marginRight: '4px' }}>문항수</span>
                     <strong style={{
@@ -847,27 +851,30 @@ const Step1Component = () => {
 
   // CSS 스타일시트 로딩
   useEffect(() => {
+    // 공통 CSS
     const commonLink = document.createElement("link");
-    commonLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/common.css";
+    commonLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/css/common.css";
     commonLink.rel = "stylesheet";
     document.head.appendChild(commonLink);
 
+    // 폰트 CSS
     const fontLink = document.createElement("link");
     fontLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/font.css";
     fontLink.rel = "stylesheet";
     document.head.appendChild(fontLink);
 
+    // 리셋 CSS
     const resetLink = document.createElement("link");
     resetLink.href = "https://ddipddipddip.s3.ap-northeast-2.amazonaws.com/tsherpa-css/reset.css";
     resetLink.rel = "stylesheet";
     document.head.appendChild(resetLink);
 
     return () => {
-      document.head.removeChild(commonLink);
-      document.head.removeChild(fontLink);
-      document.head.removeChild(resetLink);
+        document.head.removeChild(commonLink);
+        document.head.removeChild(fontLink);
+        document.head.removeChild(resetLink);
     };
-  }, []);
+}, []);
 
   // 평가 영역 데이터 로드
   useEffect(() => {
@@ -960,7 +967,7 @@ const Step1Component = () => {
     document.body.style.zoom = "125%";  // 75% 크기로 축소
   
     // 또는 방법 2: transform scale 사용
-    document.body.style.transform = "scale(0.67)";
+    document.body.style.transform = "scale(0.65)";
     document.body.style.transformOrigin = "top ";
   
     return () => {
@@ -1116,21 +1123,24 @@ const Step1Component = () => {
     if (newCheckedNodes.length > 0) {
       // 출처 설정 - 교사용으로 기본 설정
       setSource('teacher');
-
+  
       // 평가영역 설정 - 모든 항목 선택
       if (Array.isArray(evaluation) && evaluation.length > 0) {
         const allDomainIds = evaluation.map(item => item.domainId);
         setSelectedEvaluation(allDomainIds);
       }
-
-      // 문제형태 설정 - 객관식과 주관식 모두 선택
-      setSelectedQuestiontype('objective,subjective');
+  
+      // 문제형태 설정 - 객관식과 주관식 모두 선택 (배열로 변경)
+      setSelectedQuestiontype(['objective', 'subjective']);
+    } else {
+      // 전체 해제시
+      setSource('');
+      setSelectedEvaluation([]);
+      setSelectedQuestiontype([]); // 빈 배열로 초기화
     }
-
+  
     // 기존의 체크노드 업데이트 로직
     setCheckedNodes(newCheckedNodes);
-    console.log('Updated checked nodes:', newCheckedNodes);
-
   };
 
 
@@ -1194,15 +1204,18 @@ const Step1Component = () => {
   };
 
   // 문제 형태 클릭 핸들러 수정
-  const handleQuestionTypeClick = (type) => {
-    setSelectedQuestiontype(prev => {
-      if (prev.includes(type)) {
-        return prev.filter(item => item !== type);
-      } else {
-        return [...prev, type];
-      }
-    });
-  };
+const handleQuestionTypeClick = (type) => {
+  setSelectedQuestiontype(prev => {
+    // prev가 배열인지 확인
+    const currentTypes = Array.isArray(prev) ? prev : [];
+    
+    if (currentTypes.includes(type)) {
+      return currentTypes.filter(item => item !== type);
+    } else {
+      return [...currentTypes, type];
+    }
+  });
+};
   
   const handleSourceClick = (sourceType) => {
     setSource(prev => prev === sourceType ? '' : sourceType);
@@ -1311,13 +1324,15 @@ if (activeSteps.length === 0) {
   ];
 
   let questionForm = '';
+if (Array.isArray(selectedQuestiontype)) {
   if (selectedQuestiontype.includes('objective') && selectedQuestiontype.includes('subjective')) {
     questionForm = 'multiple,subjective';
   } else if (selectedQuestiontype.includes('objective')) {
-    questionForm = 'multiple,';
+    questionForm = 'multiple';
   } else if (selectedQuestiontype.includes('subjective')) {
     questionForm = 'subjective';
   }
+}
   
   // 필수 입력값 확인
   if (activityCategoryList.length === 0) {
@@ -1437,12 +1452,12 @@ if (activeSteps.length === 0) {
             ...questionsByDifficulty["상"].slice(0, equalCount)
           ];
 
-          counts = [
-            {level: "최하", count: 0, targetCount: 0, adjustedCount: 0},
-            {level: "하", count: questionsByDifficulty["하"].length, targetCount: equalCount, adjustedCount: equalCount},
-            {level: "중", count: questionsByDifficulty["중"].length, targetCount: equalCount + remainder, adjustedCount: equalCount + remainder},
-            {level: "상", count: questionsByDifficulty["상"].length, targetCount: equalCount, adjustedCount: equalCount},
-            {level: "최상", count: 0, targetCount: 0, adjustedCount: 0}
+          counts =Array.isArray(tempDifficultyCounts) ? tempDifficultyCounts : [
+            { level: "최하", count: 0, targetCount: 0, adjustedCount: 0 },
+            { level: "하", count: itemList.filter(item => item.difficultyName === "하").length, targetCount: 0, adjustedCount: 0 },
+            { level: "중", count: itemList.filter(item => item.difficultyName === "중").length, targetCount: 0, adjustedCount: 0 },
+            { level: "상", count: itemList.filter(item => item.difficultyName === "상").length, targetCount: 0, adjustedCount: 0 },
+            { level: "최상", count: 0, targetCount: 0, adjustedCount: 0 }
           ];
         }
 
@@ -1516,7 +1531,10 @@ if (activeSteps.length === 0) {
     setIsConfirmOpen(isConfirm)
   }
 
+  const handleClickHome = () => {
 
+    moveToPath('/');
+  };
 
   return (
       <div id="wrap" className="full-pop-que">
@@ -1529,10 +1547,38 @@ if (activeSteps.length === 0) {
             handleClose={handleCloseAccessModal}
             open={isAccessModalOpen}
         />
+        <Button 
+          variant={'outlined'} 
+          onClick={handleClickHome}
+          style={{
+            position: 'absolute',
+            top: '-15px',
+            right: '-100px'
+          }}
+        >
+                <HomeIcon />홈
+              </Button>
         <div className="full-pop-wrap">
           {/* 팝업 헤더 */}
-          <div className="pop-header">
-            <ul className="title">
+         
+          <div className="pop-header" style={{
+    width: '100%',
+    padding: '0 16px',
+    boxSizing: 'border-box',
+    marginTop: '20px', // 헤더를 아래로 내림
+    marginBottom: '-40px' // 콘텐츠와의 간격 조정
+}}>
+            <ul className="title" style={{
+        display: 'flex',
+        position: 'absolute',
+        top: '-17px',
+        left: '20px',
+        listStyle: 'none',
+        padding: 0,
+        margin: 0,
+        gap: '40px', // 각 단계 사이의 간격
+        borderBottom: 'none' // 선 제거
+    }}>
               <li className="active">STEP 1 단원선택</li>
               <li>STEP 2 문항 편집</li>
               <li>STEP 3 시험지 저장</li>
@@ -1541,7 +1587,14 @@ if (activeSteps.length === 0) {
           </div>
 
           <div className="pop-content">
-            <div className="view-box">
+          <div className="view-box" style={{ 
+        border: '2px solid #1976d2',
+        width: '110%',        // 110%에서 100%로 수정
+        height: '850px',
+        margin: '0',          // auto에서 0으로 수정
+        marginTop: '20px'     // 필요한 경우 상단 여백 추가
+    }}>
+
               <div className="view-top">
                 <div className="paper-info">
                   <span>{name}</span>
@@ -1553,7 +1606,9 @@ if (activeSteps.length === 0) {
                 <div className="view-box-wrap">
                   <div className="unit-box-wrap">
                     <div className="unit-box">
-                      <div className="unit-cnt scroll-inner">
+                      <div className="unit-cnt scroll-inner"  style={{ marginTop: '30px' ,
+                        
+                      }}>
                         {isLoadingChapters ? (
                             <LoadingSpinner />
                         ) : (
@@ -1776,30 +1831,29 @@ if (activeSteps.length === 0) {
 
                       {/* 문제 형태 */}
 
-                      <div className='box'>
-                        <div className='title-wrap'>
-                          <span className='tit-text'>문제 형태</span>
-                        </div>
-                        <div className='btn-wrap multi'>
-                        <button
-          type='button'
-          className={`btn-line ${selectedQuestiontype.includes('objective') ? 'active' : ''}`}
-
-          data-step='objective'
-          onClick={() => handleQuestionTypeClick('objective')}
-        >
-                            객관식
-                          </button>
-                          <button
-          type='button'
-          className={`btn-line ${selectedQuestiontype.includes('subjective') ? 'active' : ''}`}
-          data-step='subjective'
-          onClick={() => handleQuestionTypeClick('subjective')}
-        >
-                            주관식
-                          </button>
-                        </div>
-                      </div>
+<div className='box'>
+  <div className='title-wrap'>
+    <span className='tit-text'>문제 형태</span>
+  </div>
+  <div className='btn-wrap multi'>
+    <button
+      type='button'
+      className={`btn-line ${selectedQuestiontype.includes('objective') ? 'active' : ''}`}
+      data-step='objective'
+      onClick={() => handleQuestionTypeClick('objective')}
+    >
+      객관식
+    </button>
+    <button
+      type='button'
+      className={`btn-line ${selectedQuestiontype.includes('subjective') ? 'active' : ''}`}
+      data-step='subjective'
+      onClick={() => handleQuestionTypeClick('subjective')}
+    >
+      주관식
+    </button>
+  </div>
+</div>
 
 
                       <DifficultyDisplay
@@ -1836,7 +1890,13 @@ if (activeSteps.length === 0) {
           {/* 하단 버튼 */}
           <div className='step-btn-wrap'>
             <button type='button' className='btn-step'
-                    onClick={submitToStep0}>
+                    onClick={submitToStep0}
+                    style={{ 
+                      right: '50px',
+                      float: 'right',     // 오른쪽 정렬 추가
+                      marginLeft: '20px', // 필요한 경우 여백 추가
+                      marginTop: '-20px'
+                  }}>
               출제 방법 선택
             </button>
             <button
@@ -1844,8 +1904,14 @@ if (activeSteps.length === 0) {
                 className='btn-step next pop-btn'
                 data-pop='que-pop'
                 onClick={submitToStep2}
+                style={{ 
+                  right: '50px',
+                  float: 'right',     // 오른쪽 정렬 추가
+                  marginRight: '-105px', // 필요한 경우 여백 추가
+                  marginTop: '-20px'
+              }}
             >
-              STEP2 문항 편집
+              문항 편집
             </button>
           </div>
 
