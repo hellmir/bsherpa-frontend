@@ -5,13 +5,40 @@ import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 
-const groupChapters = (chapters) => {
-    const grouped = [];
+interface Chapter {
+    largeChapterName: string;
+    mediumChapterName: string;
+    smallChapterName: string;
+    topicChapterName: string;
+}
+
+interface GroupedChapter {
+    largeChapterName: string;
+    mediumChapters: {
+        mediumChapterName: string;
+        smallChapters: {
+            smallChapterName: string;
+            topics: string[];
+        }[];
+    }[];
+}
+
+interface ChapterScopeModalProps {
+    open: boolean;
+    onClose: () => void;
+    chapters: Chapter[];
+    subjectName: string;
+    author: string;
+    curriculumYear: string;
+}
+
+const groupChapters = (chapters: Chapter[]): GroupedChapter[] => {
+    const grouped: GroupedChapter[] = [];
 
     chapters.forEach((chapter) => {
         const {largeChapterName, mediumChapterName, smallChapterName, topicChapterName} = chapter;
 
-        let largeChapter = grouped.find(group => group.largeChapterName === largeChapterName);
+        let largeChapter = grouped.find((group) => group.largeChapterName === largeChapterName);
         if (!largeChapter) {
             largeChapter = {
                 largeChapterName,
@@ -21,7 +48,7 @@ const groupChapters = (chapters) => {
         }
 
         let mediumChapter = largeChapter.mediumChapters.find(
-            group => group.mediumChapterName === mediumChapterName
+            (group) => group.mediumChapterName === mediumChapterName
         );
         if (!mediumChapter) {
             mediumChapter = {
@@ -32,7 +59,7 @@ const groupChapters = (chapters) => {
         }
 
         let smallChapter = mediumChapter.smallChapters.find(
-            group => group.smallChapterName === smallChapterName
+            (group) => group.smallChapterName === smallChapterName
         );
         if (!smallChapter) {
             smallChapter = {
@@ -50,7 +77,14 @@ const groupChapters = (chapters) => {
     return grouped;
 };
 
-const ChapterScopeModalComponent = ({open, onClose, chapters, subjectName, author, curriculumYear}) => {
+const ChapterScopeModalComponent: React.FC<ChapterScopeModalProps> = ({
+                                                                          open,
+                                                                          onClose,
+                                                                          chapters,
+                                                                          subjectName,
+                                                                          author,
+                                                                          curriculumYear,
+                                                                      }) => {
     const groupedChapters = groupChapters(chapters);
 
     return (
