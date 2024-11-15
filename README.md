@@ -50,7 +50,8 @@
 ## 🛠️ Skills
 
 ## Front-End
-
+- JavaScript
+- TypeScript
 - React
 - Redux
 - Axios
