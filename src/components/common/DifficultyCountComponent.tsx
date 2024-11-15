@@ -8,6 +8,7 @@ interface DifficultyCount {
 
 interface DifficultyCountComponentProps {
     difficultyCounts: DifficultyCount[];
+    getDifficultyColor: (level: string) => string;
     totalQuestions: number;
 }
 

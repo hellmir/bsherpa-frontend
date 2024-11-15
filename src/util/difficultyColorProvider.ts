@@ -1,4 +1,4 @@
-export const getDifficultyColor = (difficultyName) => {
+export const getDifficultyColor = (difficultyName: string): string => {
     switch (difficultyName) {
         case "최상":
             return "red";
@@ -13,4 +13,4 @@ export const getDifficultyColor = (difficultyName) => {
         default:
             return "gray";
     }
-}
+};

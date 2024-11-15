@@ -21,9 +21,7 @@ import {useDispatch, useSelector} from "react-redux";
 import Step2RightSideComponent from "./Step2RightSideComponent";
 // @ts-ignore
 import ModalComponent from "../common/ModalComponent";
-// @ts-ignore
 import DifficultyCountComponent from "../common/DifficultyCountComponent";
-// @ts-ignore
 import {getDifficultyColor} from "../../util/difficultyColorProvider";
 // @ts-ignore
 import ErrorReportModal from "../common/ErrorReportModalComponent";
