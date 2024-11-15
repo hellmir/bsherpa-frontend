@@ -9,22 +9,8 @@ import ExamSummaryComponent from "../common/ExamSummaryComponent";
 import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent";
 // @ts-ignore
 import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent";
-
-interface Item {
-    itemId: number;
-    passageId: string | number;
-    passageUrl?: string;
-    questionUrl?: string;
-    answerUrl?: string;
-    explainUrl?: string;
-    difficultyName: string;
-    questionFormCode: number;
-    largeChapterName: string;
-    mediumChapterName: string;
-    smallChapterName: string;
-    topicChapterName: string;
-    itemNo: number;
-}
+// @ts-ignore
+import {Item} from "../../types/Item";
 
 interface Step2RightSideComponentProps {
     itemList: Item[];
