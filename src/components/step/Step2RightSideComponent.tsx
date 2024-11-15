@@ -1,9 +1,40 @@
 import React, {useState} from "react";
-import {DragDropContext} from "react-beautiful-dnd";
-import CommonResource from "../../util/CommonResource.jsx";
-import ExamSummaryComponent from "../common/ExamSummaryComponent.jsx";
-import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent.jsx";
-import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent.jsx";
+// @ts-ignore
+import {DragDropContext, DropResult} from "react-beautiful-dnd";
+// @ts-ignore
+import CommonResource from "../../util/CommonResource";
+// @ts-ignore
+import ExamSummaryComponent from "../common/ExamSummaryComponent";
+// @ts-ignore
+import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent";
+// @ts-ignore
+import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent";
+
+interface Item {
+    itemId: number;
+    passageId: string | number;
+    passageUrl?: string;
+    questionUrl?: string;
+    answerUrl?: string;
+    explainUrl?: string;
+    difficultyName: string;
+    questionFormCode: number;
+    largeChapterName: string;
+    mediumChapterName: string;
+    smallChapterName: string;
+    topicChapterName: string;
+    itemNo: number;
+}
+
+interface Step2RightSideComponentProps {
+    itemList: Item[];
+    onDragEnd: (result: DropResult) => void;
+    onShowSimilar: (itemId: number, index: number) => void;
+    questionIndex: number;
+    similarItems: Item[];
+    deletedItems: Item[];
+    onAddItem: (item: Item) => void;
+}
 
 export default function Step2RightSideComponent({
                                                     itemList,
@@ -12,12 +43,12 @@ export default function Step2RightSideComponent({
                                                     questionIndex,
                                                     similarItems,
                                                     deletedItems,
-                                                    onAddItem
-                                                }) {
-    const [activeTab, setActiveTab] = useState("summary");
-    const [selectedItemId, setSelectedItemId] = useState(null);
+                                                    onAddItem,
+                                                }: Step2RightSideComponentProps) {
+    const [activeTab, setActiveTab] = useState<string>("summary");
+    const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
 
-    const groupByPassage = (items) => {
+    const groupByPassage = (items: Item[]): Record<string | number, Item[]> => {
         return items.reduce((acc, item) => {
             const passageId = item.passageId || "noPassage";
             if (!acc[passageId]) {
@@ -25,12 +56,12 @@ export default function Step2RightSideComponent({
             }
             acc[passageId].push(item);
             return acc;
-        }, {});
+        }, {} as Record<string | number, Item[]>);
     };
 
-    const handleTabClick = (tab, itemId = null, index = null) => {
+    const handleTabClick = (tab: string, itemId: number | null = null, index: number | null = null) => {
         setActiveTab(tab);
-        if (tab === "similar" && itemId && index) {
+        if (tab === "similar" && itemId && index !== null) {
             setSelectedItemId(itemId);
             onShowSimilar(itemId, index);
         }
