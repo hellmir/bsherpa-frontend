@@ -12,7 +12,6 @@ import {
 // @ts-ignore
 import useCustomMove from "../../hooks/useCustomMove";
 import Button from "@mui/material/Button";
-// @ts-ignore
 import ConfirmationModal from "../common/ConfirmationModal";
 import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
