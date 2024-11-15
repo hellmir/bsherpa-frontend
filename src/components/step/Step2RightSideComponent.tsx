@@ -5,7 +5,6 @@ import {DragDropContext, DropResult} from "react-beautiful-dnd";
 import CommonResource from "../../util/CommonResource";
 // @ts-ignore
 import ExamSummaryComponent from "../common/ExamSummaryComponent";
-// @ts-ignore
 import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent";
 // @ts-ignore
 import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent";

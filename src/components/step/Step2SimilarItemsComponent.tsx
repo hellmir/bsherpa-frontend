@@ -1,15 +1,42 @@
 import React, {useState} from "react";
-import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
-import ErrorReportModal from "../common/ErrorReportModalComponent.jsx";
+// @ts-ignore
+import {getDifficultyColor} from "../../util/difficultyColorProvider";
+// @ts-ignore
+import ErrorReportModal from "../common/ErrorReportModalComponent";
 
-export default function Step2SimilarItemsComponent({items, onBack, questionNumber, onAddItem}) {
-    const [selectedDifficulty, setSelectedDifficulty] = useState("전체");
-    const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
-    const [selectedItemId, setSelectedItemId] = useState(null);
+interface Item {
+    itemId: number;
+    passageId?: string | number;
+    passageUrl?: string;
+    questionUrl?: string;
+    difficultyName: string;
+    questionFormCode: number;
+    largeChapterName: string;
+    mediumChapterName: string;
+    smallChapterName: string;
+    topicChapterName: string;
+}
+
+interface Step2SimilarItemsComponentProps {
+    items: Item[];
+    onBack: () => void;
+    questionNumber: number;
+    onAddItem: (item: Item) => void;
+}
+
+export default function Step2SimilarItemsComponent({
+                                                       items,
+                                                       onBack,
+                                                       questionNumber,
+                                                       onAddItem,
+                                                   }: Step2SimilarItemsComponentProps) {
+    const [selectedDifficulty, setSelectedDifficulty] = useState<string>("전체");
+    const [isErrorReportOpen, setIsErrorReportOpen] = useState<boolean>(false);
+    const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
 
     const hasPassage = items.some((item) => item.passageId && item.passageUrl);
 
-    const handleDifficultyChange = (event) => {
+    const handleDifficultyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedDifficulty(event.target.value);
     };
 
@@ -23,7 +50,10 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
         ? `${items.findIndex(i => i === filteredItems[0]) + 1} ~ ${items.findIndex(i => i === filteredItems[filteredItems.length - 1]) + 1}`
         : null;
 
-    const groupedItemsByPassage = filteredItems.reduce((groups, item) => {
+    const groupedItemsByPassage = filteredItems.reduce<Record<string | number, {
+        passageUrl: string | null;
+        items: Item[]
+    }>>((groups, item) => {
         const passageId = item.passageId || "noPassage";
         if (!groups[passageId]) {
             groups[passageId] = {
@@ -35,7 +65,7 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
         return groups;
     }, {});
 
-    const handleOpenErrorReport = (itemId) => {
+    const handleOpenErrorReport = (itemId: number) => {
         setSelectedItemId(itemId);
         setIsErrorReportOpen(true);
     };
@@ -128,7 +158,7 @@ export default function Step2SimilarItemsComponent({items, onBack, questionNumbe
                                             </div>
                                             <div className="btn-wrap">
                                                 <button type="button" className="btn-error pop-btn"
-                                                        onClick={handleOpenErrorReport}></button>
+                                                        onClick={() => handleOpenErrorReport(item.itemId)}></button>
                                             </div>
                                         </div>
                                         <div className="view-que">
