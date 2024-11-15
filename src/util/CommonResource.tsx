@@ -1,6 +1,6 @@
 import {useEffect} from "react";
 
-const CommonResource = () => {
+const CommonResource: React.FC = () => {
     useEffect(() => {
         // 공통 CSS
         const commonLink = document.createElement("link");

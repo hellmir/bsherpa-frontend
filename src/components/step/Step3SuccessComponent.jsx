@@ -1,4 +1,4 @@
-import CommonResource from "../../util/CommonResource.jsx";
+import CommonResource from "../../util/CommonResource.tsx";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 
 export default function Step3SuccessComponent(){

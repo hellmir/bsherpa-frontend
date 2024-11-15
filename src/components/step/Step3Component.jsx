@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import {useNavigate} from "react-router-dom";
-import CommonResource from "../../util/CommonResource.jsx";
+import CommonResource from "../../util/CommonResource.tsx";
 import {useDispatch, useSelector} from "react-redux";
 import {getBookData, getQuestionData, registerExam} from "../../api/step3Api.js";
 import {useQuery} from "@tanstack/react-query";
-import {setExamData} from "../../slices/examDataSlice.js";
+import {setExamData} from "../../slices/examDataSlice.ts";
 import useCustomMove from "../../hooks/useCustomMove.jsx";
 import Button from "@mui/material/Button";
 import BorderColorOutlinedIcon from "@mui/icons-material/BorderColorOutlined";
