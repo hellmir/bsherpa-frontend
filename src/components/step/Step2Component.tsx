@@ -31,7 +31,7 @@ import ErrorReportModal from "../common/ErrorReportModalComponent";
 import {useLocation} from "react-router-dom";
 import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent"
 // @ts-ignore
-import {Item} from "../../types/Item";
+import {Item} from "../../type/Item";
 
 interface GroupedItem {
     passageId: string | number;
