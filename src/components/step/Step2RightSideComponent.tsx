@@ -1,15 +1,11 @@
 import React, {useState} from "react";
 // @ts-ignore
 import {DragDropContext, DropResult} from "react-beautiful-dnd";
-// @ts-ignore
 import CommonResource from "../../util/CommonResource";
-// @ts-ignore
 import ExamSummaryComponent from "../common/ExamSummaryComponent";
 import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent";
-// @ts-ignore
 import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent";
-// @ts-ignore
-import {Item} from "../../types/Item";
+import {Item} from "../../type/Item";
 
 interface Step2RightSideComponentProps {
     itemList: Item[];
@@ -21,6 +17,12 @@ interface Step2RightSideComponentProps {
     onAddItem: (item: Item) => void;
 }
 
+interface GroupedItem {
+    passageId: string | number;
+    passageUrl?: string | null;
+    items: Item[];
+}
+
 export default function Step2RightSideComponent({
                                                     itemList,
                                                     onDragEnd,
@@ -30,6 +32,16 @@ export default function Step2RightSideComponent({
                                                     deletedItems,
                                                     onAddItem,
                                                 }: Step2RightSideComponentProps) {
+    const groupedDeletedItems: GroupedItem[] = deletedItems.reduce((acc: GroupedItem[], item: Item) => {
+        const group = acc.find(g => g.passageId === item.passageId);
+        if (group) {
+            group.items.push(item);
+        } else {
+            acc.push({passageId: item.passageId, passageUrl: item.passageUrl, items: [item]});
+        }
+        return acc;
+    }, []);
+
     const [activeTab, setActiveTab] = useState<string>("summary");
     const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
 
@@ -75,15 +87,13 @@ export default function Step2RightSideComponent({
                     {activeTab === "similar" && (
                         <Step2SimilarItemsComponent
                             items={similarItems}
-                            onBack={() => setActiveTab("summary")}
                             questionNumber={questionIndex}
                             onAddItem={onAddItem}
                         />
                     )}
                     {activeTab === "deleted" && (
                         <Step2DeletedItemsComponent
-                            deletedItems={deletedItems}
-                            onBack={() => setActiveTab("summary")}
+                            deletedItems={groupedDeletedItems}
                             onRestoreItem={onAddItem}
                         />
                     )}
