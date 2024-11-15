@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Button from "@mui/material/Button";
-import CommonResource from "../../util/CommonResource.jsx";
+import CommonResource from "../../util/CommonResource.tsx";
 import { getExamTest } from "../../api/step4Api.js";
 import {Image} from "@mui/icons-material";
 
