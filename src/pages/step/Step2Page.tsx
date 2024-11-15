@@ -1,5 +1,4 @@
-// @ts-ignore
-import Step2Component from "../../components/step/Step2Component.tsx";
+import Step2Component from "../../components/step/Step2Component";
 
 export default function Step2Page() {
     return (

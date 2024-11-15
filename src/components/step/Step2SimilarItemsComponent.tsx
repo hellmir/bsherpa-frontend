@@ -3,30 +3,16 @@ import React, {useState} from "react";
 import {getDifficultyColor} from "../../util/difficultyColorProvider";
 // @ts-ignore
 import ErrorReportModal from "../common/ErrorReportModalComponent";
-
-interface Item {
-    itemId: number;
-    passageId?: string | number;
-    passageUrl?: string;
-    questionUrl?: string;
-    difficultyName: string;
-    questionFormCode: number;
-    largeChapterName: string;
-    mediumChapterName: string;
-    smallChapterName: string;
-    topicChapterName: string;
-}
+import {Item} from "../../type/Item";
 
 interface Step2SimilarItemsComponentProps {
     items: Item[];
-    onBack: () => void;
     questionNumber: number;
     onAddItem: (item: Item) => void;
 }
 
 export default function Step2SimilarItemsComponent({
                                                        items,
-                                                       onBack,
                                                        questionNumber,
                                                        onAddItem,
                                                    }: Step2SimilarItemsComponentProps) {
