@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import '../../assets/css/errorReportModal.css';
-import {postRegisterErrorReport} from "../../api/step2Api.js";
+import {postRegisterErrorReport} from "../../api/step2Api.ts";
 import useCustomLogin from "../../hooks/useCustomLogin.jsx";
 
 export default function ErrorReportModal({itemId, isOpen, onClose}) {

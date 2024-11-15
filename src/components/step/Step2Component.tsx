@@ -3,7 +3,6 @@ import React, {useEffect, useRef, useState} from "react";
 import CommonResource from "../../util/CommonResource";
 import {useMutation, useQueries, useQuery, UseQueryResult} from "@tanstack/react-query";
 import HomeIcon from '@mui/icons-material/Home';
-
 import {
     getAdjustedChapterItemImagesFromTsherpa,
     getBookFromTsherpa,
@@ -33,26 +32,8 @@ import ErrorReportModal from "../common/ErrorReportModalComponent";
 import {useLocation} from "react-router-dom";
 // @ts-ignore
 import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent"
-
-interface Item {
-    itemId: number;
-    passageId: string | number;
-    passageUrl?: string;
-    questionUrl?: string;
-    answerUrl?: string;
-    explainUrl?: string;
-    difficultyName: string;
-    questionFormCode: number;
-    largeChapterName: string;
-    mediumChapterName: string;
-    smallChapterName: string;
-    topicChapterName: string;
-    itemNo: number;
-    largeChapterId: number;
-    mediumChapterId: number;
-    smallChapterId: number;
-    topicChapterId: number;
-}
+// @ts-ignore
+import {Item} from "../../types/Item";
 
 interface GroupedItem {
     passageId: string | number;
@@ -306,9 +287,10 @@ export default function Step2Component() {
             return acc;
         }, {} as Record<string | number, GroupedItem>);
 
-        const groupedArray = Object.values(passageGroups).map(group => {
-            group.items.sort((a, b) => a.itemNo - b.itemNo);
-            return group;
+        const groupedArray = Object.values(passageGroups as Record<string | number, GroupedItem>).map((group) => {
+            const typedGroup = group as GroupedItem;
+            typedGroup.items.sort((a, b) => a.itemNo - b.itemNo);
+            return typedGroup;
         });
 
         groupedArray.sort((a, b) => {
@@ -616,6 +598,7 @@ export default function Step2Component() {
     const handleClickHome = () => {
         moveToPath('/');
     };
+    // @ts-ignore
     return (
         <>
             <Button
@@ -959,9 +942,10 @@ export default function Step2Component() {
                                         onShowSimilar={(item: number | Item) => handleSimilarPageToggle(
                                             typeof item === 'number' ? item : item.itemId,
                                             itemList.indexOf(item as Item) + 1
-                                        )} questionIndex={questionIndex}
+                                        )}
+                                        questionIndex={questionIndex ?? 0}
                                         similarItems={similarItems}
-                                        deletedItems={deletedItems}
+                                        deletedItems={deletedItems.flatMap(group => group.items)}
                                         onAddItem={handleAddItem}
                                     />
                                 </div>
