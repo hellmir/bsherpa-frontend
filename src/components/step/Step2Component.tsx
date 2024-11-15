@@ -1,5 +1,4 @@
 import React, {useEffect, useRef, useState} from "react";
-// @ts-ignore
 import CommonResource from "../../util/CommonResource";
 import {useMutation, useQueries, useQuery, UseQueryResult} from "@tanstack/react-query";
 import HomeIcon from '@mui/icons-material/Home';
@@ -30,7 +29,6 @@ import {getDifficultyColor} from "../../util/difficultyColorProvider";
 // @ts-ignore
 import ErrorReportModal from "../common/ErrorReportModalComponent";
 import {useLocation} from "react-router-dom";
-// @ts-ignore
 import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent"
 // @ts-ignore
 import {Item} from "../../types/Item";
