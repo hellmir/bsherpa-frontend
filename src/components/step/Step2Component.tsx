@@ -15,7 +15,6 @@ import Button from "@mui/material/Button";
 import ConfirmationModal from "../common/ConfirmationModal";
 import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
-// @ts-ignore
 import {setExamData} from "../../slices/examDataSlice";
 import {useDispatch, useSelector} from "react-redux";
 import Step2RightSideComponent from "./Step2RightSideComponent";
@@ -23,11 +22,9 @@ import Step2RightSideComponent from "./Step2RightSideComponent";
 import ModalComponent from "../common/ModalComponent";
 import DifficultyCountComponent from "../common/DifficultyCountComponent";
 import {getDifficultyColor} from "../../util/difficultyColorProvider";
-// @ts-ignore
 import ErrorReportModal from "../common/ErrorReportModalComponent";
 import {useLocation} from "react-router-dom";
 import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent"
-// @ts-ignore
 import {Item} from "../../type/Item";
 
 interface GroupedItem {

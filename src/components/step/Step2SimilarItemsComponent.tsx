@@ -1,7 +1,5 @@
 import React, {useState} from "react";
-// @ts-ignore
 import {getDifficultyColor} from "../../util/difficultyColorProvider";
-// @ts-ignore
 import ErrorReportModal from "../common/ErrorReportModalComponent";
 import {Item} from "../../type/Item";
 

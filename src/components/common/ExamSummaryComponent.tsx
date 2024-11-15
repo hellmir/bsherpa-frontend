@@ -1,7 +1,7 @@
 import React from "react";
 // @ts-ignore
 import {Draggable, DraggableProvided, DraggableStateSnapshot, Droppable, DroppableProvided} from "react-beautiful-dnd";
-import QuesionTypeCountComponent from "./QuesionTypeCountComponent";
+import QuestionTypeCountComponent from "./QuestionTypeCountComponent";
 import {Item} from "../../type/Item";
 
 interface GroupedItems {
@@ -167,7 +167,7 @@ const ExamSummaryComponent: React.FC<ExamSummaryComponentProps> = ({itemList, gr
                     </Droppable>
                 </div>
             </div>
-            <QuesionTypeCountComponent itemList={itemList}/>
+            <QuestionTypeCountComponent itemList={itemList}/>
         </div>
     );
 };
