@@ -1,4 +1,4 @@
-import Step2Component from "../../components/step/Step2Component.jsx";
+import Step2Component from "../../components/step/Step2Component";
 
 export default function Step2Page() {
     return (

@@ -1,82 +1,101 @@
 import React, {useEffect, useRef, useState} from "react";
-import CommonResource from "../../util/CommonResource.jsx";
-import {useMutation, useQueries, useQuery} from "@tanstack/react-query";
+import CommonResource from "../../util/CommonResource";
+import {useMutation, useQueries, useQuery, UseQueryResult} from "@tanstack/react-query";
 import HomeIcon from '@mui/icons-material/Home';
-
 import {
     getAdjustedChapterItemImagesFromTsherpa,
     getBookFromTsherpa,
     getEvaluationsFromTsherpa,
     getExamItemImagesFromTsherpa,
     getSimilarItemsImagesFromTsherpa
-} from "../../api/step2Api.js";
-import useCustomMove from "../../hooks/useCustomMove.jsx";
+} from "../../api/step2Api";
+// @ts-ignore
+import useCustomMove from "../../hooks/useCustomMove";
 import Button from "@mui/material/Button";
-import ConfirmationModal from "../common/ConfirmationModal.jsx";
+import ConfirmationModal from "../common/ConfirmationModal";
 import "../../assets/css/confirmationModal.css";
 import "../../assets/css/comboBox.css";
-import {setExamData} from "../../slices/examDataSlice.js";
+import {setExamData} from "../../slices/examDataSlice";
 import {useDispatch, useSelector} from "react-redux";
-import Step2RightSideComponent from "./Step2RightSideComponent.jsx";
-import ModalComponent from "../common/ModalComponent.jsx";
-import DifficultyCountComponent from "../common/DifficultyCountComponent.jsx";
-import {getDifficultyColor} from "../../util/difficultyColorProvider.js";
-import ErrorReportModal from "../common/ErrorReportModalComponent.jsx";
+import Step2RightSideComponent from "./Step2RightSideComponent";
+// @ts-ignore
+import ModalComponent from "../common/ModalComponent";
+import DifficultyCountComponent from "../common/DifficultyCountComponent";
+import {getDifficultyColor} from "../../util/difficultyColorProvider";
+import ErrorReportModal from "../common/ErrorReportModalComponent";
 import {useLocation} from "react-router-dom";
-import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent.jsx";
+import ChapterScopeModalComponent from "../common/ChapterScopeModalComponent"
+import {Item} from "../../type/Item";
+
+interface GroupedItem {
+    passageId: string | number;
+    passageUrl?: string | null;
+    items: Item[];
+}
+
+interface DifficultyCount {
+    level: string;
+    count: number;
+}
+
+interface ItemsRequestForm {
+    activityCategoryList: string[];
+    levelCnt: number[];
+    minorClassification: string[];
+    questionForm: string;
+}
 
 export default function Step2Component() {
     const dispatch = useDispatch();
-
-    const [initialStep1Data, setInitialStep1Data] = useState(null);
+    const [initialStep1Data, setInitialStep1Data] = useState<any>(null);
     const step1DataLoaded = useRef(false);
-    const minorClassification = useRef([]);
+    const minorClassification = useRef<string[]>([]);
     const [isProblemOptionsOpen, setIsProblemOptionsOpen] = useState(false);
     const [isSortOptionsOpen, setIsSortOptionsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState("문제만 보기");
     const [selectedSortOption, setSelectedSortOption] = useState("단원순");
-    const [groupedItems, setGroupedItems] = useState([]);
-    const [itemList, setItemList] = useState([]);
-    const [tempItemList, setTempItemList] = useState([]);
-    const [difficultyCounts, setDifficultyCounts] = useState([
+    const [groupedItems, setGroupedItems] = useState<GroupedItem[]>([]);
+    const [itemList, setItemList] = useState<Item[]>([]);
+    const [tempItemList, setTempItemList] = useState<Item[]>([]);
+    const [difficultyCounts, setDifficultyCounts] = useState<DifficultyCount[]>([
         {level: "최하", count: 0},
         {level: "하", count: 0},
         {level: "중", count: 0},
         {level: "상", count: 0},
         {level: "최상", count: 0}
     ]);
-    const [tempDifficultyCounts, setTempDifficultyCounts] = useState([]);
+    const [tempDifficultyCounts, setTempDifficultyCounts] = useState<DifficultyCount[]>([]);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isSorted, setIsSorted] = useState(false);
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
     const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
     const [isSimilarPage, setIsSimilarPage] = useState(false);
-    const [similarItems, setSimilarItems] = useState([]);
-    const [questionIndex, setQuestionIndex] = useState(null);
-    const [deletedItems, setDeletedItems] = useState([]);
+    const [similarItems, setSimilarItems] = useState<Item[]>([]);
+    const [questionIndex, setQuestionIndex] = useState<number | null>(null);
+    const [deletedItems, setDeletedItems] = useState<GroupedItem[]>([]);
     const [noSimilarItemsMessage, setNoSimilarItemsMessage] = useState("");
     const [isNoSimilarItemsModalOpen, setIsNoSimilarItemsModalOpen] = useState(false);
     const [isErrorReportOpen, setIsErrorReportOpen] = useState(false);
-    const [lastAddedItemId, setLastAddedItemId] = useState(null);
+    const [lastAddedItemId, setLastAddedItemId] = useState<number | null>(null);
     const [isScopeModalOpen, setIsScopeModalOpen] = useState(false);
-    const [selectedItemId, setSelectedItemId] = useState(null);
+    const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
 
-    const step0ExamIdList = useSelector((state) => state.examIdSlice);
+    const step0ExamIdList = useSelector((state: any) => state.examIdSlice);
     console.log('Step0으로부터 전송된 시험지 ID 리스트: ', step0ExamIdList);
 
     const questionQueries = useQueries({
         queries: step0ExamIdList?.length
-            ? step0ExamIdList.map((examId) => ({
+            ? step0ExamIdList.map((examId: number) => ({
                 queryKey: ["questionData", examId],
                 queryFn: () => getExamItemImagesFromTsherpa(examId),
                 staleTime: 1000 * 3,
             }))
             : [],
-    });
+    }) as UseQueryResult<{ itemList: Item[] }>[];
 
     const questionsDataFromExams = questionQueries
         .filter((query) => query.isSuccess)
-        .map((query) => query.data.itemList);
+        .map((query) => query.data!.itemList);
 
     const step1Data = useLocation().state?.data || null;
     console.log('Step1으로부터 전송된 데이터: ', step1Data);
@@ -86,9 +105,9 @@ export default function Step2Component() {
     };
     console.log("Step1으로부터 전송된 문제 목록: ", questionsData);
 
-    const fetchSimilarItems = (itemId, questionIndex) => {
+    const fetchSimilarItems = (itemId: number, questionIndex: number) => {
         getSimilarItemsImagesFromTsherpa(itemId)
-            .then((data) => {
+            .then((data: { itemList: Item[] }) => {
                 if (data.itemList.length === 0) {
                     setNoSimilarItemsMessage("검색된 유사 문제가 없습니다.");
                     setIsNoSimilarItemsModalOpen(true);
@@ -99,22 +118,22 @@ export default function Step2Component() {
                     console.log("유사 문제 목록: ", data.itemList);
                 }
             })
-            .catch((error) => {
+            .catch((error: any) => {
                 console.error("유사 문제 가져오기 실패:", error);
             });
     };
 
     const handleOpenModal = () => setIsShiftModalOpen(true);
-    const handleCloseShiftModal = () => setIsShiftModalOpen(false)
+    const handleCloseShiftModal = () => setIsShiftModalOpen(false);
     const handleCloseNoSimilarItemsModal = () => setIsNoSimilarItemsModalOpen(false);
-    const handleOpenErrorReport = (itemId) => {
+    const handleOpenErrorReport = (itemId: number) => {
         setSelectedItemId(itemId);
         setIsErrorReportOpen(true);
     };
     const handleCloseErrorReport = () => setIsErrorReportOpen(false);
 
-    const bookId = useSelector((state) => state.bookIdSlice);
-    console.log(`교재 ID: ${bookId}`)
+    const bookId = useSelector((state: any) => state.bookIdSlice);
+    console.log(`교재 ID: ${bookId}`);
 
     const {moveToStepWithData, moveToPath} = useCustomMove();
 
@@ -124,7 +143,7 @@ export default function Step2Component() {
         staleTime: 1000 * 3,
         enabled: !!bookId
     });
-    console.log('교재 정보: ', bookData)
+    console.log('교재 정보: ', bookData);
 
     const subjectName = bookData?.subjectInfoList?.[0]?.subjectName?.split('(')[0] || "과목명 없음";
     const author = bookData?.subjectInfoList?.[0]?.subjectName?.match(/\(([^)]+)\)/)?.[1] || "저자 정보 없음";
@@ -134,14 +153,14 @@ export default function Step2Component() {
         queryKey: ['evaluationsData', bookId],
         queryFn: () => getEvaluationsFromTsherpa(bookId),
         staleTime: 1000 * 3
-    })
-    console.log('평가 영역 데이터: ', evaluationsData)
+    });
+    console.log('평가 영역 데이터: ', evaluationsData);
 
     const activityCategoryList = evaluationsData
-        ? evaluationsData.evaluationList.map(evaluation => evaluation.domainId)
+        ? evaluationsData.evaluationList.map((evaluation: any) => evaluation.domainId)
         : [];
 
-    console.log(`평가 영역 목록: ${activityCategoryList}`)
+    console.log(`평가 영역 목록: ${activityCategoryList}`);
 
     const chapterNames = itemList.map(item => ({
         largeChapterName: item.largeChapterName,
@@ -153,20 +172,20 @@ export default function Step2Component() {
     const handleOpenScopeModal = () => setIsScopeModalOpen(true);
     const handleCloseScopeModal = () => setIsScopeModalOpen(false);
 
-    const itemsRequestForm = initialStep1Data && initialStep1Data.activityCategoryList && initialStep1Data.difficultyCounts && initialStep1Data.selectedEvaluation && initialStep1Data.minorClassification
+    const itemsRequestForm: ItemsRequestForm | null = initialStep1Data && initialStep1Data.activityCategoryList && initialStep1Data.difficultyCounts && initialStep1Data.selectedEvaluation && initialStep1Data.minorClassification
         ? {
             activityCategoryList: initialStep1Data.selectedEvaluation,
-            levelCnt: initialStep1Data.counts.map((count) => count.targetCount),
+            levelCnt: initialStep1Data.counts.map((count: any) => count.targetCount),
             minorClassification: initialStep1Data.minorClassification,
             questionForm: initialStep1Data.questionForm
         }
         : null;
     console.log('문제 요청 양식: ', itemsRequestForm);
 
-    const fetchQuestions = useMutation({
-        mutationFn: (itemsRequestForm) => {
+    const fetchQuestions = useMutation<{ data: { itemList: Item[] } }, Error, ItemsRequestForm>({
+        mutationFn: (itemsRequestForm: ItemsRequestForm) => {
             console.log("fetchQuestions mutationFn 호출됨 - form:", itemsRequestForm);
-            return getAdjustedChapterItemImagesFromTsherpa(itemsRequestForm)
+            return getAdjustedChapterItemImagesFromTsherpa(itemsRequestForm);
         },
         onSuccess: (data) => {
             const newTempItemList = [...data.data.itemList];
@@ -222,10 +241,6 @@ export default function Step2Component() {
     }, [groupedItems]);
 
     useEffect(() => {
-        console.log("isProblemOptionsOpen changed:", isProblemOptionsOpen);
-    }, [isProblemOptionsOpen]);
-
-    useEffect(() => {
         if (step0ExamIdList?.length && questionsDataFromExams.length > 0 && itemList.length === 0) {
             const combinedData = {data: {itemList: questionsDataFromExams.flat()}};
             console.log("questionsData 전체 구조:", combinedData);
@@ -254,7 +269,7 @@ export default function Step2Component() {
         }
     }, [itemList, lastAddedItemId]);
 
-    const organizeItems = (items) => {
+    const organizeItems = (items: Item[]) => {
         const passageGroups = items.reduce((acc, item) => {
             const passageId = item.passageId || "noPassage";
             if (!acc[passageId]) {
@@ -262,11 +277,12 @@ export default function Step2Component() {
             }
             acc[passageId].items.push(item);
             return acc;
-        }, {});
+        }, {} as Record<string | number, GroupedItem>);
 
-        const groupedArray = Object.values(passageGroups).map(group => {
-            group.items.sort((a, b) => a.itemNo - b.itemNo);
-            return group;
+        const groupedArray = Object.values(passageGroups as Record<string | number, GroupedItem>).map((group) => {
+            const typedGroup = group as GroupedItem;
+            typedGroup.items.sort((a, b) => a.itemNo - b.itemNo);
+            return typedGroup;
         });
 
         groupedArray.sort((a, b) => {
@@ -280,7 +296,7 @@ export default function Step2Component() {
     };
 
     useEffect(() => {
-        const counts = [
+        const counts: DifficultyCount[] = [
             {level: "최하", count: 0},
             {level: "하", count: 0},
             {level: "중", count: 0},
@@ -331,14 +347,10 @@ export default function Step2Component() {
     };
 
     useEffect(() => {
-        console.log("itemList가 업데이트되었습니다: ", itemList);
-    }, [itemList]);
-
-    useEffect(() => {
         document.body.style.transform = "scale(0.8)";
-        document.body.style.transformOrigin = "top ";
+        document.body.style.transformOrigin = "top";
         return () => {
-            document.body.style.zoom = "100%";
+            (document.body.style as any).zoom = "100%";
             document.body.style.transform = "none";
         };
     }, []);
@@ -378,21 +390,21 @@ export default function Step2Component() {
         console.log("Sort options open:", !isSortOptionsOpen);
     };
 
-    const handleOptionSelect = (option) => {
+    const handleOptionSelect = (option: string) => {
         setSelectedOption(option);
         setIsProblemOptionsOpen(false);
     };
 
-    const handleSortOptionSelect = (option) => {
+    const handleSortOptionSelect = (option: string) => {
         setSelectedSortOption(option);
         setIsSortOptionsOpen(false);
     };
 
-    const handleSimilarPageToggle = (itemId, questionIndex) => {
+    const handleSimilarPageToggle = (itemId: number, questionIndex: number) => {
         fetchSimilarItems(itemId, questionIndex);
     };
 
-    const handleDeleteItem = (itemId) => {
+    const handleDeleteItem = (itemId: number) => {
         const itemToDelete = itemList.find((item) => item.itemId === itemId);
         if (itemToDelete) {
             const relatedPassage = groupedItems.find(group => group.passageId === itemToDelete.passageId);
@@ -431,7 +443,7 @@ export default function Step2Component() {
         }
     };
 
-    const handleDeletePassage = (passageId) => {
+    const handleDeletePassage = (passageId: string | number) => {
         const itemsToDelete = itemList.filter((item) => item.passageId === passageId);
 
         setDeletedItems((prevDeletedItems) => [
@@ -451,14 +463,14 @@ export default function Step2Component() {
         setSelectedSortOption("사용자 정렬");
     };
 
-    const scrollToNewItem = (newItemId) => {
+    const scrollToNewItem = (newItemId: number) => {
         const newItemElement = document.getElementById(`question-${newItemId}`);
         if (newItemElement) {
             newItemElement.scrollIntoView({behavior: 'smooth', block: 'center'});
         }
     };
 
-    const handleAddItem = (newItem) => {
+    const handleAddItem = (newItem: Item) => {
         setItemList((prevItemList) => [...prevItemList, newItem]);
         setLastAddedItemId(newItem.itemId);
 
@@ -493,7 +505,7 @@ export default function Step2Component() {
         );
     };
 
-    const handleDragEnd = (result) => {
+    const handleDragEnd = (result: any) => {
         const {destination, source, type} = result;
 
         if (!destination) return;
@@ -505,7 +517,7 @@ export default function Step2Component() {
 
             setGroupedItems(updatedGroups);
 
-            const newSortedItemList = updatedGroups.flatMap(group => group.items);
+            const newSortedItemList = updatedGroups.flatMap((group: { items: any; }) => group.items);
             setItemList(newSortedItemList);
             setSelectedSortOption("사용자 정렬");
 
@@ -513,13 +525,9 @@ export default function Step2Component() {
         } else if (type === "ITEM") {
             const sourcePassageId = source.droppableId;
             const destinationPassageId = destination.droppableId;
-            console.log(sourcePassageId, destinationPassageId, 'asdlfjads');
 
             const sourcePassageIdNumber = Number(sourcePassageId);
             const destinationPassageIdNumber = Number(destinationPassageId);
-
-            console.log(`sourcePassageId: ${sourcePassageIdNumber}, destinationPassageId: ${destinationPassageIdNumber}`);
-            console.log('현재 groupedItems:', groupedItems.map(group => group.passageId));
 
             if (sourcePassageId !== destinationPassageId && sourcePassageId !== "noPassage" && destinationPassageId !== "noPassage") {
                 console.log('다른 지문으로 이동할 수 없습니다.');
@@ -527,16 +535,13 @@ export default function Step2Component() {
                 return;
             }
 
-            console.log(`문항을 ${source.index}에서 ${destination.index}로 이동`);
-
-            const groupIndex = updatedGroups.findIndex(group => {
+            const groupIndex = updatedGroups.findIndex((group: { passageId: number; }) => {
                 if (typeof group.passageId === "string" && group.passageId === sourcePassageId) {
                     return true;
                 }
-                if (typeof group.passageId === "number" && group.passageId === sourcePassageIdNumber) {
-                    return true;
-                }
-                return false;
+
+                return typeof group.passageId === "number" && group.passageId === sourcePassageIdNumber;
+
             });
 
             if (groupIndex === -1) {
@@ -566,7 +571,7 @@ export default function Step2Component() {
 
             setGroupedItems(updatedGroups);
 
-            const newSortedItemList = updatedGroups.flatMap(group => group.items);
+            const newSortedItemList = updatedGroups.flatMap((group: { items: any; }) => group.items);
             setItemList(newSortedItemList);
             setSelectedSortOption("사용자 정렬");
         }
@@ -578,29 +583,29 @@ export default function Step2Component() {
     };
 
     const handleClickMoveToStepThree = () => {
-        console.log(`STEP 3 시험지 저장 : ${bookId, totalQuestions, itemList}`);
+        console.log(`STEP 3 시험지 저장 : bookId=${bookId}, totalQuestions=${totalQuestions}, itemList=${JSON.stringify(itemList)}`);
         dispatch(setExamData({bookId, totalQuestions, groupedItems, step1Data}));
         moveToStepWithData('step3', {bookId, groupedItems});
     };
     const handleClickHome = () => {
-    
         moveToPath('/');
-      };
+    };
+    // @ts-ignore
     return (
         <>
-            <Button 
-                    variant={'outlined'} 
-                    onClick={handleClickHome}
-                    style={{
-                        position: 'relative',
-                        top: '55px',
-                        right: '-50%',
-                        zIndex:1000,
-                        margin: '5px'
-                    }}
-                    >
-                <HomeIcon />홈
-              </Button>
+            <Button
+                variant={'outlined'}
+                onClick={handleClickHome}
+                style={{
+                    position: 'relative',
+                    top: '55px',
+                    right: '-50%',
+                    zIndex: 1000,
+                    margin: '5px'
+                }}
+            >
+                <HomeIcon/>홈
+            </Button>
             <CommonResource/>
             {isConfirmOpen && (
                 <ConfirmationModal
@@ -644,12 +649,12 @@ export default function Step2Component() {
                         <button type="button" className="del-btn"></button>
                     </div>
                     <div className="pop-content">
-                    <div className="view-box" style={{ border: '2px solid #1976d2',
-            width:'103%',
-            height: '850px',
-            margin: 'auto',
-              // 가운데 정렬을 위해
-         }}>
+                        <div className="view-box" style={{
+                            border: '2px solid #1976d2',
+                            width: '103%',
+                            height: '850px',
+                            margin: 'auto',
+                        }}>
 
                             <div className="view-top">
                                 <div className="paper-info">
@@ -790,12 +795,15 @@ export default function Step2Component() {
                                                                 width: "100%",
                                                                 boxSizing: "border-box"
                                                             }}>
-                                                                <img src={group.passageUrl} alt="지문 이미지"
-                                                                     style={{
-                                                                         width: "100%",
-                                                                         height: "auto",
-                                                                         objectFit: "contain"
-                                                                     }}/>
+                                                                <img
+                                                                    src={group.passageUrl || ""}
+                                                                    alt="지문 이미지"
+                                                                    style={{
+                                                                        width: "100%",
+                                                                        height: "auto",
+                                                                        objectFit: "contain"
+                                                                    }}
+                                                                />
                                                             </div>
                                                         </div>
                                                     )}
@@ -923,10 +931,13 @@ export default function Step2Component() {
                                     <Step2RightSideComponent
                                         itemList={itemList}
                                         onDragEnd={handleDragEnd}
-                                        onShowSimilar={(item) => handleSimilarPageToggle(item, itemList.indexOf(item) + 1)}
-                                        questionIndex={questionIndex}
+                                        onShowSimilar={(item: number | Item) => handleSimilarPageToggle(
+                                            typeof item === 'number' ? item : item.itemId,
+                                            itemList.indexOf(item as Item) + 1
+                                        )}
+                                        questionIndex={questionIndex ?? 0}
                                         similarItems={similarItems}
-                                        deletedItems={deletedItems}
+                                        deletedItems={deletedItems.flatMap(group => group.items)}
                                         onAddItem={handleAddItem}
                                     />
                                 </div>
@@ -944,10 +955,10 @@ export default function Step2Component() {
                             variant="contained"
                             onClick={handleClickMoveToStepThree}
                             className="btn-step next"
-                            style={{ 
+                            style={{
                                 right: '50px',
-                                float: 'right',     // 오른쪽 정렬 추가
-                                marginRight: '-90px' // 필요한 경우 여백 추가
+                                float: 'right',
+                                marginRight: '-90px'
                             }}
                         ><b>시험지 저장</b>
                         </Button>

@@ -1,9 +1,27 @@
 import React, {useState} from "react";
-import {DragDropContext} from "react-beautiful-dnd";
-import CommonResource from "../../util/CommonResource.jsx";
-import ExamSummaryComponent from "../common/ExamSummaryComponent.jsx";
-import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent.jsx";
-import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent.jsx";
+// @ts-ignore
+import {DragDropContext, DropResult} from "react-beautiful-dnd";
+import CommonResource from "../../util/CommonResource";
+import ExamSummaryComponent from "../common/ExamSummaryComponent";
+import Step2SimilarItemsComponent from "./Step2SimilarItemsComponent";
+import Step2DeletedItemsComponent from "./Step2DeletedItemsComponent";
+import {Item} from "../../type/Item";
+
+interface Step2RightSideComponentProps {
+    itemList: Item[];
+    onDragEnd: (result: DropResult) => void;
+    onShowSimilar: (itemId: number, index: number) => void;
+    questionIndex: number;
+    similarItems: Item[];
+    deletedItems: Item[];
+    onAddItem: (item: Item) => void;
+}
+
+interface GroupedItem {
+    passageId: string | number;
+    passageUrl?: string | null;
+    items: Item[];
+}
 
 export default function Step2RightSideComponent({
                                                     itemList,
@@ -12,12 +30,22 @@ export default function Step2RightSideComponent({
                                                     questionIndex,
                                                     similarItems,
                                                     deletedItems,
-                                                    onAddItem
-                                                }) {
-    const [activeTab, setActiveTab] = useState("summary");
-    const [selectedItemId, setSelectedItemId] = useState(null);
+                                                    onAddItem,
+                                                }: Step2RightSideComponentProps) {
+    const groupedDeletedItems: GroupedItem[] = deletedItems.reduce((acc: GroupedItem[], item: Item) => {
+        const group = acc.find(g => g.passageId === item.passageId);
+        if (group) {
+            group.items.push(item);
+        } else {
+            acc.push({passageId: item.passageId, passageUrl: item.passageUrl, items: [item]});
+        }
+        return acc;
+    }, []);
 
-    const groupByPassage = (items) => {
+    const [activeTab, setActiveTab] = useState<string>("summary");
+    const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+
+    const groupByPassage = (items: Item[]): Record<string | number, Item[]> => {
         return items.reduce((acc, item) => {
             const passageId = item.passageId || "noPassage";
             if (!acc[passageId]) {
@@ -25,12 +53,12 @@ export default function Step2RightSideComponent({
             }
             acc[passageId].push(item);
             return acc;
-        }, {});
+        }, {} as Record<string | number, Item[]>);
     };
 
-    const handleTabClick = (tab, itemId = null, index = null) => {
+    const handleTabClick = (tab: string, itemId: number | null = null, index: number | null = null) => {
         setActiveTab(tab);
-        if (tab === "similar" && itemId && index) {
+        if (tab === "similar" && itemId && index !== null) {
             setSelectedItemId(itemId);
             onShowSimilar(itemId, index);
         }
@@ -59,15 +87,13 @@ export default function Step2RightSideComponent({
                     {activeTab === "similar" && (
                         <Step2SimilarItemsComponent
                             items={similarItems}
-                            onBack={() => setActiveTab("summary")}
                             questionNumber={questionIndex}
                             onAddItem={onAddItem}
                         />
                     )}
                     {activeTab === "deleted" && (
                         <Step2DeletedItemsComponent
-                            deletedItems={deletedItems}
-                            onBack={() => setActiveTab("summary")}
+                            deletedItems={groupedDeletedItems}
                             onRestoreItem={onAddItem}
                         />
                     )}
