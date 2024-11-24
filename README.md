@@ -41,7 +41,7 @@
   <br><br>
 
 ## 🗼 Architecture
-![bsherpa-architecture](https://github.com/user-attachments/assets/340bfb33-d7a7-44f6-8144-9fef19567396)
+![bsherpa-architecture](https://github.com/user-attachments/assets/2d3cdbe6-06bd-42c2-8dc5-b8b215fa27d2)
 <br><br>
 
 ## 🗄️ ERD
